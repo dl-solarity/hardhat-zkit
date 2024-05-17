@@ -3,6 +3,7 @@ import "hardhat/types/runtime";
 
 import { ZKitConfig } from "./types/zkit-config";
 import { HardhatZKit } from "./types/hardhat-zkit";
+import { RecursivePartial } from "./types/utils";
 
 declare module "hardhat/types/config" {
   interface HardhatConfig {
@@ -10,7 +11,7 @@ declare module "hardhat/types/config" {
   }
 
   interface HardhatUserConfig {
-    zkit?: Partial<ZKitConfig>;
+    zkit?: RecursivePartial<ZKitConfig>;
   }
 }
 

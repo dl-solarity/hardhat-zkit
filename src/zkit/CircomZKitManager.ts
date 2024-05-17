@@ -1,8 +1,13 @@
+import * as fs from "fs";
+import path from "path";
+import process from "process";
+
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 import { CircomZKit, CircuitZKit, CircuitInfo, ManagerZKitConfig, CompileOptions } from "@solarity/zkit";
 
 import { ZKitConfig } from "../types/zkit-config";
+import { MAIN_COMPONENT_REG_EXP } from "../constants";
 
 export class CircomZKitManager {
   private _circomZKit: CircomZKit;
@@ -19,7 +24,7 @@ export class CircomZKitManager {
     const circuits: CircuitZKit[] = [];
 
     circuitsInfo.forEach((info: CircuitInfo) => {
-      if (info.id !== null) {
+      if (info.id !== null && this._hasMainComponent(info)) {
         circuits.push(this._circomZKit.getCircuit(info.id));
       }
     });
@@ -61,5 +66,14 @@ export class CircomZKitManager {
       quiet: this._config.compilationSettings.quiet,
       sym: this._config.compilationSettings.sym,
     };
+  }
+
+  private _hasMainComponent(circuitInfo: CircuitInfo): boolean {
+    const circuitFile: string = fs.readFileSync(
+      `${path.join(process.cwd(), this._config.circuitsDir)}/${circuitInfo.path}`,
+      "utf-8",
+    );
+
+    return new RegExp(MAIN_COMPONENT_REG_EXP).test(circuitFile);
   }
 }

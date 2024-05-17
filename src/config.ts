@@ -1,6 +1,8 @@
 import { ConfigExtender } from "hardhat/types";
 
 import { CompilationSettings, VerifiersGenerationSettings, ZKitConfig } from "./types/zkit-config";
+import { RecursivePartial } from "./types/utils";
+import { deepMerge } from "./utils/utils";
 
 const defaultConfig: ZKitConfig = {
   circuitsDir: "circuits",
@@ -41,8 +43,8 @@ export const mergeVerifiersGenerationSettings = (
   return config;
 };
 
-export const mergeConfigs = (cliArgs: Partial<ZKitConfig> | undefined, zkitConfig: ZKitConfig): ZKitConfig => {
-  const config = cliArgs === undefined ? zkitConfig : { ...zkitConfig, ...definedProps(cliArgs) };
+export const mergeConfigs = (cliArgs: RecursivePartial<ZKitConfig> | undefined, zkitConfig: ZKitConfig): ZKitConfig => {
+  const config = cliArgs === undefined ? zkitConfig : deepMerge(zkitConfig, cliArgs);
 
   return config;
 };
