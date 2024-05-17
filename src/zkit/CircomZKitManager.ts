@@ -8,6 +8,7 @@ import { CircomZKit, CircuitZKit, CircuitInfo, ManagerZKitConfig, CompileOptions
 
 import { ZKitConfig } from "../types/zkit-config";
 import { MAIN_COMPONENT_REG_EXP } from "../constants";
+import { NonExistentCircuitError, NotAFullCircuitError } from "./errors";
 
 export class CircomZKitManager {
   private _circomZKit: CircomZKit;
@@ -47,6 +48,26 @@ export class CircomZKitManager {
     for (let i = 0; i < circuits.length; i++) {
       await circuits[i].createVerifier();
     }
+  }
+
+  public async getCircuit(circuit: string): Promise<CircuitZKit> {
+    const circuitInfo = this._circomZKit.getCircuits().find((info: CircuitInfo) => {
+      return info.id === circuit;
+    });
+
+    if (!circuitInfo) {
+      throw new NonExistentCircuitError(circuit);
+    }
+
+    if (!this._hasMainComponent(circuitInfo)) {
+      throw new NotAFullCircuitError(circuit);
+    }
+
+    return this._circomZKit.getCircuit(circuit);
+  }
+
+  public getCircuitsInfo(): CircuitInfo[] {
+    return this._circomZKit.getCircuits();
   }
 
   private _buildManagerZKitConfig(): ManagerZKitConfig {

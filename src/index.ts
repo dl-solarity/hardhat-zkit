@@ -2,6 +2,7 @@ import { extendConfig, task, types } from "hardhat/config";
 import { ActionType } from "hardhat/types";
 
 import "./type-extensions";
+import "./zkit/index";
 
 import { mergeCompilationSettings, mergeVerifiersGenerationSettings, zkitConfigExtender } from "./config";
 import { TASK_CIRCUITS_COMPILE, TASK_GENERATE_VERIFIERS } from "./constants";
