@@ -70,7 +70,7 @@ export class CircomZKitManager {
     return this._circomZKit.getCircuits();
   }
 
-  private _buildManagerZKitConfig(): ManagerZKitConfig {
+  private _buildManagerZKitConfig(): Partial<ManagerZKitConfig> {
     return {
       circuitsDir: this._config.circuitsDir,
       artifactsDir: this._config.compilationSettings.artifactsDir,

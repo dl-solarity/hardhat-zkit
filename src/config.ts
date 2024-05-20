@@ -16,7 +16,7 @@ const defaultConfig: ZKitConfig = {
   verifiersSettings: {
     verifiersDir: "contracts/verifiers",
   },
-  ptauDir: "zkit/ptau",
+  ptauDir: undefined,
   allowDownload: true,
 };
 

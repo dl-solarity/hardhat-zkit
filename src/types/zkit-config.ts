@@ -2,7 +2,7 @@ export type ZKitConfig = {
   compilationSettings: CompilationSettings;
   verifiersSettings: VerifiersGenerationSettings;
   circuitsDir: string;
-  ptauDir: string;
+  ptauDir: string | undefined;
   allowDownload: boolean;
 };
 
