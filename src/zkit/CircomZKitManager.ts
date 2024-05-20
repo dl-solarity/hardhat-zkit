@@ -6,7 +6,7 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 import { CircomZKit, CircuitZKit, CircuitInfo, ManagerZKitConfig, CompileOptions } from "@solarity/zkit";
 
-import { ZKitConfig } from "../types/zkit-config";
+import { FileFilterSettings, ZKitConfig } from "../types/zkit-config";
 import { MAIN_COMPONENT_REG_EXP } from "../constants";
 import { NonExistentCircuitError, CircuitWithoutMainComponentError } from "./errors";
 
@@ -18,10 +18,19 @@ export class CircomZKitManager {
     private _config: ZKitConfig = _hre.config.zkit,
   ) {
     this._circomZKit = new CircomZKit(this._buildManagerZKitConfig());
+
+    this._config.compilationSettings = {
+      ...this._config.compilationSettings,
+      ...this._normalizeFilterSettings(this._config.compilationSettings),
+    };
+    this._config.verifiersSettings = {
+      ...this._config.verifiersSettings,
+      ...this._normalizeFilterSettings(this._config.verifiersSettings),
+    };
   }
 
   public async compile() {
-    const circuitsInfo: CircuitInfo[] = this._circomZKit.getCircuits();
+    const circuitsInfo: CircuitInfo[] = this._filterCircuits(this.getCircuitsInfo());
     const circuits: CircuitZKit[] = [];
 
     circuitsInfo.forEach((info: CircuitInfo) => {
@@ -36,7 +45,7 @@ export class CircomZKitManager {
   }
 
   public async generateVerifiers() {
-    const circuitsInfo: CircuitInfo[] = this._circomZKit.getCircuits();
+    const circuitsInfo: CircuitInfo[] = this._filterCircuits(this.getCircuitsInfo());
     const circuits: CircuitZKit[] = [];
 
     circuitsInfo.forEach((info: CircuitInfo) => {
@@ -51,7 +60,7 @@ export class CircomZKitManager {
   }
 
   public async getCircuit(circuit: string): Promise<CircuitZKit> {
-    const circuitInfo = this._circomZKit.getCircuits().find((info: CircuitInfo) => {
+    const circuitInfo = this.getCircuitsInfo().find((info: CircuitInfo) => {
       return info.id === circuit;
     });
 
@@ -96,5 +105,37 @@ export class CircomZKitManager {
     );
 
     return new RegExp(MAIN_COMPONENT_REG_EXP).test(circuitFile);
+  }
+
+  private _filterCircuits(circuitsInfo: CircuitInfo[]): CircuitInfo[] {
+    return circuitsInfo.filter((circuitInfo: CircuitInfo) => {
+      return (
+        (this._config.compilationSettings.onlyFiles.length == 0 ||
+          this._contains(this._config.compilationSettings.onlyFiles, circuitInfo.path)) &&
+        !this._contains(this._config.compilationSettings.skipFiles, circuitInfo.path)
+      );
+    });
+  }
+
+  private _contains(pathList: any, source: any) {
+    const isSubPath = (parent: string, child: string) => {
+      const parentTokens = parent.split(path.posix.sep).filter((i) => i.length);
+      const childTokens = child.split(path.posix.sep).filter((i) => i.length);
+
+      return parentTokens.every((t, i) => childTokens[i] === t);
+    };
+
+    return pathList === undefined ? false : pathList.some((p: any) => isSubPath(p, source));
+  }
+
+  private _normalizeFilterSettings(filterSettings: FileFilterSettings): FileFilterSettings {
+    filterSettings.onlyFiles = filterSettings.onlyFiles.map((p) => this._toUnixPath(path.normalize(p)));
+    filterSettings.skipFiles = filterSettings.skipFiles.map((p) => this._toUnixPath(path.normalize(p)));
+
+    return filterSettings;
+  }
+
+  private _toUnixPath(userPath: string) {
+    return userPath.split(path.sep).join(path.posix.sep);
   }
 }

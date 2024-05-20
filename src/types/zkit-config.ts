@@ -6,7 +6,7 @@ export type ZKitConfig = {
   allowDownload: boolean;
 };
 
-export type CompilationSettings = {
+export type CompilationSettings = FileFilterSettings & {
   artifactsDir: string;
   sym: boolean;
   json: boolean;
@@ -14,6 +14,11 @@ export type CompilationSettings = {
   quiet: boolean;
 };
 
-export type VerifiersGenerationSettings = {
+export type VerifiersGenerationSettings = FileFilterSettings & {
   verifiersDir: string;
+};
+
+export type FileFilterSettings = {
+  onlyFiles: string[];
+  skipFiles: string[];
 };

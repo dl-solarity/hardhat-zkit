@@ -8,17 +8,17 @@ import { mergeCompilationSettings, mergeVerifiersGenerationSettings, zkitConfigE
 import { TASK_CIRCUITS_COMPILE, TASK_GENERATE_VERIFIERS } from "./constants";
 
 import { CircomZKitManager } from "./zkit/CircomZKitManager";
-import { CompilationSettings, VerifiersGenerationSettings } from "./types/zkit-config";
+import { CompilationTaskArgs, VerifiersGenerationTaskArgs } from "./types/task-args";
 
 extendConfig(zkitConfigExtender);
 
-const circuitsCompile: ActionType<CompilationSettings> = async (taskArgs, env) => {
+const circuitsCompile: ActionType<CompilationTaskArgs> = async (taskArgs, env) => {
   env.config.zkit.compilationSettings = mergeCompilationSettings(taskArgs, env.config.zkit.compilationSettings);
 
   await new CircomZKitManager(env).compile();
 };
 
-const generateVerifiers: ActionType<VerifiersGenerationSettings> = async (taskArgs, env) => {
+const generateVerifiers: ActionType<VerifiersGenerationTaskArgs> = async (taskArgs, env) => {
   env.config.zkit.verifiersSettings = mergeVerifiersGenerationSettings(taskArgs, env.config.zkit.verifiersSettings);
 
   await new CircomZKitManager(env).generateVerifiers();

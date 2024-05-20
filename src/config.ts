@@ -3,11 +3,14 @@ import { ConfigExtender } from "hardhat/types";
 import { CompilationSettings, VerifiersGenerationSettings, ZKitConfig } from "./types/zkit-config";
 import { RecursivePartial } from "./types/utils";
 import { deepMerge } from "./utils/utils";
+import { CompilationTaskArgs, VerifiersGenerationTaskArgs } from "./types/task-args";
 
 const defaultConfig: ZKitConfig = {
   circuitsDir: "circuits",
   compilationSettings: {
     artifactsDir: "zkit/artifacts",
+    onlyFiles: [],
+    skipFiles: [],
     c: false,
     json: false,
     quiet: false,
@@ -15,6 +18,8 @@ const defaultConfig: ZKitConfig = {
   },
   verifiersSettings: {
     verifiersDir: "contracts/verifiers",
+    onlyFiles: [],
+    skipFiles: [],
   },
   ptauDir: undefined,
   allowDownload: true,
@@ -25,23 +30,21 @@ export const zkitConfigExtender: ConfigExtender = (resolvedConfig, config) => {
 };
 
 export const mergeCompilationSettings = (
-  cliArgs: Partial<CompilationSettings> | undefined,
+  cliArgs: Partial<CompilationTaskArgs> | undefined,
   compilationSettings: CompilationSettings,
 ): CompilationSettings => {
   return { ...compilationSettings, ...definedProps(cliArgs) };
 };
 
 export const mergeVerifiersGenerationSettings = (
-  cliArgs: Partial<VerifiersGenerationSettings> | undefined,
+  cliArgs: Partial<VerifiersGenerationTaskArgs> | undefined,
   verifiersGenerationSettings: VerifiersGenerationSettings,
 ): VerifiersGenerationSettings => {
   return { ...verifiersGenerationSettings, ...definedProps(cliArgs) };
 };
 
 export const mergeConfigs = (cliArgs: RecursivePartial<ZKitConfig> | undefined, zkitConfig: ZKitConfig): ZKitConfig => {
-  const config = cliArgs === undefined ? zkitConfig : deepMerge(zkitConfig, cliArgs);
-
-  return config;
+  return cliArgs === undefined ? zkitConfig : deepMerge(zkitConfig, cliArgs);
 };
 
 const definedProps = (obj: any): any =>
