@@ -7,7 +7,7 @@ import { deepMerge } from "./utils/utils";
 const defaultConfig: ZKitConfig = {
   circuitsDir: "circuits",
   compilationSettings: {
-    artifactsDir: "zkit-artifacts",
+    artifactsDir: "zkit/artifacts",
     c: false,
     json: false,
     quiet: false,
@@ -16,7 +16,7 @@ const defaultConfig: ZKitConfig = {
   verifiersSettings: {
     verifiersDir: "contracts/verifiers",
   },
-  ptauDir: "",
+  ptauDir: "zkit/ptau",
   allowDownload: true,
 };
 
@@ -28,19 +28,14 @@ export const mergeCompilationSettings = (
   cliArgs: Partial<CompilationSettings> | undefined,
   compilationSettings: CompilationSettings,
 ): CompilationSettings => {
-  const config = cliArgs === undefined ? compilationSettings : { ...compilationSettings, ...definedProps(cliArgs) };
-
-  return config;
+  return { ...compilationSettings, ...definedProps(cliArgs) };
 };
 
 export const mergeVerifiersGenerationSettings = (
   cliArgs: Partial<VerifiersGenerationSettings> | undefined,
   verifiersGenerationSettings: VerifiersGenerationSettings,
 ): VerifiersGenerationSettings => {
-  const config =
-    cliArgs === undefined ? verifiersGenerationSettings : { ...verifiersGenerationSettings, ...definedProps(cliArgs) };
-
-  return config;
+  return { ...verifiersGenerationSettings, ...definedProps(cliArgs) };
 };
 
 export const mergeConfigs = (cliArgs: RecursivePartial<ZKitConfig> | undefined, zkitConfig: ZKitConfig): ZKitConfig => {
@@ -49,4 +44,5 @@ export const mergeConfigs = (cliArgs: RecursivePartial<ZKitConfig> | undefined, 
   return config;
 };
 
-const definedProps = (obj: any): any => Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined));
+const definedProps = (obj: any): any =>
+  Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined && v !== false));

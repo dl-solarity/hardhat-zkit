@@ -12,7 +12,7 @@ export class NonExistentCircuitError extends HardhatZKitError {
   }
 }
 
-export class NotAFullCircuitError extends HardhatZKitError {
+export class CircuitWithoutMainComponentError extends HardhatZKitError {
   constructor(circuit: string) {
     super(`Circuit '${circuit}' does not have a main component definition`);
   }
