@@ -12,6 +12,12 @@ export class NonExistentCircuitError extends HardhatZKitError {
   }
 }
 
+export class UncompiledCircuitError extends HardhatZKitError {
+  constructor(circuit: string) {
+    super(`Circuit '${circuit}' was not compiled yet. Please compile circuits and try again`);
+  }
+}
+
 export class CircuitWithoutMainComponentError extends HardhatZKitError {
   constructor(circuit: string) {
     super(`Circuit '${circuit}' does not have a main component definition`);

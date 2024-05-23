@@ -7,8 +7,8 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { CircomZKit, CircuitZKit, CircuitInfo, ManagerZKitConfig, CompileOptions } from "@solarity/zkit";
 
 import { FileFilterSettings, ZKitConfig } from "../types/zkit-config";
+import { NonExistentCircuitError, CircuitWithoutMainComponentError, UncompiledCircuitError } from "./errors";
 import { MAIN_COMPONENT_REG_EXP } from "../constants";
-import { NonExistentCircuitError, CircuitWithoutMainComponentError } from "./errors";
 
 export class CircomZKitManager {
   private _circomZKit: CircomZKit;
@@ -50,6 +50,10 @@ export class CircomZKitManager {
 
     circuitsInfo.forEach((info: CircuitInfo) => {
       if (info.id !== null && this._hasMainComponent(info)) {
+        if (!fs.existsSync(`${this._config.compilationSettings.artifactsDir}/${info.path}`)) {
+          throw new UncompiledCircuitError(info.id);
+        }
+
         circuits.push(this._circomZKit.getCircuit(info.id));
       }
     });

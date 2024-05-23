@@ -32,6 +32,7 @@ describe("CircomZKitManager", () => {
     useEnvironment("with-circuits");
 
     beforeEach("setup", async function () {
+      fs.rmSync("zkit", { recursive: true, force: true });
       fs.rmSync("contracts/verifiers", { recursive: true, force: true });
 
       circomZKitManager = new CircomZKitManager(this.hre);
@@ -45,6 +46,12 @@ describe("CircomZKitManager", () => {
       await circomZKitManager.generateVerifiers();
 
       expect(fs.existsSync("contracts/verifiers/main/mul2/mul2Verifier.sol")).to.be.true;
+    });
+
+    it("should get exception if try to generate verifiers without compilation", async () => {
+      const reason = `Circuit 'mul2' was not compiled yet. Please compile circuits and try again`;
+
+      await expect(circomZKitManager.generateVerifiers()).to.be.rejectedWith(reason);
     });
   });
 
