@@ -30,7 +30,7 @@ export class CircomZKitManager {
   }
 
   public async compile() {
-    const circuitsInfo: CircuitInfo[] = this._filterCircuits(this.getCircuitsInfo());
+    const circuitsInfo: CircuitInfo[] = this._filterCircuits(this.getCircuitsInfo(), this._config.compilationSettings);
     const circuits: CircuitZKit[] = [];
 
     circuitsInfo.forEach((info: CircuitInfo) => {
@@ -45,7 +45,7 @@ export class CircomZKitManager {
   }
 
   public async generateVerifiers() {
-    const circuitsInfo: CircuitInfo[] = this._filterCircuits(this.getCircuitsInfo());
+    const circuitsInfo: CircuitInfo[] = this._filterCircuits(this.getCircuitsInfo(), this._config.verifiersSettings);
     const circuits: CircuitZKit[] = [];
 
     circuitsInfo.forEach((info: CircuitInfo) => {
@@ -107,17 +107,16 @@ export class CircomZKitManager {
     return new RegExp(MAIN_COMPONENT_REG_EXP).test(circuitFile);
   }
 
-  private _filterCircuits(circuitsInfo: CircuitInfo[]): CircuitInfo[] {
+  private _filterCircuits(circuitsInfo: CircuitInfo[], filterSettings: FileFilterSettings): CircuitInfo[] {
     return circuitsInfo.filter((circuitInfo: CircuitInfo) => {
       return (
-        (this._config.compilationSettings.onlyFiles.length == 0 ||
-          this._contains(this._config.compilationSettings.onlyFiles, circuitInfo.path)) &&
-        !this._contains(this._config.compilationSettings.skipFiles, circuitInfo.path)
+        (filterSettings.onlyFiles.length == 0 || this._contains(filterSettings.onlyFiles, circuitInfo.path)) &&
+        !this._contains(filterSettings.skipFiles, circuitInfo.path)
       );
     });
   }
 
-  private _contains(pathList: any, source: any) {
+  private _contains(pathList: string[], source: any) {
     const isSubPath = (parent: string, child: string) => {
       const parentTokens = parent.split(path.posix.sep).filter((i) => i.length);
       const childTokens = child.split(path.posix.sep).filter((i) => i.length);
@@ -125,7 +124,7 @@ export class CircomZKitManager {
       return parentTokens.every((t, i) => childTokens[i] === t);
     };
 
-    return pathList === undefined ? false : pathList.some((p: any) => isSubPath(p, source));
+    return pathList.some((p: any) => isSubPath(p, source));
   }
 
   private _normalizeFilterSettings(filterSettings: FileFilterSettings): FileFilterSettings {

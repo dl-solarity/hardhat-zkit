@@ -44,7 +44,7 @@ export const mergeVerifiersGenerationSettings = (
 };
 
 export const mergeConfigs = (cliArgs: RecursivePartial<ZKitConfig> | undefined, zkitConfig: ZKitConfig): ZKitConfig => {
-  return cliArgs === undefined ? zkitConfig : deepMerge(zkitConfig, cliArgs);
+  return cliArgs === undefined ? zkitConfig : deepMerge({}, zkitConfig, cliArgs);
 };
 
 const definedProps = (obj: any): any =>
