@@ -1,7 +1,5 @@
 import { HardhatUserConfig } from "hardhat/config";
 
-import "hardhat-abi-exporter";
-
 import "@nomicfoundation/hardhat-ethers";
 
 import "../../src";
@@ -21,9 +19,6 @@ const config: HardhatUserConfig = {
       },
       evmVersion: "paris",
     },
-  },
-  abiExporter: {
-    flat: true,
   },
 };
 
