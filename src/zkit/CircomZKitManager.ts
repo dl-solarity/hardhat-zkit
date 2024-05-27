@@ -45,10 +45,17 @@ export class CircomZKitManager {
   }
 
   public async generateVerifiers() {
-    const circuitsInfo: CircuitInfo[] = this._filterCircuits(this.getCircuitsInfo(), this._config.verifiersSettings);
+    const compiledFilteredCircuitsInfo: CircuitInfo[] = this._filterCircuits(
+      this.getCircuitsInfo(),
+      this._config.compilationSettings,
+    );
+    const filteredCircuitsInfo: CircuitInfo[] = this._filterCircuits(
+      compiledFilteredCircuitsInfo,
+      this._config.verifiersSettings,
+    );
     const circuits: CircuitZKit[] = [];
 
-    circuitsInfo.forEach((info: CircuitInfo) => {
+    filteredCircuitsInfo.forEach((info: CircuitInfo) => {
       if (info.id !== null && this._hasMainComponent(info)) {
         if (!fs.existsSync(`${this._config.compilationSettings.artifactsDir}/${info.path}`)) {
           throw new UncompiledCircuitError(info.id);
