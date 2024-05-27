@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "noEmitOnError": true,
+    "skipDefaultLibCheck": true,
+    "skipLibCheck": true,
+    "outDir": "./dist",
+    "experimentalDecorators": true,
+    "types": [
+      "@nomicfoundation/hardhat-ethers"
+    ]
+  },
+  "exclude": [
+    "./dist",
+    "./node_modules",
+    "./test/**/hardhat.config.ts",
+    "./publish"
+  ],
+  "include": [
+    "src",
+    "test",
+  ]
+}
