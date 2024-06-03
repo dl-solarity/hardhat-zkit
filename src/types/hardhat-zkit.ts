@@ -1,8 +1,8 @@
 import { CircuitZKit, CircuitInfo } from "@solarity/zkit";
 
-export declare function getCircuit(circuit: string): Promise<CircuitZKit>;
+export declare function getCircuit(circuitName: string): Promise<CircuitZKit>;
 
-export declare function getCircuitsInfo(): CircuitInfo[];
+export declare function getCircuitsInfo(withMainComponent?: boolean): Promise<CircuitInfo[]>;
 
 export interface HardhatZKit {
   getCircuit: typeof getCircuit;

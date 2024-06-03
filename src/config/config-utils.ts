@@ -19,3 +19,7 @@ export function deepMerge(target: any, ...sources: any[]): any {
 
   return deepMerge(target, ...sources);
 }
+
+export function definedProps(obj: any): any {
+  return Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined && v !== false));
+}

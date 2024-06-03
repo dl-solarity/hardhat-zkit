@@ -7,6 +7,7 @@ const defaultConfig: HardhatUserConfig = {
   zkit: {
     circuitsDir: "circuits",
     compilationSettings: {
+      artifactsDir: "zkit/artifacts",
       skipFiles: ["vendor"],
       quiet: true,
     },
