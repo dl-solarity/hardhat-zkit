@@ -1,10 +1,10 @@
 import * as taskTypes from "hardhat/types/builtin-tasks";
 
-import { ResolvedFile, Resolver } from "./resolver";
+import { ResolvedFile, Resolver } from "./Resolver";
 import { HardhatError } from "hardhat/internal/core/errors";
 import { ERRORS } from "hardhat/internal/core/errors-list";
 
-export class DependencyGraph implements taskTypes.DependencyGraph {
+export class DependencyGraph {
   public static async createFromResolvedFiles(
     resolver: Resolver,
     resolvedFiles: ResolvedFile[],
@@ -58,62 +58,6 @@ export class DependencyGraph implements taskTypes.DependencyGraph {
     return [...transitiveDependencies];
   }
 
-  public getConnectedComponents(): DependencyGraph[] {
-    const undirectedGraph: Record<string, Set<string>> = {};
-
-    for (const [sourceName, dependencies] of this._dependenciesPerFile.entries()) {
-      undirectedGraph[sourceName] = undirectedGraph[sourceName] ?? new Set();
-      for (const dependency of dependencies) {
-        undirectedGraph[dependency.sourceName] = undirectedGraph[dependency.sourceName] ?? new Set();
-        undirectedGraph[sourceName].add(dependency.sourceName);
-        undirectedGraph[dependency.sourceName].add(sourceName);
-      }
-    }
-
-    const components: Array<Set<string>> = [];
-    const visited = new Set<string>();
-
-    for (const node of Object.keys(undirectedGraph)) {
-      if (visited.has(node)) {
-        continue;
-      }
-      visited.add(node);
-      const component = new Set([node]);
-      const stack = [...undirectedGraph[node]];
-      while (stack.length > 0) {
-        const newNode = stack.pop()!;
-        if (visited.has(newNode)) {
-          continue;
-        }
-        visited.add(newNode);
-        component.add(newNode);
-        [...undirectedGraph[newNode]].forEach((adjacent) => {
-          if (!visited.has(adjacent)) {
-            stack.push(adjacent);
-          }
-        });
-      }
-
-      components.push(component);
-    }
-
-    const connectedComponents: DependencyGraph[] = [];
-    for (const component of components) {
-      const dependencyGraph = new DependencyGraph();
-
-      for (const sourceName of component) {
-        const file = this._resolvedFiles.get(sourceName)!;
-        const dependencies = this._dependenciesPerFile.get(sourceName)!;
-
-        dependencyGraph._resolvedFiles.set(sourceName, file);
-        dependencyGraph._dependenciesPerFile.set(sourceName, dependencies);
-      }
-      connectedComponents.push(dependencyGraph);
-    }
-
-    return connectedComponents;
-  }
-
   private _getTransitiveDependencies(
     file: ResolvedFile,
     visited: Set<ResolvedFile>,
@@ -157,6 +101,7 @@ export class DependencyGraph implements taskTypes.DependencyGraph {
     this._visitedFiles.set(file.absolutePath, file.sourceName);
 
     const dependencies = new Set<ResolvedFile>();
+
     this._resolvedFiles.set(file.sourceName, file);
     this._dependenciesPerFile.set(file.sourceName, dependencies);
 

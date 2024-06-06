@@ -1,7 +1,7 @@
 import fsExtra from "fs-extra";
 
 import { task, subtask, types } from "hardhat/config";
-import { TASK_COMPILE_SOLIDITY_READ_FILE, TASK_COMPILE_TRANSFORM_IMPORT_NAME } from "hardhat/builtin-tasks/task-names";
+import { TASK_COMPILE_SOLIDITY_READ_FILE } from "hardhat/builtin-tasks/task-names";
 import { localPathToSourceName } from "hardhat/utils/source-names";
 import { getAllFilesMatching } from "hardhat/internal/util/fs-utils";
 
@@ -20,13 +20,13 @@ import {
   TASK_ZKIT_GET_FILTERED_CIRCUITS_INFO,
 } from "./task-names";
 
-import { getArtifactsDirFullPath, getCircuitsDirFullPath } from "../utils/path-utils";
+import { getArtifactsDirFullPath, getCircuitsDirFullPath, getCircomFilesCachePath } from "../utils/path-utils";
 
 import { ResolvedFileWithDependencies } from "../types/compile";
-import { Parser } from "../internal/parse";
-import { ResolvedFile, Resolver } from "../internal/resolver";
-import { DependencyGraph } from "../internal/dependencyGraph";
-import { CircomCircuitsCache, getCircomFilesCachePath } from "../internal/circom-files-cache";
+import { Parser } from "../internal/Parser";
+import { ResolvedFile, Resolver } from "../internal/Resolver";
+import { DependencyGraph } from "../internal/DependencyGraph";
+import { CircomCircuitsCache } from "../internal/CircomCircuitsCache";
 import { DuplicateCircuitsNameError, MultipleCircuitsInfoError, ZeroCircuitsInfoError } from "../errors";
 
 subtask(TASK_CIRCUITS_COMPILE_GET_SOURCE_PATHS)
@@ -67,16 +67,8 @@ subtask(TASK_CIRCUITS_COMPILE_GET_DEPENDENCY_GRAPH)
     ): Promise<DependencyGraph> => {
       const parser = new Parser(circuitFilesCache);
       const remappings = await run(TASK_CIRCUITS_COMPILE_GET_REMAPPINGS);
-      const resolver = new Resolver(
-        rootPath ?? config.paths.root,
-        parser,
-        remappings,
-        (absolutePath: string) => run(TASK_COMPILE_SOLIDITY_READ_FILE, { absolutePath }),
-        (importName: string) =>
-          run(TASK_COMPILE_TRANSFORM_IMPORT_NAME, {
-            importName,
-            deprecationCheck: true,
-          }),
+      const resolver = new Resolver(rootPath ?? config.paths.root, parser, remappings, (absolutePath: string) =>
+        run(TASK_COMPILE_SOLIDITY_READ_FILE, { absolutePath }),
       );
 
       const resolvedFiles = await Promise.all(sourceNames.map((sn) => resolver.resolveSourceName(sn)));
@@ -252,7 +244,7 @@ task(TASK_CIRCUITS_COMPILE, "Compile circuits")
         resolvedFilesToCompile,
       );
 
-      const resolvedFilesWithDependecies: ResolvedFileWithDependencies[] = await run(
+      const resolvedFilesWithDependencies: ResolvedFileWithDependencies[] = await run(
         TASK_CIRCUITS_COMPILE_FILTER_RESOLVED_FILES_TO_COMPILE,
         {
           resolvedFilesToCompile,
@@ -262,7 +254,7 @@ task(TASK_CIRCUITS_COMPILE, "Compile circuits")
         },
       );
 
-      const filteredFilesToCompile: ResolvedFile[] = resolvedFilesWithDependecies.map((file) => file.resolvedFile);
+      const filteredFilesToCompile: ResolvedFile[] = resolvedFilesWithDependencies.map((file) => file.resolvedFile);
 
       await run(TASK_CIRCUITS_COMPILE_COMPILE_CIRCUITS, {
         resolvedFilesToCompile: filteredFilesToCompile,
@@ -276,7 +268,7 @@ task(TASK_CIRCUITS_COMPILE, "Compile circuits")
         },
       });
 
-      for (const resolvedFileWithDependecies of resolvedFilesWithDependecies) {
+      for (const resolvedFileWithDependecies of resolvedFilesWithDependencies) {
         for (const file of [resolvedFileWithDependecies.resolvedFile, ...resolvedFileWithDependecies.dependencies]) {
           circuitFilesCache.addFile(file.absolutePath, {
             lastModificationDate: file.lastModificationDate.valueOf(),

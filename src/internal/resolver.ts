@@ -19,14 +19,8 @@ import { ERRORS } from "hardhat/internal/core/errors-list";
 import { getRealPath } from "hardhat/internal/util/fs-utils";
 import { createNonCryptographicHashBasedIdentifier } from "hardhat/internal/util/hash";
 
-import { Parser } from "./parse";
-import { CIRCOM_FILE_REG_EXP } from "./constants";
-
-export interface ResolvedFilesMap {
-  [sourceName: string]: ResolvedFile;
-}
-
-const NODE_MODULES = "node_modules";
+import { Parser } from "./Parser";
+import { CIRCOM_FILE_REG_EXP, NODE_MODULES, NODE_MODULES_REG_EXP, URI_SCHEME_REG_EXP } from "./constants";
 
 export class ResolvedFile implements IResolvedFile {
   public readonly library?: LibraryInfo;
@@ -67,13 +61,12 @@ export class Resolver {
     private readonly _parser: Parser,
     private readonly _remappings: Record<string, string>,
     private readonly _readFile: (absolutePath: string) => Promise<string>,
-    private readonly _transformImportName: (importName: string) => Promise<string>,
   ) {}
 
   /**
    * Resolves a source name into a ResolvedFile.
    *
-   * @param sourceName The source name as it would be provided to solc.
+   * @param sourceName The circuit source name.
    */
   public async resolveSourceName(sourceName: string): Promise<ResolvedFile> {
     const cached = this._cache.get(sourceName);
@@ -103,11 +96,6 @@ export class Resolver {
    * @param importName The path in the import statement.
    */
   public async resolveImport(from: ResolvedFile, importName: string): Promise<ResolvedFile> {
-    // sanity check for deprecated task
-    if (importName !== (await this._transformImportName(importName))) {
-      throw new HardhatError(ERRORS.TASK_DEFINITIONS.DEPRECATED_TRANSFORM_IMPORT_TASK);
-    }
-
     const imported = applyRemappings(this._remappings, importName);
 
     const scheme = this._getUriScheme(imported);
@@ -162,7 +150,7 @@ export class Resolver {
 
       // We have this special case here, because otherwise local relative
       // imports can be treated as library imports. For example if
-      // `contracts/c.sol` imports `../non-existent/a.sol`
+      // `circuits/c.circom` imports `../non-existent/a.circom`
       if (from.library === undefined && isRelativeImport && !this._isRelativeImportToLibrary(from, imported)) {
         resolvedFile = await this._resolveLocalSourceName(sourceName, applyRemappings(this._remappings, sourceName));
       } else {
@@ -243,28 +231,20 @@ export class Resolver {
   }
 
   private async _resolveLibrarySourceName(sourceName: string, remappedSourceName: string): Promise<ResolvedFile> {
-    const normalizedSourceName = remappedSourceName.replace(/^node_modules\//, "");
+    const normalizedSourceName = remappedSourceName.replace(NODE_MODULES_REG_EXP, "");
     const libraryName = this._getLibraryName(normalizedSourceName);
 
     let packageJsonPath;
     try {
       packageJsonPath = this._resolveNodeModulesFileFromProjectRoot(path.join(libraryName, "package.json"));
     } catch (error) {
-      // if the project is using a dependency from hardhat itself but it can't
-      // be found, this means that a global installation is being used, so we
-      // resolve the dependency relative to this file
-      if (libraryName === "hardhat") {
-        const hardhatCoreDir = path.join(__dirname, "..", "..");
-        packageJsonPath = path.join(hardhatCoreDir, "package.json");
-      } else {
-        throw new HardhatError(
-          ERRORS.RESOLVER.LIBRARY_NOT_INSTALLED,
-          {
-            library: libraryName,
-          },
-          error as Error,
-        );
-      }
+      throw new HardhatError(
+        ERRORS.RESOLVER.LIBRARY_NOT_INSTALLED,
+        {
+          library: libraryName,
+        },
+        error as Error,
+      );
     }
 
     let nodeModulesPath = path.dirname(path.dirname(packageJsonPath));
@@ -311,7 +291,7 @@ export class Resolver {
   private async _relativeImportToSourceName(from: ResolvedFile, imported: string): Promise<string> {
     // This is a special case, were we turn relative imports from local files
     // into library imports if necessary. The reason for this is that many
-    // users just do `import "../node_modules/lib/a.sol";`.
+    // users just do `import "../node_modules/lib/a.circom";`.
     if (this._isRelativeImportToLibrary(from, imported)) {
       return this._relativeImportToLibraryToSourceName(from, imported);
     }
@@ -399,8 +379,7 @@ export class Resolver {
   }
 
   private _getUriScheme(s: string): string | undefined {
-    const re = /([a-zA-Z]+):\/\//;
-    const match = re.exec(s);
+    const match = URI_SCHEME_REG_EXP.exec(s);
     if (match === null) {
       return undefined;
     }
@@ -429,7 +408,7 @@ export class Resolver {
     const sourceName = normalizeSourceName(path.join(path.dirname(from.sourceName), imported));
 
     const nmIndex = sourceName.indexOf(`${NODE_MODULES}/`);
-    return sourceName.substr(nmIndex + NODE_MODULES.length + 1);
+    return sourceName.substring(nmIndex + NODE_MODULES.length + 1);
   }
 
   private async _validateSourceNameExistenceAndCasing(fromDir: string, sourceName: string, isLibrary: boolean) {

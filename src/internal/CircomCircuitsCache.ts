@@ -1,12 +1,8 @@
 import fsExtra from "fs-extra";
 import * as t from "io-ts";
-import * as path from "path";
 
-import { ProjectPathsConfig } from "hardhat/types";
-
-import { CIRCOM_CIRCUITS_CACHE_FILENAME } from "./constants";
-
-const FORMAT_VERSION = "hh-zkit-cache-1";
+import { FORMAT_VERSION } from "./constants";
+import { Cache, CacheEntry } from "../types/internal/circuits-cache";
 
 const CacheEntryCodec = t.type({
   lastModificationDate: t.number,
@@ -20,19 +16,6 @@ const CacheCodec = t.type({
   _format: t.string,
   files: t.record(t.string, CacheEntryCodec),
 });
-
-export interface CacheEntry {
-  lastModificationDate: number;
-  contentHash: string;
-  sourceName: string;
-  imports: string[];
-  versionPragmas: string[];
-}
-
-export interface Cache {
-  _format: string;
-  files: Record<string, CacheEntry>;
-}
 
 export class CircomCircuitsCache {
   public static createEmpty(): CircomCircuitsCache {
@@ -113,8 +96,4 @@ export class CircomCircuitsCache {
 
     return false;
   }
-}
-
-export function getCircomFilesCachePath(paths: ProjectPathsConfig): string {
-  return path.join(paths.cache, CIRCOM_CIRCUITS_CACHE_FILENAME);
 }
