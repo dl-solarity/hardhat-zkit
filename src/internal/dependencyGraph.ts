@@ -1,8 +1,8 @@
-import * as taskTypes from "hardhat/types/builtin-tasks";
-
-import { ResolvedFile, Resolver } from "./Resolver";
 import { HardhatError } from "hardhat/internal/core/errors";
 import { ERRORS } from "hardhat/internal/core/errors-list";
+
+import { ResolvedFile, Resolver } from "./Resolver";
+import { TransitiveDependency } from "../types/internal/dependency-graph";
 
 export class DependencyGraph {
   public static async createFromResolvedFiles(
@@ -50,7 +50,7 @@ export class DependencyGraph {
     return [...dependencies];
   }
 
-  public getTransitiveDependencies(file: ResolvedFile): taskTypes.TransitiveDependency[] {
+  public getTransitiveDependencies(file: ResolvedFile): TransitiveDependency[] {
     const visited = new Set<ResolvedFile>();
 
     const transitiveDependencies = this._getTransitiveDependencies(file, visited, []);
@@ -62,18 +62,19 @@ export class DependencyGraph {
     file: ResolvedFile,
     visited: Set<ResolvedFile>,
     path: ResolvedFile[],
-  ): Set<taskTypes.TransitiveDependency> {
+  ): Set<TransitiveDependency> {
     if (visited.has(file)) {
       return new Set();
     }
+
     visited.add(file);
 
-    const directDependencies: taskTypes.TransitiveDependency[] = this.getDependencies(file).map((dependency) => ({
+    const directDependencies: TransitiveDependency[] = this.getDependencies(file).map((dependency) => ({
       dependency,
       path,
     }));
 
-    const transitiveDependencies = new Set<taskTypes.TransitiveDependency>(directDependencies);
+    const transitiveDependencies = new Set<TransitiveDependency>(directDependencies);
 
     for (const { dependency } of transitiveDependencies) {
       this._getTransitiveDependencies(dependency, visited, path.concat(dependency)).forEach((x) =>

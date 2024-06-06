@@ -51,6 +51,7 @@
   },
   "dependencies": {
     "@solarity/zkit": "0.1.0",
+    "hardhat": "2.20.1",
     "resolve": "1.22.8"
   },
   "peerDependencies": {
