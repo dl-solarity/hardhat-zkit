@@ -4,7 +4,7 @@ import { expect } from "chai";
 
 import { useEnvironment } from "../../helpers";
 import { CircuitInfo, CircuitZKit } from "@solarity/zkit";
-import { TASK_CIRCUITS_COMPILE, TASK_GENERATE_VERIFIERS } from "../../../src/constants";
+import { TASK_CIRCUITS_COMPILE, TASK_GENERATE_VERIFIERS } from "../../../src/tasks/task-names";
 
 describe("zkit", () => {
   describe("full proof generation flow", () => {

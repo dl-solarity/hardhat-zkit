@@ -1,37 +1,22 @@
-import { extendConfig, task, types } from "hardhat/config";
-import { ActionType } from "hardhat/types";
+import { extendConfig, extendEnvironment } from "hardhat/config";
+import { lazyObject } from "hardhat/plugins";
 
+import * as tasks from "./tasks";
 import "./type-extensions";
-import "./zkit/index";
 
-import { mergeCompilationSettings, mergeVerifiersGenerationSettings, zkitConfigExtender } from "./config";
-import { TASK_CIRCUITS_COMPILE, TASK_GENERATE_VERIFIERS } from "./constants";
-
-import { CircomZKitManager } from "./zkit/CircomZKitManager";
-import { CompilationTaskArgs, VerifiersGenerationTaskArgs } from "./types/task-args";
+import { zkitConfigExtender } from "./config/config";
 
 extendConfig(zkitConfigExtender);
 
-const circuitsCompile: ActionType<CompilationTaskArgs> = async (taskArgs, env) => {
-  env.config.zkit.compilationSettings = mergeCompilationSettings(taskArgs, env.config.zkit.compilationSettings);
-
-  await new CircomZKitManager(env).compile();
-};
-
-const generateVerifiers: ActionType<VerifiersGenerationTaskArgs> = async (taskArgs, env) => {
-  env.config.zkit.verifiersSettings = mergeVerifiersGenerationSettings(taskArgs, env.config.zkit.verifiersSettings);
-
-  await new CircomZKitManager(env).generateVerifiers();
-};
-
-task(TASK_CIRCUITS_COMPILE, "Compile circuits")
-  .addOptionalParam("artifactsDir", "The circuits directory path.", undefined, types.string)
-  .addFlag("sym", "The sym flag.")
-  .addFlag("json", "The json flag.")
-  .addFlag("c", "The c flag.")
-  .addFlag("quiet", "The quiet flag.")
-  .setAction(circuitsCompile);
-
-task(TASK_GENERATE_VERIFIERS, "Generate verifiers for circuits")
-  .addOptionalParam("verifiersDir", "The generated verifiers directory path.", undefined, types.string)
-  .setAction(generateVerifiers);
+extendEnvironment((hre) => {
+  hre.zkit = lazyObject(() => {
+    return {
+      getCircuit: async (circuitName: string) => {
+        return await hre.run(tasks.TASK_ZKIT_GET_CIRCUIT_ZKIT, { circuitName });
+      },
+      getCircuitsInfo: async (withMainComponent?: boolean) => {
+        return await hre.run(tasks.TASK_ZKIT_GET_CIRCUITS_INFO, { withMainComponent: withMainComponent ?? false });
+      },
+    };
+  });
+});

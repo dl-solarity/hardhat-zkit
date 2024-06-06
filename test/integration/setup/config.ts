@@ -4,7 +4,7 @@ import { extendConfig } from "hardhat/config";
 
 import { useEnvironment } from "../../helpers";
 
-import { zkitConfigExtender } from "../../../src/config";
+import { zkitConfigExtender } from "../../../src/config/config";
 
 import { ZKitConfig } from "../../../src/types/zkit-config";
 
