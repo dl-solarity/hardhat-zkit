@@ -16,6 +16,12 @@ export class NonExistentFile extends HardhatZKitError {
   }
 }
 
+export class NonExistentR1CSHeader extends HardhatZKitError {
+  constructor(r1csFilePath: string) {
+    super(`Header section in ${r1csFilePath} file is not found.`);
+  }
+}
+
 export class MultipleCircuitsInfoError extends HardhatZKitError {
   constructor(fileSourceName: string, circuitsInfo: CircuitInfo[]) {
     super(
