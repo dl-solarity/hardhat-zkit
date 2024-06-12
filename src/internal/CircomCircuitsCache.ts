@@ -1,13 +1,23 @@
 import fsExtra from "fs-extra";
 import * as t from "io-ts";
+import { isEqual } from "lodash";
 
 import { FORMAT_VERSION } from "./constants";
 import { Cache, CacheEntry } from "../types/internal/circuits-cache";
+import { CompileOptions } from "../types/compile";
+
+const CompileOptionsCodec = t.type({
+  sym: t.boolean,
+  json: t.boolean,
+  c: t.boolean,
+  quiet: t.boolean,
+});
 
 const CacheEntryCodec = t.type({
   lastModificationDate: t.number,
   contentHash: t.string,
   sourceName: t.string,
+  compileOptions: CompileOptionsCodec,
   imports: t.array(t.string),
   versionPragmas: t.array(t.string),
 });
@@ -83,7 +93,7 @@ export class CircomCircuitsCache {
     delete this._cache.files[file];
   }
 
-  public hasFileChanged(absolutePath: string, contentHash: string): boolean {
+  public hasFileChanged(absolutePath: string, contentHash: string, compileOptions: CompileOptions): boolean {
     const cacheEntry = this.getEntry(absolutePath);
 
     if (cacheEntry === undefined) {
@@ -91,6 +101,10 @@ export class CircomCircuitsCache {
     }
 
     if (cacheEntry.contentHash !== contentHash) {
+      return true;
+    }
+
+    if (!isEqual(cacheEntry.compileOptions, compileOptions)) {
       return true;
     }
 

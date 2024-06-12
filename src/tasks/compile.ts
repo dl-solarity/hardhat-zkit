@@ -31,6 +31,7 @@ import {
   TASK_CIRCUITS_COMPILE_GENERATE_ZKEY_FILES,
   TASK_CIRCUITS_COMPILE_GENERATE_VKEY_FILES,
   TASK_CIRCUITS_COMPILE_MOVE_FROM_TEMP_TO_ARTIFACTS,
+  TASK_CIRCUITS_COMPILE_VALIDATE_RESOLVED_FILES_TO_COMPILE,
 } from "./task-names";
 
 import {
@@ -47,7 +48,7 @@ import { DependencyGraph } from "../internal/DependencyGraph";
 import { CircomCircuitsCache } from "../internal/CircomCircuitsCache";
 import { FileFilterSettings, ContributionTemplateType } from "../types/zkit-config";
 import { MAIN_COMPONENT_REG_EXP, MAX_PTAU_ID, PTAU_FILE_REG_EXP } from "../internal/constants";
-import { NonExistentR1CSHeader } from "../errors";
+import { DuplicateCircuitsNameError, NonExistentR1CSHeader } from "../errors";
 import { downloadFile, readDirRecursively } from "../utils/utils";
 
 const { Context, CircomRunner, bindings } = require("@distributedlab/circom2");
@@ -213,17 +214,20 @@ subtask(TASK_CIRCUITS_COMPILE_FILTER_RESOLVED_FILES_TO_COMPILE)
   .addParam("resolvedFilesToCompile", undefined, undefined, types.any)
   .addParam("dependencyGraph", undefined, undefined, types.any)
   .addParam("circuitFilesCache", undefined, undefined, types.any)
+  .addParam("compileOptions", undefined, undefined, types.any)
   .addFlag("force", undefined)
   .setAction(
     async ({
       resolvedFilesToCompile,
       dependencyGraph,
       circuitFilesCache,
+      compileOptions,
       force,
     }: {
       resolvedFilesToCompile: ResolvedFile[];
       dependencyGraph: DependencyGraph;
       circuitFilesCache: CircomCircuitsCache;
+      compileOptions: CompileOptions;
       force: boolean;
     }): Promise<ResolvedFileWithDependencies[]> => {
       const resolvedFilesWithDependecies: ResolvedFileWithDependencies[] = [];
@@ -236,7 +240,7 @@ subtask(TASK_CIRCUITS_COMPILE_FILTER_RESOLVED_FILES_TO_COMPILE)
       }
 
       if (!force) {
-        return resolvedFilesWithDependecies.filter((file) => needsCompilation(file, circuitFilesCache));
+        return resolvedFilesWithDependecies.filter((file) => needsCompilation(file, circuitFilesCache, compileOptions));
       }
 
       return resolvedFilesWithDependecies;
@@ -313,6 +317,28 @@ subtask(TASK_CIRCUITS_COMPILE_FILTER_RESOLVED_FILES)
       });
     },
   );
+
+subtask(TASK_CIRCUITS_COMPILE_VALIDATE_RESOLVED_FILES_TO_COMPILE)
+  .addParam("resolvedFiles", undefined, undefined, types.any)
+  .setAction(async ({ resolvedFiles }: { resolvedFiles: ResolvedFile[] }) => {
+    let circuitsNameCount = {} as Record<string, ResolvedFile>;
+
+    resolvedFiles.forEach((file: ResolvedFile) => {
+      const circuitName = path.parse(file.absolutePath).name;
+
+      if (circuitsNameCount[circuitName]) {
+        throw new DuplicateCircuitsNameError(file.sourceName, circuitsNameCount[circuitName].sourceName);
+      }
+
+      circuitsNameCount[circuitName] = file;
+
+      // circuitsNameCount[circuitName] = (circuitsNameCount[circuitName] || 0) + 1;
+
+      // if (circuitsNameCount[circuitName] > 1) {
+      //   throw new DuplicateCircuitsNameError(file.sourceName);
+      // }
+    });
+  });
 
 subtask(TASK_CIRCUITS_COMPILE_GET_CONSTRAINTS_NUMBER)
   .addParam("compilationInfo", undefined, undefined, types.any)
@@ -595,6 +621,8 @@ task(TASK_CIRCUITS_COMPILE, "Compile circuits")
         withMainComponent: true,
       });
 
+      await run(TASK_CIRCUITS_COMPILE_VALIDATE_RESOLVED_FILES_TO_COMPILE, { resolvedFiles: resolvedFilesToCompile });
+
       const artifactsDirFullPath = getArtifactsDirFullPath(
         projectRoot,
         artifactsDir ?? config.zkit.compilationSettings.artifactsDir,
@@ -606,12 +634,15 @@ task(TASK_CIRCUITS_COMPILE, "Compile circuits")
         resolvedFilesToCompile,
       );
 
+      const compileOptions: CompileOptions = { sym, json, c, quiet };
+
       const resolvedFilesWithDependencies: ResolvedFileWithDependencies[] = await run(
         TASK_CIRCUITS_COMPILE_FILTER_RESOLVED_FILES_TO_COMPILE,
         {
           resolvedFilesToCompile,
           dependencyGraph,
           circuitFilesCache,
+          compileOptions,
           force,
         },
       );
@@ -620,28 +651,25 @@ task(TASK_CIRCUITS_COMPILE, "Compile circuits")
 
       const tempDir: string = path.join(os.tmpdir(), ".zkit", uuid());
 
-      try {
-        const compilationsInfo: CircuitCompilationInfo[] = await run(TASK_CIRCUITS_COMPILE_COMPILE_CIRCUITS, {
-          tempDir,
-          circuitsDirFullPath: circuitsRoot,
-          artifactsDirFullPath,
-          resolvedFilesToCompile: filteredFilesToCompile,
-          compileOptions: {
-            sym,
-            json,
-            c,
-            quiet,
-          },
-        });
+      if (filteredFilesToCompile.length > 0) {
+        try {
+          const compilationsInfo: CircuitCompilationInfo[] = await run(TASK_CIRCUITS_COMPILE_COMPILE_CIRCUITS, {
+            tempDir,
+            circuitsDirFullPath: circuitsRoot,
+            artifactsDirFullPath,
+            resolvedFilesToCompile: filteredFilesToCompile,
+            compileOptions,
+          });
 
-        const ptauFile: string = await run(TASK_CIRCUITS_COMPILE_GET_PTAU_FILE, { compilationsInfo, denyDownload });
+          const ptauFile: string = await run(TASK_CIRCUITS_COMPILE_GET_PTAU_FILE, { compilationsInfo, denyDownload });
 
-        await run(TASK_CIRCUITS_COMPILE_GENERATE_ZKEY_FILES, { ptauFile, compilationsInfo });
-        await run(TASK_CIRCUITS_COMPILE_GENERATE_VKEY_FILES, { compilationsInfo });
+          await run(TASK_CIRCUITS_COMPILE_GENERATE_ZKEY_FILES, { ptauFile, compilationsInfo });
+          await run(TASK_CIRCUITS_COMPILE_GENERATE_VKEY_FILES, { compilationsInfo });
 
-        await run(TASK_CIRCUITS_COMPILE_MOVE_FROM_TEMP_TO_ARTIFACTS, { compilationsInfo });
-      } finally {
-        fs.rmSync(tempDir, { recursive: true, force: true });
+          await run(TASK_CIRCUITS_COMPILE_MOVE_FROM_TEMP_TO_ARTIFACTS, { compilationsInfo });
+        } finally {
+          fs.rmSync(tempDir, { recursive: true, force: true });
+        }
       }
 
       for (const resolvedFileWithDependecies of resolvedFilesWithDependencies) {
@@ -650,6 +678,7 @@ task(TASK_CIRCUITS_COMPILE, "Compile circuits")
             lastModificationDate: file.lastModificationDate.valueOf(),
             contentHash: file.contentHash,
             sourceName: file.sourceName,
+            compileOptions,
             imports: file.content.imports,
             versionPragmas: file.content.versionPragmas,
           });
@@ -684,9 +713,10 @@ async function invalidateCacheMissingArtifacts(
 function needsCompilation(
   resolvedFilesWithDependecies: ResolvedFileWithDependencies,
   cache: CircomCircuitsCache,
+  compileOptions: CompileOptions,
 ): boolean {
   for (const file of [resolvedFilesWithDependecies.resolvedFile, ...resolvedFilesWithDependecies.dependencies]) {
-    const hasChanged = cache.hasFileChanged(file.absolutePath, file.contentHash);
+    const hasChanged = cache.hasFileChanged(file.absolutePath, file.contentHash, compileOptions);
 
     if (hasChanged) {
       return true;

@@ -7,6 +7,8 @@ export const TASK_CIRCUITS_COMPILE_FILTER_SOURCE_NAMES = "circuits-compile:filte
 export const TASK_CIRCUITS_COMPILE_FILTER_RESOLVED_FILES = "circuits-compile:filter-resolved-files";
 export const TASK_CIRCUITS_COMPILE_FILTER_RESOLVED_FILES_TO_COMPILE =
   "circuits-compile:filter-resolved-files-to-compile";
+export const TASK_CIRCUITS_COMPILE_VALIDATE_RESOLVED_FILES_TO_COMPILE =
+  "circuits-compile:validate-resolved-files-to-compile";
 export const TASK_CIRCUITS_COMPILE_COMPILE_CIRCUITS = "circuits-compile:compile-circuits";
 export const TASK_CIRCUITS_COMPILE_GET_DEPENDENCY_GRAPH = "circuits-compile:get-dependency-graph";
 export const TASK_CIRCUITS_COMPILE_GET_REMAPPINGS = "circuits-compile:get-remappings";

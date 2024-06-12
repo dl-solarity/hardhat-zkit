@@ -37,8 +37,8 @@ export class ZeroCircuitsInfoError extends HardhatZKitError {
 }
 
 export class DuplicateCircuitsNameError extends HardhatZKitError {
-  constructor(fileSourceName: string) {
-    super(`Circuit with ${fileSourceName} source name duplicated another circuit`);
+  constructor(fileSourceName: string, duplicatedFileSourceName: string) {
+    super(`Circuit ${fileSourceName} duplicated ${duplicatedFileSourceName} circuit`);
   }
 }
 

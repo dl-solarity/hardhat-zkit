@@ -35,7 +35,7 @@ subtask(TASK_GENERATE_VERIFIERS_VERIFY_ARTIFACTS_EXISTENCE)
         const circuitSourceName = localSourceNameToPath(config.zkit.circuitsDir, info.path);
 
         if (info.id == null) {
-          throw new DuplicateCircuitsNameError(circuitSourceName);
+          throw new Error(circuitSourceName);
         }
 
         if (!fsExtra.existsSync(localSourceNameToPath(artifactsRoot, info.path))) {
