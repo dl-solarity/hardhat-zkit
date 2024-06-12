@@ -19,6 +19,10 @@ export const TASK_CIRCUITS_COMPILE_GET_PTAU_FILE = "circuits-compile:get-ptau-fi
 export const TASK_CIRCUITS_COMPILE_GET_CONSTRAINTS_NUMBER = "circuits-compile:get-constraints-number";
 export const TASK_CIRCUITS_COMPILE_DOWNLOAD_PTAU_FILE = "circuits-compile:download-ptau-file";
 
+export const TASK_CIRCUITS_COMPILE_GENERATE_ZKEY_FILES = "circuits-compile:generate-zkey-files";
+export const TASK_CIRCUITS_COMPILE_GENERATE_VKEY_FILES = "circuits-compile:generate-verification-key-files";
+export const TASK_CIRCUITS_COMPILE_MOVE_FROM_TEMP_TO_ARTIFACTS = "circuits-compile:move-from-temp-to-artifacts";
+
 export const TASK_GENERATE_VERIFIERS = "generate-verifiers";
 export const TASK_GENERATE_VERIFIERS_VERIFY_ARTIFACTS_EXISTENCE = "generate-verifiers:verify-artifacts-existence";
 

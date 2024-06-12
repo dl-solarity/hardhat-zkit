@@ -12,6 +12,8 @@ export type CompilationSettings = FileFilterSettings & {
   json: boolean;
   c: boolean;
   quiet: boolean;
+  contributionTemplate: ContributionTemplateType;
+  contributions: number;
 };
 
 export type VerifiersGenerationSettings = FileFilterSettings & {
@@ -22,3 +24,5 @@ export type FileFilterSettings = {
   onlyFiles: string[];
   skipFiles: string[];
 };
+
+export type ContributionTemplateType = "groth16";

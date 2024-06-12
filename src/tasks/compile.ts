@@ -1,6 +1,11 @@
+import os from "os";
 import fs from "fs";
 import fsExtra from "fs-extra";
 import path from "path";
+import { randomBytes } from "crypto";
+import { v4 as uuid } from "uuid";
+
+import * as snarkjs from "snarkjs";
 
 import { task, subtask, types } from "hardhat/config";
 import { TASK_COMPILE_SOLIDITY_READ_FILE } from "hardhat/builtin-tasks/task-names";
@@ -23,6 +28,9 @@ import {
   TASK_CIRCUITS_COMPILE_GET_PTAU_FILE,
   TASK_CIRCUITS_COMPILE_GET_CONSTRAINTS_NUMBER,
   TASK_CIRCUITS_COMPILE_DOWNLOAD_PTAU_FILE,
+  TASK_CIRCUITS_COMPILE_GENERATE_ZKEY_FILES,
+  TASK_CIRCUITS_COMPILE_GENERATE_VKEY_FILES,
+  TASK_CIRCUITS_COMPILE_MOVE_FROM_TEMP_TO_ARTIFACTS,
 } from "./task-names";
 
 import {
@@ -37,10 +45,10 @@ import { Parser } from "../internal/Parser";
 import { ResolvedFile, Resolver } from "../internal/Resolver";
 import { DependencyGraph } from "../internal/DependencyGraph";
 import { CircomCircuitsCache } from "../internal/CircomCircuitsCache";
-import { FileFilterSettings } from "../types/zkit-config";
+import { FileFilterSettings, ContributionTemplateType } from "../types/zkit-config";
 import { MAIN_COMPONENT_REG_EXP, MAX_PTAU_ID, PTAU_FILE_REG_EXP } from "../internal/constants";
 import { NonExistentR1CSHeader } from "../errors";
-import { downloadFile } from "../utils/utils";
+import { downloadFile, readDirRecursively } from "../utils/utils";
 
 const { Context, CircomRunner, bindings } = require("@distributedlab/circom2");
 
@@ -444,6 +452,90 @@ subtask(TASK_CIRCUITS_COMPILE_GET_PTAU_FILE)
     },
   );
 
+subtask(TASK_CIRCUITS_COMPILE_GENERATE_ZKEY_FILES)
+  .addParam("ptauFile", undefined, undefined, types.string)
+  .addParam("compilationsInfo", undefined, undefined, types.any)
+  .setAction(
+    async (
+      {
+        ptauFile,
+        compilationsInfo,
+      }: {
+        ptauFile: string;
+        compilationsInfo: CircuitCompilationInfo[];
+      },
+      { config },
+    ) => {
+      const contributions: number = config.zkit.compilationSettings.contributions;
+      const contributionTemplate: ContributionTemplateType = config.zkit.compilationSettings.contributionTemplate;
+
+      await Promise.all(
+        compilationsInfo.map(async (info: CircuitCompilationInfo) => {
+          const r1csFile = localSourceNameToPath(info.tempArtifactsPath, `${info.circuitName}.r1cs`);
+          const zKeyFile = localSourceNameToPath(info.tempArtifactsPath, `${info.circuitName}.zkey`);
+
+          if (contributionTemplate === "groth16") {
+            await snarkjs.zKey.newZKey(r1csFile, ptauFile, zKeyFile);
+
+            const zKeyFileNext = `${zKeyFile}.next.zkey`;
+
+            for (let i = 0; i < contributions; ++i) {
+              await snarkjs.zKey.contribute(
+                zKeyFile,
+                zKeyFileNext,
+                `${zKeyFile}_contribution_${i}`,
+                randomBytes(32).toString("hex"),
+              );
+
+              fs.rmSync(zKeyFile);
+              fs.renameSync(zKeyFileNext, zKeyFile);
+            }
+          } else {
+            throw new Error(`Unsupported contribution template - ${contributionTemplate}`);
+          }
+        }),
+      );
+    },
+  );
+
+subtask(TASK_CIRCUITS_COMPILE_GENERATE_VKEY_FILES)
+  .addParam("compilationsInfo", undefined, undefined, types.any)
+  .setAction(async ({ compilationsInfo }: { compilationsInfo: CircuitCompilationInfo[] }) => {
+    await Promise.all(
+      compilationsInfo.map(async (info: CircuitCompilationInfo) => {
+        const zkeyFile = localSourceNameToPath(info.tempArtifactsPath, `${info.circuitName}.zkey`);
+        const vKeyFile = localSourceNameToPath(info.tempArtifactsPath, `${info.circuitName}.vkey.json`);
+
+        const vKeyData = await snarkjs.zKey.exportVerificationKey(zkeyFile);
+
+        fs.writeFileSync(vKeyFile, JSON.stringify(vKeyData));
+      }),
+    );
+  });
+
+subtask(TASK_CIRCUITS_COMPILE_MOVE_FROM_TEMP_TO_ARTIFACTS)
+  .addParam("compilationsInfo", undefined, undefined, types.any)
+  .setAction(async ({ compilationsInfo }: { compilationsInfo: CircuitCompilationInfo[] }) => {
+    compilationsInfo.forEach((info: CircuitCompilationInfo) => {
+      fs.mkdirSync(info.artifactsPath, { recursive: true });
+
+      readDirRecursively(info.tempArtifactsPath, (dir: string, file: string) => {
+        const correspondingOutDir = path.join(info.artifactsPath, path.relative(info.tempArtifactsPath, dir));
+        const correspondingOutFile = path.join(info.artifactsPath, path.relative(info.tempArtifactsPath, file));
+
+        if (!fs.existsSync(correspondingOutDir)) {
+          fs.mkdirSync(correspondingOutDir);
+        }
+
+        if (fs.existsSync(correspondingOutFile)) {
+          fs.rmSync(correspondingOutFile);
+        }
+
+        fs.copyFileSync(file, correspondingOutFile);
+      });
+    });
+  });
+
 task(TASK_CIRCUITS_COMPILE, "Compile circuits")
   .addOptionalParam("artifactsDir", "The circuits artifacts directory path.", undefined, types.string)
   .addFlag("force", "The force flag.")
@@ -526,22 +618,31 @@ task(TASK_CIRCUITS_COMPILE, "Compile circuits")
 
       const filteredFilesToCompile: ResolvedFile[] = resolvedFilesWithDependencies.map((file) => file.resolvedFile);
 
-      const tempDir: string = artifactsDirFullPath;
+      const tempDir: string = path.join(os.tmpdir(), ".zkit", uuid());
 
-      const compilationsInfo: CircuitCompilationInfo[] = await run(TASK_CIRCUITS_COMPILE_COMPILE_CIRCUITS, {
-        tempDir,
-        circuitsDirFullPath: circuitsRoot,
-        artifactsDirFullPath,
-        resolvedFilesToCompile: filteredFilesToCompile,
-        compileOptions: {
-          sym,
-          json,
-          c,
-          quiet,
-        },
-      });
+      try {
+        const compilationsInfo: CircuitCompilationInfo[] = await run(TASK_CIRCUITS_COMPILE_COMPILE_CIRCUITS, {
+          tempDir,
+          circuitsDirFullPath: circuitsRoot,
+          artifactsDirFullPath,
+          resolvedFilesToCompile: filteredFilesToCompile,
+          compileOptions: {
+            sym,
+            json,
+            c,
+            quiet,
+          },
+        });
 
-      const ptauFile: string = await run(TASK_CIRCUITS_COMPILE_GET_PTAU_FILE, { compilationsInfo, denyDownload });
+        const ptauFile: string = await run(TASK_CIRCUITS_COMPILE_GET_PTAU_FILE, { compilationsInfo, denyDownload });
+
+        await run(TASK_CIRCUITS_COMPILE_GENERATE_ZKEY_FILES, { ptauFile, compilationsInfo });
+        await run(TASK_CIRCUITS_COMPILE_GENERATE_VKEY_FILES, { compilationsInfo });
+
+        await run(TASK_CIRCUITS_COMPILE_MOVE_FROM_TEMP_TO_ARTIFACTS, { compilationsInfo });
+      } finally {
+        fs.rmSync(tempDir, { recursive: true, force: true });
+      }
 
       for (const resolvedFileWithDependecies of resolvedFilesWithDependencies) {
         for (const file of [resolvedFileWithDependecies.resolvedFile, ...resolvedFileWithDependecies.dependencies]) {

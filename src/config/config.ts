@@ -14,6 +14,8 @@ const defaultConfig: ZKitConfig = {
     json: false,
     quiet: false,
     sym: false,
+    contributionTemplate: "groth16",
+    contributions: 1,
   },
   verifiersSettings: {
     verifiersDir: "contracts/verifiers",

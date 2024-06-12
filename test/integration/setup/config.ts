@@ -29,6 +29,8 @@ describe("config", () => {
           json: false,
           quiet: true,
           sym: false,
+          contributionTemplate: "groth16",
+          contributions: 1,
         },
         verifiersSettings: {
           onlyFiles: ["mock"],
@@ -64,6 +66,8 @@ describe("config", () => {
           json: false,
           quiet: false,
           sym: false,
+          contributionTemplate: "groth16",
+          contributions: 1,
         },
         verifiersSettings: {
           verifiersDir: "contracts/verifiers",
