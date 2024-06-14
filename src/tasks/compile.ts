@@ -51,6 +51,7 @@ import { MAIN_COMPONENT_REG_EXP, MAX_PTAU_ID, PTAU_FILE_REG_EXP } from "../inter
 import { DuplicateCircuitsNameError, NonExistentR1CSHeader } from "../errors";
 import { downloadFile, readDirRecursively } from "../utils/utils";
 
+// eslint-disable-next-line
 const { Context, CircomRunner, bindings } = require("@distributedlab/circom2");
 
 subtask(TASK_CIRCUITS_COMPILE_GET_SOURCE_PATHS)
@@ -321,7 +322,7 @@ subtask(TASK_CIRCUITS_COMPILE_FILTER_RESOLVED_FILES)
 subtask(TASK_CIRCUITS_COMPILE_VALIDATE_RESOLVED_FILES_TO_COMPILE)
   .addParam("resolvedFiles", undefined, undefined, types.any)
   .setAction(async ({ resolvedFiles }: { resolvedFiles: ResolvedFile[] }) => {
-    let circuitsNameCount = {} as Record<string, ResolvedFile>;
+    const circuitsNameCount = {} as Record<string, ResolvedFile>;
 
     resolvedFiles.forEach((file: ResolvedFile) => {
       const circuitName = path.parse(file.absolutePath).name;
@@ -331,12 +332,6 @@ subtask(TASK_CIRCUITS_COMPILE_VALIDATE_RESOLVED_FILES_TO_COMPILE)
       }
 
       circuitsNameCount[circuitName] = file;
-
-      // circuitsNameCount[circuitName] = (circuitsNameCount[circuitName] || 0) + 1;
-
-      // if (circuitsNameCount[circuitName] > 1) {
-      //   throw new DuplicateCircuitsNameError(file.sourceName);
-      // }
     });
   });
 

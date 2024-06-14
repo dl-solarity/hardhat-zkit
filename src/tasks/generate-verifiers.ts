@@ -15,7 +15,7 @@ import {
 } from "./task-names";
 
 import { getArtifactsDirFullPath } from "../utils/path-utils";
-import { DuplicateCircuitsNameError, NonExistentCircuitArtifactsError } from "../errors";
+import { NonExistentCircuitArtifactsError } from "../errors";
 
 subtask(TASK_GENERATE_VERIFIERS_VERIFY_ARTIFACTS_EXISTENCE)
   .addOptionalParam("artifactsDir", undefined, undefined, types.string)
