@@ -43,7 +43,7 @@ import { DependencyGraph } from "../internal/DependencyGraph";
 import { CircomCircuitsCache } from "../internal/CircomCircuitsCache";
 import { FileFilterSettings, ContributionTemplateType } from "../types/zkit-config";
 import { MAIN_COMPONENT_REG_EXP, MAX_PTAU_ID, PTAU_FILE_REG_EXP } from "../internal/constants";
-import { DuplicateCircuitsNameError, NonExistentR1CSHeader } from "../errors";
+import { DuplicateCircuitsNameError, NonExistentR1CSHeader } from "./errors";
 import { downloadFile, readDirRecursively } from "../utils/utils";
 
 // eslint-disable-next-line

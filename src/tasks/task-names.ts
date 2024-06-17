@@ -26,8 +26,4 @@ export const TASK_CIRCUITS_COMPILE_MOVE_FROM_TEMP_TO_ARTIFACTS = "circuits-compi
 
 export const TASK_GENERATE_VERIFIERS = "generate-verifiers";
 
-export const TASK_ZKIT_GET_CIRCOM_ZKIT = "zkit:get-circom-zkit";
 export const TASK_ZKIT_GET_CIRCUIT_ZKIT = "zkit:get-circuit-zkit";
-export const TASK_ZKIT_GET_CIRCUITS_INFO = "zkit:get-circuits-info";
-export const TASK_ZKIT_FILTER_CIRCUITS_INFO = "zkit:filter-circuits-info";
-export const TASK_ZKIT_GET_FILTERED_CIRCUITS_INFO = "zkit:get-filtered-circuits-info";
