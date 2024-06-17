@@ -241,20 +241,22 @@ subtask(TASK_CIRCUITS_COMPILE_FILTER_RESOLVED_FILES_TO_COMPILE)
       compileOptions: CompileOptions;
       force: boolean;
     }): Promise<ResolvedFileWithDependencies[]> => {
-      const resolvedFilesWithDependecies: ResolvedFileWithDependencies[] = [];
+      const resolvedFilesWithDependencies: ResolvedFileWithDependencies[] = [];
 
       for (const file of resolvedFilesToCompile) {
-        resolvedFilesWithDependecies.push({
+        resolvedFilesWithDependencies.push({
           resolvedFile: file,
           dependencies: dependencyGraph.getTransitiveDependencies(file).map((dep) => dep.dependency),
         });
       }
 
       if (!force) {
-        return resolvedFilesWithDependecies.filter((file) => needsCompilation(file, circuitFilesCache, compileOptions));
+        return resolvedFilesWithDependencies.filter((file) =>
+          needsCompilation(file, circuitFilesCache, compileOptions),
+        );
       }
 
-      return resolvedFilesWithDependecies;
+      return resolvedFilesWithDependencies;
     },
   );
 
@@ -718,11 +720,11 @@ async function invalidateCacheMissingArtifacts(
 }
 
 function needsCompilation(
-  resolvedFilesWithDependecies: ResolvedFileWithDependencies,
+  resolvedFilesWithDependencies: ResolvedFileWithDependencies,
   cache: CircomCircuitsCache,
   compileOptions: CompileOptions,
 ): boolean {
-  for (const file of [resolvedFilesWithDependecies.resolvedFile, ...resolvedFilesWithDependecies.dependencies]) {
+  for (const file of [resolvedFilesWithDependencies.resolvedFile, ...resolvedFilesWithDependencies.dependencies]) {
     const hasChanged = cache.hasFileChanged(file.absolutePath, file.contentHash, compileOptions);
 
     if (hasChanged) {
