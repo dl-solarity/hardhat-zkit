@@ -34,12 +34,7 @@ import {
   TASK_CIRCUITS_COMPILE_VALIDATE_RESOLVED_FILES_TO_COMPILE,
 } from "./task-names";
 
-import {
-  getArtifactsDirFullPath,
-  getCircuitsDirFullPath,
-  getCircomFilesCachePath,
-  getPtauDirFullPath,
-} from "../utils/path-utils";
+import { getCircomFilesCachePath, getNormalizedFullPath, getPtauDirFullPath } from "../utils/path-utils";
 
 import { ResolvedFileWithDependencies, CompileOptions, CircuitCompilationInfo, PtauInfo } from "../types/compile";
 import { Parser } from "../internal/Parser";
@@ -587,7 +582,7 @@ task(TASK_CIRCUITS_COMPILE, "Compile circuits")
       { config, run },
     ) => {
       const projectRoot = config.paths.root;
-      const circuitsRoot: string = getCircuitsDirFullPath(projectRoot, config.zkit.circuitsDir);
+      const circuitsRoot: string = getNormalizedFullPath(projectRoot, config.zkit.circuitsDir);
 
       const sourcePaths: string[] = await run(TASK_CIRCUITS_COMPILE_GET_SOURCE_PATHS, { sourcePath: circuitsRoot });
       const filteredSourcePaths: string[] = await run(TASK_CIRCUITS_COMPILE_FILTER_SOURCE_PATHS, {
@@ -618,7 +613,7 @@ task(TASK_CIRCUITS_COMPILE, "Compile circuits")
 
       await run(TASK_CIRCUITS_COMPILE_VALIDATE_RESOLVED_FILES_TO_COMPILE, { resolvedFiles: resolvedFilesToCompile });
 
-      const artifactsDirFullPath = getArtifactsDirFullPath(
+      const artifactsDirFullPath = getNormalizedFullPath(
         projectRoot,
         artifactsDir ?? config.zkit.compilationSettings.artifactsDir,
       );

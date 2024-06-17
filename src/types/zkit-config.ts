@@ -2,8 +2,8 @@ import { CompileOptions } from "./compile";
 
 export type ZKitConfig = {
   compilationSettings: CompilationSettings;
-  verifiersSettings: VerifiersGenerationSettings;
   circuitsDir: string;
+  verifiersDir: string;
   ptauDir: string | undefined;
   allowDownload: boolean;
 };
@@ -14,10 +14,6 @@ export type CompilationSettings = FileFilterSettings &
     contributionTemplate: ContributionTemplateType;
     contributions: number;
   };
-
-export type VerifiersGenerationSettings = FileFilterSettings & {
-  verifiersDir: string;
-};
 
 export type FileFilterSettings = {
   onlyFiles: string[];

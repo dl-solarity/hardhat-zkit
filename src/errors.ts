@@ -1,7 +1,5 @@
 import { NomicLabsHardhatPluginError } from "hardhat/plugins";
 
-import { CircuitInfo } from "@solarity/zkit";
-
 import { PLAGIN_NAME } from "./internal/constants";
 
 export class HardhatZKitError extends NomicLabsHardhatPluginError {
@@ -19,14 +17,6 @@ export class NonExistentFile extends HardhatZKitError {
 export class NonExistentR1CSHeader extends HardhatZKitError {
   constructor(r1csFilePath: string) {
     super(`Header section in ${r1csFilePath} file is not found.`);
-  }
-}
-
-export class MultipleCircuitsInfoError extends HardhatZKitError {
-  constructor(fileSourceName: string, circuitsInfo: CircuitInfo[]) {
-    super(
-      `Circuit with ${fileSourceName} source name has several circuits info: ${circuitsInfo.map((info) => `[Path: ${info.path}, Id: ${info.id}]`)}`,
-    );
   }
 }
 

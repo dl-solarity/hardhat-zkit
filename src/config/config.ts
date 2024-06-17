@@ -17,11 +17,7 @@ const defaultConfig: ZKitConfig = {
     contributionTemplate: "groth16",
     contributions: 1,
   },
-  verifiersSettings: {
-    verifiersDir: "contracts/verifiers",
-    onlyFiles: [],
-    skipFiles: [],
-  },
+  verifiersDir: "contracts/verifiers",
   ptauDir: undefined,
   allowDownload: true,
 };

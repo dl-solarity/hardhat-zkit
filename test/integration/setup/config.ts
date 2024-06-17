@@ -32,11 +32,7 @@ describe("config", () => {
           contributionTemplate: "groth16",
           contributions: 1,
         },
-        verifiersSettings: {
-          onlyFiles: ["mock"],
-          skipFiles: [],
-          verifiersDir: "contracts/verifiers",
-        },
+        verifiersDir: "contracts/verifiers",
         ptauDir: "zkit/ptau",
         allowDownload: true,
       };
@@ -69,11 +65,7 @@ describe("config", () => {
           contributionTemplate: "groth16",
           contributions: 1,
         },
-        verifiersSettings: {
-          verifiersDir: "contracts/verifiers",
-          onlyFiles: [],
-          skipFiles: [],
-        },
+        verifiersDir: "contracts/verifiers",
         ptauDir: undefined,
         allowDownload: true,
       };

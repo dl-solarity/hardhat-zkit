@@ -3,7 +3,6 @@ export const TASK_CIRCUITS_COMPILE = "circuits-compile";
 export const TASK_CIRCUITS_COMPILE_GET_SOURCE_PATHS = "circuits-compile:get-source-paths";
 export const TASK_CIRCUITS_COMPILE_GET_SOURCE_NAMES = "circuits-compile:get-source-names";
 export const TASK_CIRCUITS_COMPILE_FILTER_SOURCE_PATHS = "circuits-compile:filter-source-paths";
-export const TASK_CIRCUITS_COMPILE_FILTER_SOURCE_NAMES = "circuits-compile:filter-source-names";
 export const TASK_CIRCUITS_COMPILE_FILTER_RESOLVED_FILES = "circuits-compile:filter-resolved-files";
 export const TASK_CIRCUITS_COMPILE_FILTER_RESOLVED_FILES_TO_COMPILE =
   "circuits-compile:filter-resolved-files-to-compile";
@@ -26,7 +25,6 @@ export const TASK_CIRCUITS_COMPILE_GENERATE_VKEY_FILES = "circuits-compile:gener
 export const TASK_CIRCUITS_COMPILE_MOVE_FROM_TEMP_TO_ARTIFACTS = "circuits-compile:move-from-temp-to-artifacts";
 
 export const TASK_GENERATE_VERIFIERS = "generate-verifiers";
-export const TASK_GENERATE_VERIFIERS_VERIFY_ARTIFACTS_EXISTENCE = "generate-verifiers:verify-artifacts-existence";
 
 export const TASK_ZKIT_GET_CIRCOM_ZKIT = "zkit:get-circom-zkit";
 export const TASK_ZKIT_GET_CIRCUIT_ZKIT = "zkit:get-circuit-zkit";
