@@ -5,7 +5,7 @@ export type ZKitConfig = {
   circuitsDir: string;
   verifiersDir: string;
   ptauDir: string | undefined;
-  allowDownload: boolean;
+  ptauDownload: boolean;
 };
 
 export type CompilationSettings = FileFilterSettings &

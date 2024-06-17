@@ -34,7 +34,7 @@ describe("config", () => {
         },
         verifiersDir: "contracts/verifiers",
         ptauDir: "zkit/ptau",
-        allowDownload: true,
+        ptauDownload: true,
       };
 
       expect(loadedOptions).to.deep.equal(userDefinedConfig);
@@ -67,7 +67,7 @@ describe("config", () => {
         },
         verifiersDir: "contracts/verifiers",
         ptauDir: undefined,
-        allowDownload: true,
+        ptauDownload: true,
       };
 
       expect(loadedOptions).to.deep.equal(defaultConfig);

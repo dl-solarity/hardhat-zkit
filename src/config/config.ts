@@ -19,7 +19,7 @@ const defaultConfig: ZKitConfig = {
   },
   verifiersDir: "contracts/verifiers",
   ptauDir: undefined,
-  allowDownload: true,
+  ptauDownload: true,
 };
 
 export const zkitConfigExtender: ConfigExtender = (resolvedConfig, config) => {

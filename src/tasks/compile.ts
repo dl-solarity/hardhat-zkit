@@ -386,21 +386,21 @@ subtask(TASK_CIRCUITS_COMPILE_GET_CONSTRAINTS_NUMBER)
 subtask(TASK_CIRCUITS_COMPILE_DOWNLOAD_PTAU_FILE)
   .addParam("ptauInfo", undefined, undefined, types.any)
   .addParam("ptauDirFullPath", undefined, undefined, types.string)
-  .addFlag("denyDownload", undefined)
+  .addFlag("ptauDownload", undefined)
   .setAction(
     async (
       {
         ptauInfo,
         ptauDirFullPath,
-        denyDownload,
+        ptauDownload,
       }: {
         ptauInfo: PtauInfo;
         ptauDirFullPath: string;
-        denyDownload: boolean;
+        ptauDownload: boolean;
       },
       { config },
     ) => {
-      if (!config.zkit.allowDownload && denyDownload) {
+      if (!config.zkit.ptauDownload && ptauDownload) {
         throw new HardhatZKitError(
           "Download is cancelled. Allow download or consider passing 'ptauDir=PATH_TO_LOCAL_DIR' to the existing ptau files",
         );
@@ -416,15 +416,15 @@ subtask(TASK_CIRCUITS_COMPILE_DOWNLOAD_PTAU_FILE)
 
 subtask(TASK_CIRCUITS_COMPILE_GET_PTAU_FILE)
   .addParam("compilationsInfo", undefined, undefined, types.any)
-  .addFlag("denyDownload", undefined)
+  .addFlag("ptauDownload", undefined)
   .setAction(
     async (
       {
         compilationsInfo,
-        denyDownload,
+        ptauDownload,
       }: {
         compilationsInfo: CircuitCompilationInfo[];
-        denyDownload: boolean;
+        ptauDownload: boolean;
       },
       { config, run },
     ): Promise<string> => {
@@ -477,7 +477,7 @@ subtask(TASK_CIRCUITS_COMPILE_GET_PTAU_FILE)
             downloadURL: url,
           },
           ptauDirFullPath,
-          denyDownload,
+          ptauDownload,
         });
       }
 
@@ -571,30 +571,30 @@ subtask(TASK_CIRCUITS_COMPILE_MOVE_FROM_TEMP_TO_ARTIFACTS)
 
 task(TASK_CIRCUITS_COMPILE, "Compile circuits")
   .addOptionalParam("artifactsDir", "The circuits artifacts directory path.", undefined, types.string)
+  .addOptionalParam("ptauDownload", "The ptau download flag parameter.", true, types.boolean)
   .addFlag("force", "The force flag.")
   .addFlag("sym", "The sym flag.")
   .addFlag("json", "The json flag.")
   .addFlag("c", "The c flag.")
   .addFlag("quiet", "The quiet flag.")
-  .addFlag("denyDownload", "The denyDownload flag.")
   .setAction(
     async (
       {
         artifactsDir,
+        ptauDownload,
         force,
         sym,
         json,
         c,
         quiet,
-        denyDownload,
       }: {
         artifactsDir?: string;
+        ptauDownload: boolean;
         force: boolean;
         sym: boolean;
         json: boolean;
         c: boolean;
         quiet: boolean;
-        denyDownload: boolean;
       },
       { config, run },
     ) => {
@@ -668,7 +668,7 @@ task(TASK_CIRCUITS_COMPILE, "Compile circuits")
             compileOptions,
           });
 
-          const ptauFile: string = await run(TASK_CIRCUITS_COMPILE_GET_PTAU_FILE, { compilationsInfo, denyDownload });
+          const ptauFile: string = await run(TASK_CIRCUITS_COMPILE_GET_PTAU_FILE, { compilationsInfo, ptauDownload });
 
           await run(TASK_CIRCUITS_COMPILE_GENERATE_ZKEY_FILES, { ptauFile, compilationsInfo });
           await run(TASK_CIRCUITS_COMPILE_GENERATE_VKEY_FILES, { compilationsInfo });
