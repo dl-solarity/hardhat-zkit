@@ -14,14 +14,12 @@ const defaultConfig: ZKitConfig = {
     json: false,
     quiet: false,
     sym: false,
+    contributionTemplate: "groth16",
+    contributions: 1,
   },
-  verifiersSettings: {
-    verifiersDir: "contracts/verifiers",
-    onlyFiles: [],
-    skipFiles: [],
-  },
+  verifiersDir: "contracts/verifiers",
   ptauDir: undefined,
-  allowDownload: true,
+  ptauDownload: true,
 };
 
 export const zkitConfigExtender: ConfigExtender = (resolvedConfig, config) => {

@@ -16,7 +16,7 @@ const defaultConfig: HardhatUserConfig = {
       verifiersDir: "contracts/verifiers",
     },
     ptauDir: "zkit/ptau",
-    allowDownload: true,
+    ptauDownload: true,
   },
 };
 

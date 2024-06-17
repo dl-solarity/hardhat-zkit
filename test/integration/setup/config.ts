@@ -29,14 +29,12 @@ describe("config", () => {
           json: false,
           quiet: true,
           sym: false,
+          contributionTemplate: "groth16",
+          contributions: 1,
         },
-        verifiersSettings: {
-          onlyFiles: ["mock"],
-          skipFiles: [],
-          verifiersDir: "contracts/verifiers",
-        },
+        verifiersDir: "contracts/verifiers",
         ptauDir: "zkit/ptau",
-        allowDownload: true,
+        ptauDownload: true,
       };
 
       expect(loadedOptions).to.deep.equal(userDefinedConfig);
@@ -64,14 +62,12 @@ describe("config", () => {
           json: false,
           quiet: false,
           sym: false,
+          contributionTemplate: "groth16",
+          contributions: 1,
         },
-        verifiersSettings: {
-          verifiersDir: "contracts/verifiers",
-          onlyFiles: [],
-          skipFiles: [],
-        },
+        verifiersDir: "contracts/verifiers",
         ptauDir: undefined,
-        allowDownload: true,
+        ptauDownload: true,
       };
 
       expect(loadedOptions).to.deep.equal(defaultConfig);

@@ -1,10 +1,13 @@
-export const PLAGIN_NAME = "@solarity/hardhat-zkit";
+export const PLUGIN_NAME = "@solarity/hardhat-zkit";
 
 export const CIRCOM_CIRCUITS_CACHE_FILENAME = "circom-circuits-cache.json";
 
 export const FORMAT_VERSION = "hh-zkit-cache-1";
 
 export const NODE_MODULES = "node_modules";
+
+export const MAX_PTAU_ID = 27;
+export const PTAU_FILE_REG_EXP = /^(?:.+-|)(\d{1,2}).ptau$/;
 
 export const INCLUDE_REG_EXP = /include +"([.\-/\w]+)";/g;
 export const PRAGMA_VERSION_REG_EXP = /pragma +circom +(\d\.\d\.\d) *;/g;

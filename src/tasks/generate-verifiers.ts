@@ -1,53 +1,12 @@
-import fsExtra from "fs-extra";
+import path from "path";
 
-import { task, subtask, types } from "hardhat/config";
-import { localSourceNameToPath } from "hardhat/utils/source-names";
+import { task, types } from "hardhat/config";
 
-import { CircomZKit, CircuitInfo, CircuitZKit } from "@solarity/zkit";
+import { CircuitZKit } from "@solarity/zkit";
 
-import {
-  TASK_GENERATE_VERIFIERS,
-  TASK_CIRCUITS_COMPILE,
-  TASK_ZKIT_GET_CIRCOM_ZKIT,
-  TASK_ZKIT_GET_FILTERED_CIRCUITS_INFO,
-  TASK_ZKIT_FILTER_CIRCUITS_INFO,
-  TASK_GENERATE_VERIFIERS_VERIFY_ARTIFACTS_EXISTENCE,
-} from "./task-names";
+import { TASK_GENERATE_VERIFIERS, TASK_CIRCUITS_COMPILE } from "./task-names";
 
-import { getArtifactsDirFullPath } from "../utils/path-utils";
-import { DuplicateCircuitsNameError, NonExistentCircuitArtifactsError } from "../errors";
-
-subtask(TASK_GENERATE_VERIFIERS_VERIFY_ARTIFACTS_EXISTENCE)
-  .addOptionalParam("artifactsDir", undefined, undefined, types.string)
-  .addParam("circuitsInfo", undefined, undefined, types.any)
-  .setAction(
-    async (
-      { artifactsDir, circuitsInfo }: { artifactsDir: string; circuitsInfo: CircuitInfo[] },
-      { config },
-    ): Promise<string[]> => {
-      const artifactsRoot = getArtifactsDirFullPath(
-        config.paths.root,
-        artifactsDir ?? config.zkit.compilationSettings.artifactsDir,
-      );
-      const circuitsId: string[] = [];
-
-      circuitsInfo.forEach((info) => {
-        const circuitSourceName = localSourceNameToPath(config.zkit.circuitsDir, info.path);
-
-        if (info.id == null) {
-          throw new DuplicateCircuitsNameError(circuitSourceName);
-        }
-
-        if (!fsExtra.existsSync(localSourceNameToPath(artifactsRoot, info.path))) {
-          throw new NonExistentCircuitArtifactsError(info.id);
-        }
-
-        circuitsId.push(info.id);
-      });
-
-      return circuitsId;
-    },
-  );
+import { getAllDirsMatchingSync, getNormalizedFullPath } from "../utils/path-utils";
 
 task(TASK_GENERATE_VERIFIERS, "Generate verifiers for circuits")
   .addOptionalParam("artifactsDir", "The circuits artifacts directory path.", undefined, types.string)
@@ -68,29 +27,21 @@ task(TASK_GENERATE_VERIFIERS, "Generate verifiers for circuits")
         await run(TASK_CIRCUITS_COMPILE, { artifactsDir, quiet });
       }
 
-      const circomZKit: CircomZKit = await run(TASK_ZKIT_GET_CIRCOM_ZKIT, { artifactsDir, verifiersDir });
+      const artifactsDirFullPath = getNormalizedFullPath(
+        config.paths.root,
+        artifactsDir ?? config.zkit.compilationSettings.artifactsDir,
+      );
+      const verifiersDirFullPath = getNormalizedFullPath(config.paths.root, verifiersDir ?? config.zkit.verifiersDir);
 
-      const filteredCompiledCircuitsInfo = await run(TASK_ZKIT_GET_FILTERED_CIRCUITS_INFO, {
-        circomZKit,
-        filterSettings: config.zkit.compilationSettings,
-        withMainComponent: true,
-      });
-
-      const circuitsInfo: CircuitInfo[] = await run(TASK_ZKIT_FILTER_CIRCUITS_INFO, {
-        circuitsInfo: filteredCompiledCircuitsInfo,
-        filterSettings: config.zkit.verifiersSettings,
-      });
-
-      const circuitsId: string[] = await run(TASK_GENERATE_VERIFIERS_VERIFY_ARTIFACTS_EXISTENCE, {
-        artifactsDir,
-        circuitsInfo,
-      });
+      const artifactsDirArr: string[] = getAllDirsMatchingSync(artifactsDirFullPath, (f) => f.endsWith(".circom"));
 
       await Promise.all(
-        circuitsId.map((id: string) => {
-          const circuit: CircuitZKit = circomZKit.getCircuit(id);
-
-          return circuit.createVerifier();
+        artifactsDirArr.map(async (artifactDirPath: string) => {
+          await new CircuitZKit({
+            circuitName: path.parse(artifactDirPath).name,
+            circuitArtifactsPath: artifactDirPath,
+            verifierDirPath: verifiersDirFullPath,
+          }).createVerifier();
         }),
       );
     },

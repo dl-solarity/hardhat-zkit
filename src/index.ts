@@ -14,9 +14,6 @@ extendEnvironment((hre) => {
       getCircuit: async (circuitName: string) => {
         return await hre.run(tasks.TASK_ZKIT_GET_CIRCUIT_ZKIT, { circuitName });
       },
-      getCircuitsInfo: async (withMainComponent?: boolean) => {
-        return await hre.run(tasks.TASK_ZKIT_GET_CIRCUITS_INFO, { withMainComponent: withMainComponent ?? false });
-      },
     };
   });
 });
