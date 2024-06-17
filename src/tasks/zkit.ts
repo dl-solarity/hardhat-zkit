@@ -4,7 +4,7 @@ import { CircuitZKit, VerifierTemplateType } from "@solarity/zkit";
 
 import { TASK_ZKIT_GET_CIRCUIT_ZKIT } from "./task-names";
 import { getAllDirsMatchingSync, getNormalizedFullPath } from "../utils/path-utils";
-import { MultipleCircuitsNameError, NonExistentCircuitArtifactsError } from "./errors";
+import { HardhatZKitError } from "./errors";
 
 subtask(TASK_ZKIT_GET_CIRCUIT_ZKIT)
   .addOptionalParam("artifactsDir", undefined, undefined, types.string)
@@ -36,11 +36,13 @@ subtask(TASK_ZKIT_GET_CIRCUIT_ZKIT)
       });
 
       if (foundPaths.length === 0) {
-        throw new NonExistentCircuitArtifactsError(circuitName);
+        throw new HardhatZKitError(`The artifacts for '${circuitName}' circuit do not exist. Please compile circuits`);
       }
 
       if (foundPaths.length > 1) {
-        throw new MultipleCircuitsNameError(circuitName, foundPaths);
+        throw new HardhatZKitError(
+          `Invalid circuit name ${circuitName}. Multiple artifacts found along ${foundPaths} paths`,
+        );
       }
 
       const verifiersDirFullPath = getNormalizedFullPath(config.paths.root, verifiersDir ?? config.zkit.verifiersDir);

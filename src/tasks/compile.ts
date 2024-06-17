@@ -43,7 +43,7 @@ import { DependencyGraph } from "../internal/DependencyGraph";
 import { CircomCircuitsCache } from "../internal/CircomCircuitsCache";
 import { FileFilterSettings, ContributionTemplateType } from "../types/zkit-config";
 import { MAIN_COMPONENT_REG_EXP, MAX_PTAU_ID, PTAU_FILE_REG_EXP } from "../internal/constants";
-import { DuplicateCircuitsNameError, NonExistentR1CSHeader } from "./errors";
+import { HardhatZKitError } from "./errors";
 import { downloadFile, readDirRecursively } from "../utils/utils";
 
 // eslint-disable-next-line
@@ -78,6 +78,19 @@ subtask(TASK_CIRCUITS_COMPILE_FILTER_SOURCE_PATHS)
       sourcePaths: string[];
       filterSettings: FileFilterSettings;
     }): Promise<string[]> => {
+      const contains = (circuitsRoot: string, pathList: string[], source: any) => {
+        const isSubPath = (parent: string, child: string) => {
+          const parentTokens = parent.split(path.posix.sep).filter((i) => i.length);
+          const childTokens = child.split(path.posix.sep).filter((i) => i.length);
+
+          return parentTokens.every((t, i) => childTokens[i] === t);
+        };
+
+        return pathList.some((p: any) => {
+          return isSubPath(localSourceNameToPath(circuitsRoot, p), source);
+        });
+      };
+
       return sourcePaths.filter((sourceName: string) => {
         return (
           (filterSettings.onlyFiles.length == 0 || contains(circuitsRoot, filterSettings.onlyFiles, sourceName)) &&
@@ -151,7 +164,7 @@ subtask(TASK_CIRCUITS_COMPILE_COMPILE_CIRCUIT)
         bindings: {
           ...bindings,
           exit(code: number) {
-            throw new Error(`Compilation error. Exit code: ${code}.`);
+            throw new HardhatZKitError(`Compilation error. Exit code: ${code}.`);
           },
           fs,
         },
@@ -161,14 +174,16 @@ subtask(TASK_CIRCUITS_COMPILE_COMPILE_CIRCUIT)
       try {
         await circomRunner.execute(compiler);
       } catch (err) {
+        const parentErr = new Error(undefined, { cause: err });
+
         if (quiet) {
-          throw new Error(
-            'Compilation failed with an unknown error. Consider passing "quiet=false" flag to see the compilation error.',
-            { cause: err },
+          throw new HardhatZKitError(
+            "Compilation failed with an unknown error. Consider passing 'quiet=false' flag to see the compilation error.",
+            parentErr,
           );
         }
 
-        throw new Error("Compilation failed.", { cause: err });
+        throw new HardhatZKitError("Compilation failed.", parentErr);
       }
     },
   );
@@ -323,7 +338,9 @@ subtask(TASK_CIRCUITS_COMPILE_VALIDATE_RESOLVED_FILES_TO_COMPILE)
       const circuitName = path.parse(file.absolutePath).name;
 
       if (circuitsNameCount[circuitName]) {
-        throw new DuplicateCircuitsNameError(file.sourceName, circuitsNameCount[circuitName].sourceName);
+        throw new HardhatZKitError(
+          `Circuit ${file.sourceName} duplicated ${circuitsNameCount[circuitName].sourceName} circuit`,
+        );
       }
 
       circuitsNameCount[circuitName] = file;
@@ -363,7 +380,7 @@ subtask(TASK_CIRCUITS_COMPILE_GET_CONSTRAINTS_NUMBER)
       sectionStart += 4 + 8 + sectionSize;
     }
 
-    throw new NonExistentR1CSHeader(r1csFileName);
+    throw new HardhatZKitError(`Header section in ${r1csFileName} file is not found.`);
   });
 
 subtask(TASK_CIRCUITS_COMPILE_DOWNLOAD_PTAU_FILE)
@@ -384,15 +401,15 @@ subtask(TASK_CIRCUITS_COMPILE_DOWNLOAD_PTAU_FILE)
       { config },
     ) => {
       if (!config.zkit.allowDownload && denyDownload) {
-        throw new Error(
-          'Download is cancelled. Allow download or consider passing "ptauDir=PATH_TO_LOCAL_DIR" to the existing ptau files',
+        throw new HardhatZKitError(
+          "Download is cancelled. Allow download or consider passing 'ptauDir=PATH_TO_LOCAL_DIR' to the existing ptau files",
         );
       }
 
       fs.mkdirSync(ptauDirFullPath, { recursive: true });
 
       if (!(await downloadFile(ptauInfo.file, ptauInfo.downloadURL!))) {
-        throw new Error("Something went wrong while downloading the ptau file.");
+        throw new HardhatZKitError("Something went wrong while downloading the ptau file.");
       }
     },
   );
@@ -449,7 +466,7 @@ subtask(TASK_CIRCUITS_COMPILE_GET_PTAU_FILE)
 
       if (url) {
         if (ptauId > MAX_PTAU_ID) {
-          throw new Error(
+          throw new HardhatZKitError(
             `Circuits has too many constraints. The maximum ptauId to download is ${MAX_PTAU_ID}. Consider passing "ptauDir=PATH_TO_LOCAL_DIR" with existing ptau files.`,
           );
         }
@@ -507,7 +524,7 @@ subtask(TASK_CIRCUITS_COMPILE_GENERATE_ZKEY_FILES)
               fs.renameSync(zKeyFileNext, zKeyFile);
             }
           } else {
-            throw new Error(`Unsupported contribution template - ${contributionTemplate}`);
+            throw new HardhatZKitError(`Unsupported contribution template - ${contributionTemplate}`);
           }
         }),
       );
@@ -662,8 +679,8 @@ task(TASK_CIRCUITS_COMPILE, "Compile circuits")
         }
       }
 
-      for (const resolvedFileWithDependecies of resolvedFilesWithDependencies) {
-        for (const file of [resolvedFileWithDependecies.resolvedFile, ...resolvedFileWithDependecies.dependencies]) {
+      for (const resolvedFileWithDependencies of resolvedFilesWithDependencies) {
+        for (const file of [resolvedFileWithDependencies.resolvedFile, ...resolvedFileWithDependencies.dependencies]) {
           circuitFilesCache.addFile(file.absolutePath, {
             lastModificationDate: file.lastModificationDate.valueOf(),
             contentHash: file.contentHash,
@@ -718,17 +735,4 @@ function needsCompilation(
 
 function hasMainComponent(resolvedFile: ResolvedFile): boolean {
   return new RegExp(MAIN_COMPONENT_REG_EXP).test(resolvedFile.content.rawContent);
-}
-
-function contains(circuitsRoot: string, pathList: string[], source: any) {
-  const isSubPath = (parent: string, child: string) => {
-    const parentTokens = parent.split(path.posix.sep).filter((i) => i.length);
-    const childTokens = child.split(path.posix.sep).filter((i) => i.length);
-
-    return parentTokens.every((t, i) => childTokens[i] === t);
-  };
-
-  return pathList.some((p: any) => {
-    return isSubPath(localSourceNameToPath(circuitsRoot, p), source);
-  });
 }

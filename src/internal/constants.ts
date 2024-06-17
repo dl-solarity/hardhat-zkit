@@ -1,4 +1,4 @@
-export const PLAGIN_NAME = "@solarity/hardhat-zkit";
+export const PLUGIN_NAME = "@solarity/hardhat-zkit";
 
 export const CIRCOM_CIRCUITS_CACHE_FILENAME = "circom-circuits-cache.json";
 
