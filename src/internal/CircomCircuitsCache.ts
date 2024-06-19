@@ -4,20 +4,21 @@ import { isEqual } from "lodash";
 
 import { FORMAT_VERSION } from "./constants";
 import { Cache, CacheEntry } from "../types/internal/circuits-cache";
-import { CompileOptions } from "../types/compile";
+import { CompileFlags } from "../types/internal/circom-compiler";
 
-const CompileOptionsCodec = t.type({
+const CompileFlagsCodec = t.type({
+  r1cs: t.boolean,
+  wasm: t.boolean,
   sym: t.boolean,
   json: t.boolean,
   c: t.boolean,
-  quiet: t.boolean,
 });
 
 const CacheEntryCodec = t.type({
   lastModificationDate: t.number,
   contentHash: t.string,
   sourceName: t.string,
-  compileOptions: CompileOptionsCodec,
+  compileFlags: CompileFlagsCodec,
   imports: t.array(t.string),
   versionPragmas: t.array(t.string),
 });
@@ -93,7 +94,7 @@ export class CircomCircuitsCache {
     delete this._cache.files[file];
   }
 
-  public hasFileChanged(absolutePath: string, contentHash: string, compileOptions: CompileOptions): boolean {
+  public hasFileChanged(absolutePath: string, contentHash: string, compileFlags: CompileFlags): boolean {
     const cacheEntry = this.getEntry(absolutePath);
 
     if (cacheEntry === undefined) {
@@ -104,7 +105,7 @@ export class CircomCircuitsCache {
       return true;
     }
 
-    if (!isEqual(cacheEntry.compileOptions, compileOptions)) {
+    if (!isEqual(cacheEntry.compileFlags, compileFlags)) {
       return true;
     }
 

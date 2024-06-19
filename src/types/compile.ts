@@ -25,3 +25,14 @@ export type PtauInfo = {
   file: string;
   downloadURL: string;
 };
+
+export type CompileTaskConfig = {
+  artifactsDir?: string;
+  ptauDir?: string;
+  ptauDownload?: boolean;
+  force: boolean;
+  sym: boolean;
+  json: boolean;
+  c: boolean;
+  quiet: boolean;
+};

@@ -1,10 +1,10 @@
-import { CompileOptions } from "../compile";
+import { CompileFlags } from "./circom-compiler";
 
 export interface CacheEntry {
   lastModificationDate: number;
   contentHash: string;
   sourceName: string;
-  compileOptions: CompileOptions;
+  compileFlags: CompileFlags;
   imports: string[];
   versionPragmas: string[];
 }

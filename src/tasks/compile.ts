@@ -45,6 +45,7 @@ import { FileFilterSettings, ContributionTemplateType } from "../types/zkit-conf
 import { MAIN_COMPONENT_REG_EXP, MAX_PTAU_ID, PTAU_FILE_REG_EXP } from "../internal/constants";
 import { HardhatZKitError } from "./errors";
 import { downloadFile, readDirRecursively } from "../utils/utils";
+import { CompileFlags } from "../types/internal/circom-compiler";
 
 // eslint-disable-next-line
 const { Context, CircomRunner, bindings } = require("@distributedlab/circom2");
@@ -225,20 +226,20 @@ subtask(TASK_CIRCUITS_COMPILE_FILTER_RESOLVED_FILES_TO_COMPILE)
   .addParam("resolvedFilesToCompile", undefined, undefined, types.any)
   .addParam("dependencyGraph", undefined, undefined, types.any)
   .addParam("circuitFilesCache", undefined, undefined, types.any)
-  .addParam("compileOptions", undefined, undefined, types.any)
+  .addParam("compileFlags", undefined, undefined, types.any)
   .addFlag("force", undefined)
   .setAction(
     async ({
       resolvedFilesToCompile,
       dependencyGraph,
       circuitFilesCache,
-      compileOptions,
+      compileFlags,
       force,
     }: {
       resolvedFilesToCompile: ResolvedFile[];
       dependencyGraph: DependencyGraph;
       circuitFilesCache: CircomCircuitsCache;
-      compileOptions: CompileOptions;
+      compileFlags: CompileFlags;
       force: boolean;
     }): Promise<ResolvedFileWithDependencies[]> => {
       const resolvedFilesWithDependencies: ResolvedFileWithDependencies[] = [];
@@ -251,9 +252,7 @@ subtask(TASK_CIRCUITS_COMPILE_FILTER_RESOLVED_FILES_TO_COMPILE)
       }
 
       if (!force) {
-        return resolvedFilesWithDependencies.filter((file) =>
-          needsCompilation(file, circuitFilesCache, compileOptions),
-        );
+        return resolvedFilesWithDependencies.filter((file) => needsCompilation(file, circuitFilesCache, compileFlags));
       }
 
       return resolvedFilesWithDependencies;
@@ -510,6 +509,10 @@ subtask(TASK_CIRCUITS_COMPILE_GENERATE_ZKEY_FILES)
           const zKeyFile = localSourceNameToPath(info.tempArtifactsPath, `${info.circuitName}.zkey`);
 
           if (contributionTemplate === "groth16") {
+            console.log(r1csFile);
+            console.log(ptauFile);
+            console.log(zKeyFile);
+            console.log(fs.readdirSync(info.tempArtifactsPath));
             await snarkjs.zKey.newZKey(r1csFile, ptauFile, zKeyFile);
 
             const zKeyFileNext = `${zKeyFile}.next.zkey`;
@@ -578,7 +581,6 @@ task(TASK_CIRCUITS_COMPILE, "Compile circuits")
   .addFlag("sym", "The sym flag.")
   .addFlag("json", "The json flag.")
   .addFlag("c", "The c flag.")
-  .addFlag("quiet", "The quiet flag.")
   .setAction(
     async (
       {
@@ -588,7 +590,6 @@ task(TASK_CIRCUITS_COMPILE, "Compile circuits")
         sym,
         json,
         c,
-        quiet,
       }: {
         artifactsDir?: string;
         ptauDownload: boolean;
@@ -596,7 +597,6 @@ task(TASK_CIRCUITS_COMPILE, "Compile circuits")
         sym: boolean;
         json: boolean;
         c: boolean;
-        quiet: boolean;
       },
       { config, run },
     ) => {
@@ -643,7 +643,7 @@ task(TASK_CIRCUITS_COMPILE, "Compile circuits")
         resolvedFilesToCompile,
       );
 
-      const compileOptions: CompileOptions = { sym, json, c, quiet };
+      const compileFlags: CompileFlags = { r1cs: true, wasm: true, sym, json, c };
 
       const resolvedFilesWithDependencies: ResolvedFileWithDependencies[] = await run(
         TASK_CIRCUITS_COMPILE_FILTER_RESOLVED_FILES_TO_COMPILE,
@@ -651,7 +651,7 @@ task(TASK_CIRCUITS_COMPILE, "Compile circuits")
           resolvedFilesToCompile,
           dependencyGraph,
           circuitFilesCache,
-          compileOptions,
+          compileFlags,
           force,
         },
       );
@@ -667,7 +667,7 @@ task(TASK_CIRCUITS_COMPILE, "Compile circuits")
             circuitsDirFullPath: circuitsRoot,
             artifactsDirFullPath,
             resolvedFilesToCompile: filteredFilesToCompile,
-            compileOptions,
+            compileFlags,
           });
 
           const ptauFile: string = await run(TASK_CIRCUITS_COMPILE_GET_PTAU_FILE, { compilationsInfo, ptauDownload });
@@ -687,7 +687,7 @@ task(TASK_CIRCUITS_COMPILE, "Compile circuits")
             lastModificationDate: file.lastModificationDate.valueOf(),
             contentHash: file.contentHash,
             sourceName: file.sourceName,
-            compileOptions,
+            compileFlags,
             imports: file.content.imports,
             versionPragmas: file.content.versionPragmas,
           });
@@ -722,10 +722,10 @@ async function invalidateCacheMissingArtifacts(
 function needsCompilation(
   resolvedFilesWithDependencies: ResolvedFileWithDependencies,
   cache: CircomCircuitsCache,
-  compileOptions: CompileOptions,
+  compileFlags: CompileFlags,
 ): boolean {
   for (const file of [resolvedFilesWithDependencies.resolvedFile, ...resolvedFilesWithDependencies.dependencies]) {
-    const hasChanged = cache.hasFileChanged(file.absolutePath, file.contentHash, compileOptions);
+    const hasChanged = cache.hasFileChanged(file.absolutePath, file.contentHash, compileFlags);
 
     if (hasChanged) {
       return true;
