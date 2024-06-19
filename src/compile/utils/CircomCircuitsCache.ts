@@ -2,9 +2,8 @@ import fsExtra from "fs-extra";
 import * as t from "io-ts";
 import { isEqual } from "lodash";
 
-import { FORMAT_VERSION } from "./constants";
-import { Cache, CacheEntry } from "../types/internal/circuits-cache";
-import { CompileFlags } from "../types/internal/circom-compiler";
+import { FORMAT_VERSION } from "../../constants";
+import { Cache, CacheEntry, CompileFlags } from "../../types/compile";
 
 const CompileFlagsCodec = t.type({
   r1cs: t.boolean,

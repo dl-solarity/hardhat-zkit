@@ -8,15 +8,14 @@ import * as snarkjs from "snarkjs";
 import { HardhatConfig } from "hardhat/types";
 
 import { CircomCompilerFactory } from "./CircomCompilerFactory";
-import { ICircomCompiler } from "../types/internal/circom-compiler";
-import { CompilationProccessorConfig, CompilationInfo } from "../types/internal/compilation-processor";
-import { ResolvedFile } from "./Resolver";
-import { getNormalizedFullPath } from "../utils/path-utils";
-import { HardhatZKitError } from "../tasks/errors";
-import { PTAU_FILE_REG_EXP } from "./constants";
-import { PtauDownloader } from "./PtauDownloader";
-import { ContributionTemplateType, ZKitConfig } from "../types/zkit-config";
-import { readDirRecursively } from "../utils/utils";
+import { ICircomCompiler, CompilationProccessorConfig, CompilationInfo } from "../../types/compile";
+import { ContributionTemplateType, ZKitConfig } from "../../types/zkit-config";
+
+import { ResolvedFile, PtauDownloader } from "../utils";
+import { getNormalizedFullPath } from "../../utils/path-utils";
+import { HardhatZKitError } from "../../errors";
+import { PTAU_FILE_REG_EXP } from "../../constants";
+import { readDirRecursively } from "../../utils/utils";
 
 export class CompilationProcessor {
   private readonly _zkitConfig: ZKitConfig;
@@ -180,7 +179,7 @@ export class CompilationProcessor {
     } else {
       const ptauDownloader: PtauDownloader = new PtauDownloader(this._ptauDirFullPath);
 
-      return await ptauDownloader.downloadPtau(ptauId);
+      return ptauDownloader.downloadPtau(ptauId);
     }
   }
 

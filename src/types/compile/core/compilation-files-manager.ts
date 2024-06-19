@@ -1,4 +1,4 @@
-import { ResolvedFile } from "hardhat/types";
+import { ResolvedFile } from "hardhat/types/builtin-tasks";
 
 export type ResolvedFileWithDependencies = {
   resolvedFile: ResolvedFile;

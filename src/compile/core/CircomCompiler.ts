@@ -1,7 +1,7 @@
 import fs from "fs";
 
-import { HardhatZKitError } from "../tasks/errors";
-import { ICircomCompiler, CompileConfig } from "../types/internal/circom-compiler";
+import { HardhatZKitError } from "../../errors";
+import { ICircomCompiler, CompileConfig } from "../../types/compile/core/circom-compiler";
 
 // eslint-disable-next-line
 const { Context, CircomRunner, bindings } = require("@distributedlab/circom2");

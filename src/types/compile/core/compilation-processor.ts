@@ -1,6 +1,7 @@
+import { ResolvedFile } from "hardhat/types/builtin-tasks";
+
 import { CompilerVersion } from "./circom-compiler-factory";
 import { CompileFlags } from "./circom-compiler";
-import { ResolvedFile } from "../../internal/Resolver";
 
 export type CompilationProccessorConfig = {
   compilerVersion: CompilerVersion;

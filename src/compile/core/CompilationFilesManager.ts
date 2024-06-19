@@ -6,20 +6,13 @@ import { HardhatConfig, ProjectPathsConfig } from "hardhat/types";
 import { getAllFilesMatching } from "hardhat/internal/util/fs-utils";
 import { localPathToSourceName } from "hardhat/utils/source-names";
 
-import { FileFilterSettings, ZKitConfig } from "../types/zkit-config";
-import { CompileFlags } from "../types/internal/circom-compiler";
-import {
-  CompilationFilesManagerConfig,
-  ResolvedFileWithDependencies,
-} from "../types/internal/compilation-files-manager";
+import { FileFilterSettings, ZKitConfig } from "../../types/zkit-config";
+import { CompileFlags, CompilationFilesManagerConfig, ResolvedFileWithDependencies } from "../../types/compile";
+import { CircomCircuitsCache, DependencyGraph, Parser, ResolvedFile, Resolver } from "../utils";
 
-import { getNormalizedFullPath } from "../utils/path-utils";
-import { MAIN_COMPONENT_REG_EXP } from "./constants";
-import { CircomCircuitsCache } from "./CircomCircuitsCache";
-import { DependencyGraph } from "./DependencyGraph";
-import { Parser } from "./Parser";
-import { ResolvedFile, Resolver } from "./Resolver";
-import { HardhatZKitError } from "../tasks/errors";
+import { getNormalizedFullPath } from "../../utils/path-utils";
+import { MAIN_COMPONENT_REG_EXP } from "../../constants";
+import { HardhatZKitError } from "../../errors";
 
 export class CompilationFilesManager {
   private readonly _zkitConfig: ZKitConfig;

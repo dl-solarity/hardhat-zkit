@@ -1,9 +1,9 @@
 import fs from "fs";
 import path from "path";
-import https from "https";
 
-import { MAX_PTAU_ID } from "./constants";
-import { HardhatZKitError } from "../tasks/errors";
+import { MAX_PTAU_ID } from "../../constants";
+import { HardhatZKitError } from "../../errors";
+import { downloadFile } from "../../utils/utils";
 
 export class PtauDownloader {
   constructor(public readonly ptauDirFullPath: string) {}
@@ -22,25 +22,7 @@ export class PtauDownloader {
 
     fs.mkdirSync(this.ptauDirFullPath, { recursive: true });
 
-    const fileStream = fs.createWriteStream(ptauFilePath);
-
-    await new Promise((resolve, reject) => {
-      const request = https.get(url, (response) => {
-        response.pipe(fileStream);
-      });
-
-      fileStream.on("finish", () => resolve(true));
-
-      request.on("error", (err) => {
-        fs.unlink(ptauFilePath, () => reject(err));
-      });
-
-      fileStream.on("error", (err) => {
-        fs.unlink(ptauFilePath, () => reject(err));
-      });
-
-      request.end();
-    });
+    await downloadFile(ptauFilePath, url);
 
     return ptauFilePath;
   }

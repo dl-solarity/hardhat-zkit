@@ -1,7 +1,7 @@
-import { ParsedData } from "../types/internal/parser";
+import { ParsedData } from "../../types/compile";
 
 import { CircomCircuitsCache } from "./CircomCircuitsCache";
-import { INCLUDE_REG_EXP, PRAGMA_VERSION_REG_EXP } from "./constants";
+import { INCLUDE_REG_EXP, PRAGMA_VERSION_REG_EXP } from "../../constants";
 
 export class Parser {
   private _cache = new Map<string, ParsedData>();

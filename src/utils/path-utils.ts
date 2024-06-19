@@ -4,9 +4,9 @@ import path from "path";
 
 import { ProjectPathsConfig } from "hardhat/types";
 import { normalizeSourceName, localSourceNameToPath } from "hardhat/utils/source-names";
-
-import { CIRCOM_CIRCUITS_CACHE_FILENAME } from "../internal/constants";
 import { FileSystemAccessError, InvalidDirectoryError } from "hardhat/internal/util/fs-utils";
+
+import { CIRCOM_CIRCUITS_CACHE_FILENAME } from "../constants";
 
 export function getCircomFilesCachePath(paths: ProjectPathsConfig): string {
   return localSourceNameToPath(paths.cache, CIRCOM_CIRCUITS_CACHE_FILENAME);
