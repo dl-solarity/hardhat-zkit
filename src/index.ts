@@ -13,7 +13,7 @@ import { TASK_ZKIT_GET_CIRCUIT_ZKIT, TASK_CIRCUITS_COMPILE, TASK_GENERATE_VERIFI
 
 import { zkitConfigExtender } from "./config/config";
 
-import { CircomCircuitsCache } from "./cache/CircomCircuitsCache";
+import { CircomCircuitsCache, createCircuitsCache } from "./cache/CircomCircuitsCache";
 import { CompilationFilesManager, CompilationProcessor } from "./compile/core";
 
 import { CompileTaskConfig, GenerateVerifiersTaskConfig, GetCircuitZKitConfig } from "./types/tasks";
@@ -38,7 +38,7 @@ extendEnvironment((hre) => {
 const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfig, env: HardhatRuntimeEnvironment) => {
   const circuitsCacheFullPath: string = getNormalizedFullPath(env.config.paths.cache, CIRCOM_CIRCUITS_CACHE_FILENAME);
 
-  const circuitFilesCache: CircomCircuitsCache = await CircomCircuitsCache.readFromFile(circuitsCacheFullPath);
+  await createCircuitsCache(circuitsCacheFullPath);
 
   const compilationFilesManager: CompilationFilesManager = new CompilationFilesManager(
     {
@@ -48,7 +48,6 @@ const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfi
       ptauDownload: taskArgs.ptauDownload ?? true,
     },
     (absolutePath: string) => env.run(TASK_READ_FILE, { absolutePath }),
-    circuitFilesCache,
     env.config,
   );
 
@@ -79,7 +78,7 @@ const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfi
 
   for (const resolvedFileWithDependencies of resolvedFilesWithDependencies) {
     for (const file of [resolvedFileWithDependencies.resolvedFile, ...resolvedFileWithDependencies.dependencies]) {
-      circuitFilesCache.addFile(file.absolutePath, {
+      CircomCircuitsCache!.addFile(file.absolutePath, {
         lastModificationDate: file.lastModificationDate.valueOf(),
         contentHash: file.contentHash,
         sourceName: file.sourceName,
@@ -90,7 +89,7 @@ const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfi
     }
   }
 
-  await circuitFilesCache.writeToFile(circuitsCacheFullPath);
+  await CircomCircuitsCache!.writeToFile(circuitsCacheFullPath);
 };
 
 const generateVerifiers: ActionType<GenerateVerifiersTaskConfig> = async (

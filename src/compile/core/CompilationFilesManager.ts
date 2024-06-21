@@ -23,7 +23,6 @@ export class CompilationFilesManager {
   constructor(
     private readonly _config: CompilationFilesManagerConfig,
     private readonly _readFile: (absolutePath: string) => Promise<string>,
-    private _circuitFilesCache: CircomCircuitsCache,
     hardhatConfig: HardhatConfig,
   ) {
     this._zkitConfig = hardhatConfig.zkit;
@@ -45,7 +44,7 @@ export class CompilationFilesManager {
 
     const sourceNames: string[] = await this._getSourceNamesFromSourcePaths(filteredCircuitsSourcePaths);
 
-    const dependencyGraph: DependencyGraph = await this._getDependencyGraph(sourceNames, this._circuitFilesCache);
+    const dependencyGraph: DependencyGraph = await this._getDependencyGraph(sourceNames);
 
     const resolvedFilesToCompile: ResolvedFile[] = this._filterResolvedFiles(
       dependencyGraph.getResolvedFiles(),
@@ -54,7 +53,7 @@ export class CompilationFilesManager {
     );
 
     this._validateResolvedFiles(resolvedFilesToCompile);
-    this._invalidateCacheMissingArtifacts(this._circuitFilesCache, resolvedFilesToCompile);
+    this._invalidateCacheMissingArtifacts(resolvedFilesToCompile);
 
     let resolvedFilesWithDependencies: ResolvedFileWithDependencies[] = [];
 
@@ -67,7 +66,7 @@ export class CompilationFilesManager {
 
     if (!force) {
       resolvedFilesWithDependencies = resolvedFilesWithDependencies.filter((file) =>
-        this._needsCompilation(file, this._circuitFilesCache, compileFlags),
+        this._needsCompilation(file, compileFlags),
       );
     }
 
@@ -133,11 +132,8 @@ export class CompilationFilesManager {
     return Promise.all(sourcePaths.map((p) => localPathToSourceName(this._projectPaths.root, p)));
   }
 
-  protected async _getDependencyGraph(
-    sourceNames: string[],
-    circuitFilesCache: CircomCircuitsCache,
-  ): Promise<DependencyGraph> {
-    const parser = new Parser(circuitFilesCache);
+  protected async _getDependencyGraph(sourceNames: string[]): Promise<DependencyGraph> {
+    const parser = new Parser();
     const remappings = this._getRemappings();
     const resolver = new Resolver(this._projectPaths.root, parser, remappings, this._readFile);
 
@@ -170,32 +166,29 @@ export class CompilationFilesManager {
     });
   }
 
-  protected _invalidateCacheMissingArtifacts(solidityFilesCache: CircomCircuitsCache, resolvedFiles: ResolvedFile[]) {
+  protected _invalidateCacheMissingArtifacts(resolvedFiles: ResolvedFile[]) {
     const circuitsDirFullPath = this.getCircuitsDirFullPath();
     const artifactsDirFullPath = this.getArtifactsDirFullPath();
 
     for (const file of resolvedFiles) {
-      const cacheEntry = solidityFilesCache.getEntry(file.absolutePath);
+      const cacheEntry = CircomCircuitsCache!.getEntry(file.absolutePath);
 
       if (cacheEntry === undefined) {
         continue;
       }
 
       if (!fsExtra.existsSync(file.absolutePath.replace(circuitsDirFullPath, artifactsDirFullPath))) {
-        solidityFilesCache.removeEntry(file.absolutePath);
+        CircomCircuitsCache!.removeEntry(file.absolutePath);
       }
     }
-
-    return solidityFilesCache;
   }
 
   protected _needsCompilation(
     resolvedFilesWithDependencies: ResolvedFileWithDependencies,
-    cache: CircomCircuitsCache,
     compileFlags: CompileFlags,
   ): boolean {
     for (const file of [resolvedFilesWithDependencies.resolvedFile, ...resolvedFilesWithDependencies.dependencies]) {
-      const hasChanged = cache.hasFileChanged(file.absolutePath, file.contentHash, compileFlags);
+      const hasChanged = CircomCircuitsCache!.hasFileChanged(file.absolutePath, file.contentHash, compileFlags);
 
       if (hasChanged) {
         return true;

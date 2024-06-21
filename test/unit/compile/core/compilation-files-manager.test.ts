@@ -29,12 +29,10 @@ describe("CompilationFilesManager", () => {
   function getCompilationFilesManager(
     hre: HardhatRuntimeEnvironment,
     config: CompilationFilesManagerConfig = defaultConfig,
-    cache: CircomCircuitsCache = CircomCircuitsCache.createEmpty(),
   ): CompilationFilesManager {
     return new CompilationFilesManager(
       config,
       (absolutePath: string) => hre.run(TASK_READ_FILE, { absolutePath }),
-      cache,
       hre.config,
     );
   }
@@ -42,12 +40,10 @@ describe("CompilationFilesManager", () => {
   function getCompilationFilesManagerMock(
     hre: HardhatRuntimeEnvironment,
     config: CompilationFilesManagerConfig = defaultConfig,
-    cache: CircomCircuitsCache = CircomCircuitsCache.createEmpty(),
   ): CompilationFilesManagerMock {
     return new CompilationFilesManagerMock(
       config,
       (absolutePath: string) => hre.run(TASK_READ_FILE, { absolutePath }),
-      cache,
       hre.config,
     );
   }
@@ -201,13 +197,7 @@ describe("CompilationFilesManager", () => {
     beforeEach("setup", async function () {
       await this.hre.run(TASK_CIRCUITS_COMPILE);
 
-      const circuitsCacheFullPath: string = getNormalizedFullPath(
-        this.hre.config.paths.cache,
-        CIRCOM_CIRCUITS_CACHE_FILENAME,
-      );
-      const cache: CircomCircuitsCache = await CircomCircuitsCache.readFromFile(circuitsCacheFullPath);
-
-      compilationFilesManager = getCompilationFilesManagerMock(this.hre, defaultConfig, cache);
+      compilationFilesManager = getCompilationFilesManagerMock(this.hre, defaultConfig);
 
       const sourcePaths: string[] = await getAllFilesMatching(compilationFilesManager.getCircuitsDirFullPath(), (f) =>
         f.endsWith(".circom"),
@@ -217,7 +207,7 @@ describe("CompilationFilesManager", () => {
         compilationFilesManager.filterSourcePaths(sourcePaths, { onlyFiles: [], skipFiles: ["vendor"] }),
       );
 
-      const dependencyGraph: DependencyGraph = await compilationFilesManager.getDependencyGraph(sourceNames, cache);
+      const dependencyGraph: DependencyGraph = await compilationFilesManager.getDependencyGraph(sourceNames);
 
       resolvedFiles = dependencyGraph.getResolvedFiles();
     });
@@ -283,9 +273,7 @@ describe("CompilationFilesManager", () => {
     useEnvironment("with-duplicate-circuits");
 
     beforeEach("setup", async function () {
-      const cache: CircomCircuitsCache = CircomCircuitsCache.createEmpty();
-
-      compilationFilesManager = getCompilationFilesManagerMock(this.hre, defaultConfig, cache);
+      compilationFilesManager = getCompilationFilesManagerMock(this.hre, defaultConfig);
 
       const sourcePaths: string[] = await getAllFilesMatching(compilationFilesManager.getCircuitsDirFullPath(), (f) =>
         f.endsWith(".circom"),
@@ -295,7 +283,7 @@ describe("CompilationFilesManager", () => {
         compilationFilesManager.filterSourcePaths(sourcePaths, { onlyFiles: [], skipFiles: ["vendor"] }),
       );
 
-      const dependencyGraph: DependencyGraph = await compilationFilesManager.getDependencyGraph(sourceNames, cache);
+      const dependencyGraph: DependencyGraph = await compilationFilesManager.getDependencyGraph(sourceNames);
 
       resolvedFiles = dependencyGraph.getResolvedFiles();
     });
@@ -330,7 +318,6 @@ describe("CompilationFilesManager", () => {
 
   describe("invalidateCacheMissingArtifacts", () => {
     let compilationFilesManager: CompilationFilesManagerMock;
-    let cache: CircomCircuitsCache;
     let resolvedFiles: ResolvedFile[];
     let sourceNames: string[];
 
@@ -339,13 +326,7 @@ describe("CompilationFilesManager", () => {
     beforeEach("setup", async function () {
       await this.hre.run(TASK_CIRCUITS_COMPILE);
 
-      const circuitsCacheFullPath: string = getNormalizedFullPath(
-        this.hre.config.paths.cache,
-        CIRCOM_CIRCUITS_CACHE_FILENAME,
-      );
-      cache = await CircomCircuitsCache.readFromFile(circuitsCacheFullPath);
-
-      compilationFilesManager = getCompilationFilesManagerMock(this.hre, defaultConfig, cache);
+      compilationFilesManager = getCompilationFilesManagerMock(this.hre, defaultConfig);
 
       const sourcePaths: string[] = await getAllFilesMatching(compilationFilesManager.getCircuitsDirFullPath(), (f) =>
         f.endsWith(".circom"),
@@ -355,7 +336,7 @@ describe("CompilationFilesManager", () => {
         compilationFilesManager.filterSourcePaths(sourcePaths, { onlyFiles: [], skipFiles: ["vendor"] }),
       );
 
-      const dependencyGraph: DependencyGraph = await compilationFilesManager.getDependencyGraph(sourceNames, cache);
+      const dependencyGraph: DependencyGraph = await compilationFilesManager.getDependencyGraph(sourceNames);
 
       resolvedFiles = compilationFilesManager.filterResolvedFiles(
         dependencyGraph.getResolvedFiles(),
@@ -371,7 +352,7 @@ describe("CompilationFilesManager", () => {
         circuitToRemove,
       );
 
-      const entry = cache.getEntry(circuitFullPath);
+      const entry = CircomCircuitsCache!.getEntry(circuitFullPath);
 
       expect(entry).not.to.be.undefined;
 
@@ -384,9 +365,9 @@ describe("CompilationFilesManager", () => {
         force: true,
       });
 
-      cache = compilationFilesManager.invalidateCacheMissingArtifacts(cache, resolvedFiles);
+      compilationFilesManager.invalidateCacheMissingArtifacts(resolvedFiles);
 
-      expect(cache.getEntry(circuitFullPath)).to.be.undefined;
+      expect(CircomCircuitsCache!.getEntry(circuitFullPath)).to.be.undefined;
     });
   });
 });

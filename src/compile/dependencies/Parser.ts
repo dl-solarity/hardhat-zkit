@@ -5,11 +5,6 @@ import { INCLUDE_REG_EXP, PRAGMA_VERSION_REG_EXP } from "../../constants";
 
 export class Parser {
   private _cache = new Map<string, ParsedData>();
-  private _circomCircuitsCache: CircomCircuitsCache;
-
-  constructor(_circomCircuitsCache?: CircomCircuitsCache) {
-    this._circomCircuitsCache = _circomCircuitsCache ?? CircomCircuitsCache.createEmpty();
-  }
 
   public parse(fileContent: string, absolutePath: string, contentHash: string): ParsedData {
     const cacheResult = this._getFromCache(absolutePath, contentHash);
@@ -35,7 +30,7 @@ export class Parser {
       return internalCacheEntry;
     }
 
-    const circuitsFilesCacheEntry = this._circomCircuitsCache.getEntry(absolutePath);
+    const circuitsFilesCacheEntry = CircomCircuitsCache!.getEntry(absolutePath);
 
     if (circuitsFilesCacheEntry === undefined) {
       return null;

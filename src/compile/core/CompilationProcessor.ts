@@ -178,9 +178,7 @@ export class CompilationProcessor {
     if (entry) {
       return getNormalizedFullPath(this._ptauDirFullPath, entry.name);
     } else {
-      const ptauDownloader: PtauDownloader = new PtauDownloader(this._ptauDirFullPath);
-
-      return ptauDownloader.downloadPtau(ptauId);
+      return PtauDownloader.downloadPtau(this._ptauDirFullPath, ptauId);
     }
   }
 

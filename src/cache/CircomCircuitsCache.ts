@@ -27,33 +27,33 @@ const CacheCodec = t.type({
   files: t.record(t.string, CacheEntryCodec),
 });
 
-export class CircomCircuitsCache {
-  public static createEmpty(): CircomCircuitsCache {
-    return new CircomCircuitsCache({
+class BaseCircomCircuitsCache {
+  public static createEmpty(): BaseCircomCircuitsCache {
+    return new BaseCircomCircuitsCache({
       _format: FORMAT_VERSION,
       files: {},
     });
   }
 
-  public static async readFromFile(solidityFilesCachePath: string): Promise<CircomCircuitsCache> {
+  public static async readFromFile(circuitsFilesCachePath: string): Promise<BaseCircomCircuitsCache> {
     let cacheRaw: Cache = {
       _format: FORMAT_VERSION,
       files: {},
     };
 
-    if (await fsExtra.pathExists(solidityFilesCachePath)) {
-      cacheRaw = await fsExtra.readJson(solidityFilesCachePath);
+    if (await fsExtra.pathExists(circuitsFilesCachePath)) {
+      cacheRaw = await fsExtra.readJson(circuitsFilesCachePath);
     }
 
     const result = CacheCodec.decode(cacheRaw);
 
     if (result.isRight()) {
-      const solidityFilesCache = new CircomCircuitsCache(result.value);
+      const solidityFilesCache = new BaseCircomCircuitsCache(result.value);
       await solidityFilesCache.removeNonExistingFiles();
       return solidityFilesCache;
     }
 
-    return new CircomCircuitsCache({
+    return new BaseCircomCircuitsCache({
       _format: FORMAT_VERSION,
       files: {},
     });
@@ -110,4 +110,25 @@ export class CircomCircuitsCache {
 
     return false;
   }
+}
+
+export let CircomCircuitsCache: BaseCircomCircuitsCache | null = null;
+
+export async function createCircuitsCache(circuitsFilesCachePath?: string) {
+  if (CircomCircuitsCache) {
+    return;
+  }
+
+  if (circuitsFilesCachePath) {
+    CircomCircuitsCache = await BaseCircomCircuitsCache.readFromFile(circuitsFilesCachePath);
+  } else {
+    CircomCircuitsCache = BaseCircomCircuitsCache.createEmpty();
+  }
+}
+
+/**
+ * Used only in test environments to ensure test atomicity
+ */
+export function resetCircuitsCache() {
+  CircomCircuitsCache = null;
 }

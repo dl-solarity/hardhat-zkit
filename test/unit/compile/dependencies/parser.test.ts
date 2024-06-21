@@ -13,7 +13,6 @@ import { ParsedData } from "../../../../src/types/compile";
 
 describe("Parser", () => {
   describe("parse", () => {
-    let circuitsCache: CircomCircuitsCache;
     let parser: Parser;
 
     let circuitPath: string;
@@ -27,8 +26,7 @@ describe("Parser", () => {
     beforeEach("setup", async function () {
       circuitsCacheFullPath = getNormalizedFullPath(this.hre.config.paths.cache, CIRCOM_CIRCUITS_CACHE_FILENAME);
 
-      circuitsCache = await CircomCircuitsCache.readFromFile(circuitsCacheFullPath);
-      parser = new Parser(circuitsCache);
+      parser = new Parser();
 
       circuitPath = getNormalizedFullPath(this.hre.config.paths.root, "circuits/main/mul2.circom");
       fileContent = fs.readFileSync(circuitPath, "utf-8");

@@ -23,11 +23,8 @@ export class CompilationFilesManagerMock extends CompilationFilesManager {
     return this._getSourceNamesFromSourcePaths(sourcePaths);
   }
 
-  public async getDependencyGraph(
-    sourceNames: string[],
-    circuitFilesCache: CircomCircuitsCache,
-  ): Promise<DependencyGraph> {
-    return this._getDependencyGraph(sourceNames, circuitFilesCache);
+  public async getDependencyGraph(sourceNames: string[]): Promise<DependencyGraph> {
+    return this._getDependencyGraph(sourceNames);
   }
 
   public hasMainComponent(resolvedFile: ResolvedFile): boolean {
@@ -38,18 +35,14 @@ export class CompilationFilesManagerMock extends CompilationFilesManager {
     this._validateResolvedFiles(resolvedFiles);
   }
 
-  public invalidateCacheMissingArtifacts(
-    solidityFilesCache: CircomCircuitsCache,
-    resolvedFiles: ResolvedFile[],
-  ): CircomCircuitsCache {
-    return this._invalidateCacheMissingArtifacts(solidityFilesCache, resolvedFiles);
+  public invalidateCacheMissingArtifacts(resolvedFiles: ResolvedFile[]) {
+    return this._invalidateCacheMissingArtifacts(resolvedFiles);
   }
 
   public needsCompilation(
     resolvedFilesWithDependencies: ResolvedFileWithDependencies,
-    cache: CircomCircuitsCache,
     compileFlags: CompileFlags,
   ): boolean {
-    return this._needsCompilation(resolvedFilesWithDependencies, cache, compileFlags);
+    return this._needsCompilation(resolvedFilesWithDependencies, compileFlags);
   }
 }

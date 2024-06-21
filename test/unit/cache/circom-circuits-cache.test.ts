@@ -5,7 +5,7 @@ import { expect } from "chai";
 import { createNonCryptographicHashBasedIdentifier } from "hardhat/internal/util/hash";
 
 import { useEnvironment } from "../../helpers";
-import { CircomCircuitsCache } from "../../../src/cache/CircomCircuitsCache";
+import { CircomCircuitsCache, resetCircuitsCache, createCircuitsCache } from "../../../src/cache/CircomCircuitsCache";
 import { getNormalizedFullPath } from "../../../src/utils/path-utils";
 import { CIRCOM_CIRCUITS_CACHE_FILENAME, FORMAT_VERSION } from "../../../src/constants";
 import { TASK_CIRCUITS_COMPILE } from "../../../src/task-names";
@@ -50,10 +50,12 @@ describe("CircomCircuitsCache", () => {
 
   describe("createEmpty", () => {
     it("should correctly create empty CircomCircuitsCache instance", async () => {
-      const cache: CircomCircuitsCache = CircomCircuitsCache.createEmpty();
+      resetCircuitsCache();
 
-      expect(cache.constructor.name).to.be.eq("CircomCircuitsCache");
-      expect(Object.values(cache)[0]._format).to.be.eq(FORMAT_VERSION);
+      await createCircuitsCache(undefined);
+
+      expect(CircomCircuitsCache!.constructor.name).to.be.eq("BaseCircomCircuitsCache");
+      expect(Object.values(CircomCircuitsCache!)[0]._format).to.be.eq(FORMAT_VERSION);
     });
   });
 
@@ -61,11 +63,7 @@ describe("CircomCircuitsCache", () => {
     useEnvironment("with-circuits");
 
     it("should correctly create CircomCircuitsCache instance from file", async function () {
-      const circuitsCacheFullPath = getNormalizedFullPath(this.hre.config.paths.cache, CIRCOM_CIRCUITS_CACHE_FILENAME);
-
-      const cache: CircomCircuitsCache = await CircomCircuitsCache.readFromFile(circuitsCacheFullPath);
-
-      cache.getEntries().forEach(async (entry: CacheEntry) => {
+      CircomCircuitsCache!.getEntries().forEach(async (entry: CacheEntry) => {
         expect(entry).to.be.deep.eq(await getCacheEntry(this.hre.config.paths.root, entry.sourceName, entry.imports));
       });
     });
@@ -87,9 +85,10 @@ describe("CircomCircuitsCache", () => {
 
       fsExtra.rmSync(circuitAbsolutePath);
 
-      const cache: CircomCircuitsCache = await CircomCircuitsCache.readFromFile(circuitsCacheFullPath);
+      resetCircuitsCache();
+      await createCircuitsCache(circuitsCacheFullPath);
 
-      expect(cache.getEntry(circuitAbsolutePath)).to.be.undefined;
+      expect(CircomCircuitsCache!.getEntry(circuitAbsolutePath)).to.be.undefined;
 
       fsExtra.writeFileSync(circuitAbsolutePath, fileContent);
     });
@@ -99,9 +98,10 @@ describe("CircomCircuitsCache", () => {
 
       fsExtra.writeFileSync(invalidCacheFullPath, JSON.stringify({ a: 1, b: 2 }));
 
-      const cache: CircomCircuitsCache = await CircomCircuitsCache.readFromFile(invalidCacheFullPath);
+      resetCircuitsCache();
+      await createCircuitsCache(invalidCacheFullPath);
 
-      expect(cache.getEntries()).to.be.deep.eq([]);
+      expect(CircomCircuitsCache!.getEntries()).to.be.deep.eq([]);
 
       fsExtra.rmSync(invalidCacheFullPath);
     });
@@ -109,9 +109,10 @@ describe("CircomCircuitsCache", () => {
     it("should return empty CircomCircuitsCache instance if pass invalid cache file path", async function () {
       const invalidCacheFullPath = getNormalizedFullPath(this.hre.config.paths.cache, "invalid-cache.json");
 
-      const cache: CircomCircuitsCache = await CircomCircuitsCache.readFromFile(invalidCacheFullPath);
+      resetCircuitsCache();
+      await createCircuitsCache(invalidCacheFullPath);
 
-      expect(cache.getEntries()).to.be.deep.eq([]);
+      expect(CircomCircuitsCache!.getEntries()).to.be.deep.eq([]);
     });
   });
 
@@ -121,23 +122,17 @@ describe("CircomCircuitsCache", () => {
     it("should return correct results", async function () {
       await this.hre.run(TASK_CIRCUITS_COMPILE);
 
-      const circuitsCacheFullPath: string = getNormalizedFullPath(
-        this.hre.config.paths.cache,
-        CIRCOM_CIRCUITS_CACHE_FILENAME,
-      );
-
-      const cache: CircomCircuitsCache = await CircomCircuitsCache.readFromFile(circuitsCacheFullPath);
-
-      expect(cache.hasFileChanged("invalid-path", "", defaultCompileFlags)).to.be.true;
+      expect(CircomCircuitsCache!.hasFileChanged("invalid-path", "", defaultCompileFlags)).to.be.true;
 
       const circuitPath = getNormalizedFullPath(this.hre.config.paths.root, "circuits/main/mul2.circom");
       const fileContent = fsExtra.readFileSync(circuitPath, "utf-8");
       const contentHash = createNonCryptographicHashBasedIdentifier(Buffer.from(fileContent)).toString("hex");
 
-      expect(cache.hasFileChanged(circuitPath, contentHash + "1", defaultCompileFlags)).to.be.true;
-      expect(cache.hasFileChanged(circuitPath, contentHash, { ...defaultCompileFlags, c: true })).to.be.true;
+      expect(CircomCircuitsCache!.hasFileChanged(circuitPath, contentHash + "1", defaultCompileFlags)).to.be.true;
+      expect(CircomCircuitsCache!.hasFileChanged(circuitPath, contentHash, { ...defaultCompileFlags, c: true })).to.be
+        .true;
 
-      expect(cache.hasFileChanged(circuitPath, contentHash, defaultCompileFlags)).to.be.false;
+      expect(CircomCircuitsCache!.hasFileChanged(circuitPath, contentHash, defaultCompileFlags)).to.be.false;
     });
   });
 });
