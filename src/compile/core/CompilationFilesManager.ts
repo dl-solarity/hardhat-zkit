@@ -9,7 +9,8 @@ import { ResolvedFile } from "hardhat/types/builtin-tasks";
 
 import { FileFilterSettings, ZKitConfig } from "../../types/zkit-config";
 import { CompileFlags, CompilationFilesManagerConfig, ResolvedFileWithDependencies } from "../../types/compile";
-import { CircomCircuitsCache, DependencyGraph, Parser, Resolver } from "../utils";
+import { DependencyGraph, Parser, Resolver } from "../dependencies";
+import { CircomCircuitsCache } from "../../cache/CircomCircuitsCache";
 
 import { getNormalizedFullPath } from "../../utils/path-utils";
 import { MAIN_COMPONENT_REG_EXP } from "../../constants";

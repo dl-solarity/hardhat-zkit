@@ -1,6 +1,6 @@
 import { ParsedData } from "../../types/compile";
 
-import { CircomCircuitsCache } from "./CircomCircuitsCache";
+import { CircomCircuitsCache } from "../../cache/CircomCircuitsCache";
 import { INCLUDE_REG_EXP, PRAGMA_VERSION_REG_EXP } from "../../constants";
 
 export class Parser {

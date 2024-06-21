@@ -11,7 +11,8 @@ import { CircomCompilerFactory } from "./CircomCompilerFactory";
 import { ICircomCompiler, CompilationProccessorConfig, CompilationInfo } from "../../types/compile";
 import { ContributionTemplateType, ZKitConfig } from "../../types/zkit-config";
 
-import { ResolvedFile, PtauDownloader } from "../utils";
+import { ResolvedFile } from "../dependencies";
+import { PtauDownloader } from "../utils/PtauDownloader";
 import { getNormalizedFullPath } from "../../utils/path-utils";
 import { HardhatZKitError } from "../../errors";
 import { PTAU_FILE_REG_EXP } from "../../constants";

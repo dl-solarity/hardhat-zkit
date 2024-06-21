@@ -13,7 +13,7 @@ import { TASK_ZKIT_GET_CIRCUIT_ZKIT, TASK_CIRCUITS_COMPILE, TASK_GENERATE_VERIFI
 
 import { zkitConfigExtender } from "./config/config";
 
-import { CircomCircuitsCache } from "./compile/utils";
+import { CircomCircuitsCache } from "./cache/CircomCircuitsCache";
 import { CompilationFilesManager, CompilationProcessor } from "./compile/core";
 
 import { CompileTaskConfig, GenerateVerifiersTaskConfig, GetCircuitZKitConfig } from "./types/tasks";

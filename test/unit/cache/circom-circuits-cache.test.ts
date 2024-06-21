@@ -4,12 +4,12 @@ import { expect } from "chai";
 
 import { createNonCryptographicHashBasedIdentifier } from "hardhat/internal/util/hash";
 
-import { useEnvironment } from "../../../helpers";
-import { CircomCircuitsCache } from "../../../../src/compile/utils";
-import { getNormalizedFullPath } from "../../../../src/utils/path-utils";
-import { CIRCOM_CIRCUITS_CACHE_FILENAME, FORMAT_VERSION } from "../../../../src/constants";
-import { TASK_CIRCUITS_COMPILE } from "../../../../src/task-names";
-import { CacheEntry, CompileFlags } from "../../../../src/types/compile";
+import { useEnvironment } from "../../helpers";
+import { CircomCircuitsCache } from "../../../src/cache/CircomCircuitsCache";
+import { getNormalizedFullPath } from "../../../src/utils/path-utils";
+import { CIRCOM_CIRCUITS_CACHE_FILENAME, FORMAT_VERSION } from "../../../src/constants";
+import { TASK_CIRCUITS_COMPILE } from "../../../src/task-names";
+import { CacheEntry, CompileFlags } from "../../../src/types/compile";
 
 describe("CircomCircuitsCache", () => {
   const defaultCompileFlags: CompileFlags = {

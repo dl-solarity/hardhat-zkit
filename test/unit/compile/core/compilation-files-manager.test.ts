@@ -9,7 +9,8 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { getAllFilesMatching } from "hardhat/internal/util/fs-utils";
 
 import { CompilationFilesManager } from "../../../../src/compile/core";
-import { CircomCircuitsCache, DependencyGraph, ResolvedFile } from "../../../../src/compile/utils";
+import { CircomCircuitsCache } from "../../../../src/cache/CircomCircuitsCache";
+import { DependencyGraph, ResolvedFile } from "../../../../src/compile/dependencies";
 import { CompilationFilesManagerConfig } from "../../../../src/types/compile";
 import { getNormalizedFullPath } from "../../../../src/utils/path-utils";
 import { TASK_CIRCUITS_COMPILE } from "../../../../src/task-names";

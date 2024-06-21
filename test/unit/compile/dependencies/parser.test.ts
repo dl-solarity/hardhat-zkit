@@ -4,7 +4,8 @@ import { expect } from "chai";
 import { createNonCryptographicHashBasedIdentifier } from "hardhat/internal/util/hash";
 
 import { useEnvironment } from "../../../helpers";
-import { CircomCircuitsCache, Parser } from "../../../../src/compile/utils";
+import { CircomCircuitsCache } from "../../../../src/cache/CircomCircuitsCache";
+import { Parser } from "../../../../src/compile/dependencies";
 import { getNormalizedFullPath } from "../../../../src/utils/path-utils";
 import { CIRCOM_CIRCUITS_CACHE_FILENAME } from "../../../../src/constants";
 import { TASK_CIRCUITS_COMPILE } from "../../../../src/task-names";
