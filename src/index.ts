@@ -3,7 +3,7 @@ import path from "path";
 import { lazyObject } from "hardhat/plugins";
 import { extendConfig, extendEnvironment, task, subtask, types } from "hardhat/config";
 import { ActionType, HardhatRuntimeEnvironment } from "hardhat/types";
-import { TASK_COMPILE_SOLIDITY_READ_FILE } from "hardhat/builtin-tasks/task-names";
+import { TASK_COMPILE_SOLIDITY_READ_FILE as TASK_READ_FILE } from "hardhat/builtin-tasks/task-names";
 
 import { CircuitZKit } from "@solarity/zkit";
 
@@ -47,7 +47,7 @@ const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfi
       force: taskArgs.force,
       ptauDownload: taskArgs.ptauDownload ?? true,
     },
-    (absolutePath: string) => env.run(TASK_COMPILE_SOLIDITY_READ_FILE, { absolutePath }),
+    (absolutePath: string) => env.run(TASK_READ_FILE, { absolutePath }),
     circuitFilesCache,
     env.config,
   );

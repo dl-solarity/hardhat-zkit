@@ -5,10 +5,11 @@ import fsExtra from "fs-extra";
 import { HardhatConfig, ProjectPathsConfig } from "hardhat/types";
 import { getAllFilesMatching } from "hardhat/internal/util/fs-utils";
 import { localPathToSourceName } from "hardhat/utils/source-names";
+import { ResolvedFile } from "hardhat/types/builtin-tasks";
 
 import { FileFilterSettings, ZKitConfig } from "../../types/zkit-config";
 import { CompileFlags, CompilationFilesManagerConfig, ResolvedFileWithDependencies } from "../../types/compile";
-import { CircomCircuitsCache, DependencyGraph, Parser, ResolvedFile, Resolver } from "../utils";
+import { CircomCircuitsCache, DependencyGraph, Parser, Resolver } from "../utils";
 
 import { getNormalizedFullPath } from "../../utils/path-utils";
 import { MAIN_COMPONENT_REG_EXP } from "../../constants";
@@ -93,7 +94,7 @@ export class CompilationFilesManager {
     }
   }
 
-  private _filterSourcePaths(sourcePaths: string[], filterSettings: FileFilterSettings): string[] {
+  protected _filterSourcePaths(sourcePaths: string[], filterSettings: FileFilterSettings): string[] {
     const contains = (circuitsRoot: string, pathList: string[], source: any) => {
       const isSubPath = (parent: string, child: string) => {
         const parentTokens = parent.split(path.posix.sep).filter((i) => i.length);
@@ -117,7 +118,7 @@ export class CompilationFilesManager {
     });
   }
 
-  private _filterResolvedFiles(
+  protected _filterResolvedFiles(
     resolvedFiles: ResolvedFile[],
     sourceNames: string[],
     withMainComponent: boolean,
@@ -127,11 +128,11 @@ export class CompilationFilesManager {
     });
   }
 
-  private async _getSourceNamesFromSourcePaths(sourcePaths: string[]): Promise<string[]> {
+  protected async _getSourceNamesFromSourcePaths(sourcePaths: string[]): Promise<string[]> {
     return Promise.all(sourcePaths.map((p) => localPathToSourceName(this._projectPaths.root, p)));
   }
 
-  private async _getDependencyGraph(
+  protected async _getDependencyGraph(
     sourceNames: string[],
     circuitFilesCache: CircomCircuitsCache,
   ): Promise<DependencyGraph> {
@@ -144,15 +145,15 @@ export class CompilationFilesManager {
     return DependencyGraph.createFromResolvedFiles(resolver, resolvedFiles);
   }
 
-  private _hasMainComponent(resolvedFile: ResolvedFile): boolean {
+  protected _hasMainComponent(resolvedFile: ResolvedFile): boolean {
     return new RegExp(MAIN_COMPONENT_REG_EXP).test(resolvedFile.content.rawContent);
   }
 
-  private _getRemappings(): Record<string, string> {
+  protected _getRemappings(): Record<string, string> {
     return {};
   }
 
-  private _validateResolvedFiles(resolvedFiles: ResolvedFile[]) {
+  protected _validateResolvedFiles(resolvedFiles: ResolvedFile[]) {
     const circuitsNameCount = {} as Record<string, ResolvedFile>;
 
     resolvedFiles.forEach((file: ResolvedFile) => {
@@ -168,7 +169,7 @@ export class CompilationFilesManager {
     });
   }
 
-  private _invalidateCacheMissingArtifacts(solidityFilesCache: CircomCircuitsCache, resolvedFiles: ResolvedFile[]) {
+  protected _invalidateCacheMissingArtifacts(solidityFilesCache: CircomCircuitsCache, resolvedFiles: ResolvedFile[]) {
     const circuitsDirFullPath = this.getCircuitsDirFullPath();
     const artifactsDirFullPath = this.getArtifactsDirFullPath();
 
@@ -187,7 +188,7 @@ export class CompilationFilesManager {
     return solidityFilesCache;
   }
 
-  private _needsCompilation(
+  protected _needsCompilation(
     resolvedFilesWithDependencies: ResolvedFileWithDependencies,
     cache: CircomCircuitsCache,
     compileFlags: CompileFlags,

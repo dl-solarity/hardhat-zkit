@@ -1,27 +1,11 @@
-import os from "os";
 import fs from "fs";
 import path from "path";
 
-import { ProjectPathsConfig } from "hardhat/types";
 import { normalizeSourceName, localSourceNameToPath } from "hardhat/utils/source-names";
 import { FileSystemAccessError, InvalidDirectoryError } from "hardhat/internal/util/fs-utils";
 
-import { CIRCOM_CIRCUITS_CACHE_FILENAME } from "../constants";
-
-export function getCircomFilesCachePath(paths: ProjectPathsConfig): string {
-  return localSourceNameToPath(paths.cache, CIRCOM_CIRCUITS_CACHE_FILENAME);
-}
-
 export function getNormalizedFullPath(projectRoot: string, dirPath: string): string {
   return localSourceNameToPath(projectRoot, normalizeSourceName(dirPath));
-}
-
-export function getPtauDirFullPath(projectRoot: string, ptauDir: string | undefined): string {
-  if (ptauDir) {
-    return path.isAbsolute(ptauDir) ? ptauDir : localSourceNameToPath(projectRoot, normalizeSourceName(ptauDir));
-  } else {
-    return path.join(os.homedir(), ".zkit", ".ptau");
-  }
 }
 
 export function getAllDirsMatchingSync(
