@@ -2,7 +2,7 @@ import { HardhatError } from "hardhat/internal/core/errors";
 import { ERRORS } from "hardhat/internal/core/errors-list";
 
 import { ResolvedFile, Resolver } from "./Resolver";
-import { TransitiveDependency } from "../types/internal/dependency-graph";
+import { TransitiveDependency } from "../../types/compile";
 
 export class DependencyGraph {
   public static async createFromResolvedFiles(

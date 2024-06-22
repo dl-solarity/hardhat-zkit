@@ -8,5 +8,3 @@ template SumMul(){
 
    out <== in1 + in2 * in3;
 }
-
-component main = SumMul();

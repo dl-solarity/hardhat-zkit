@@ -4,7 +4,6 @@ node_modules
 .eslintcache
 
 # Hardhat files
-cache
 artifacts
 coverage.json
 coverage

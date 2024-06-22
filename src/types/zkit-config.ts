@@ -1,5 +1,3 @@
-import { CompileOptions } from "./compile";
-
 export type ZKitConfig = {
   compilationSettings: CompilationSettings;
   circuitsDir: string;
@@ -8,12 +6,15 @@ export type ZKitConfig = {
   ptauDownload: boolean;
 };
 
-export type CompilationSettings = FileFilterSettings &
-  CompileOptions & {
-    artifactsDir: string;
-    contributionTemplate: ContributionTemplateType;
-    contributions: number;
-  };
+export type CompilationSettings = FileFilterSettings & {
+  artifactsDir: string;
+  quiet: boolean;
+  c: boolean;
+  sym: boolean;
+  json: boolean;
+  contributionTemplate: ContributionTemplateType;
+  contributions: number;
+};
 
 export type FileFilterSettings = {
   onlyFiles: string[];

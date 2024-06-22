@@ -10,10 +10,7 @@ const defaultConfig: HardhatUserConfig = {
       skipFiles: ["vendor"],
       quiet: true,
     },
-    verifiersSettings: {
-      onlyFiles: ["mock"],
-      verifiersDir: "contracts/verifiers",
-    },
+    verifiersDir: "contracts/verifiers",
     ptauDir: "zkit/ptau",
     ptauDownload: true,
   },
