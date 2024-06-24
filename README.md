@@ -11,7 +11,7 @@
 
 This hardhat plugin is a zero-config, one-stop Circom development environment that abstracts away circuits management hassle and let's you focus on the important - code.
 
-- Rely only on high-level abstractions. Forget about `r1cs`, `zkey`, `vkey`, and `witness` generation processes.
+- Developer-oriented abstractions that simplify `r1cs`, `zkey`, `vkey`, and `witness` generation processes.
 - Recompilation of only the modified circuits.
 - Automatic downloads of phase-1 `ptau` files.
 - Invisible `wasm`-based Circom compiler management.
@@ -149,8 +149,16 @@ main()
 </tr>
 </table>
 
+### API reference
+
+---
+
+- #### `getCircuit(<filename>) -> zkit`
+
+The method accepts the filename of the circuit where its `main` component is defined. Returns the instanciated zkit object.
+
 > [!IMPORTANT] 
-> Check out the [`zkit`](https://github.com/dl-solarity/zkit) documentation as the `getCircuit()` method returns the `zkit`-based object.
+> Check out the [`zkit`](https://github.com/dl-solarity/zkit) documentation to understand zkit objects capabilities.
 
 ## Known limitations
 
