@@ -5,7 +5,7 @@
 
 # Hardhat ZKit
 
-**The ultimate solution for building with Circom.**
+**The ultimate environment for building with Circom.**
 
 ## What
 
