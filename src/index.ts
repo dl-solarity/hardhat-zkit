@@ -15,12 +15,13 @@ import { zkitConfigExtender } from "./config/config";
 
 import { CircomCircuitsCache, createCircuitsCache } from "./cache/CircomCircuitsCache";
 import { CompilationFilesManager, CompilationProcessor } from "./compile/core";
+import { Reporter, createReporter } from "./reporter/Reporter";
 
 import { CompileTaskConfig, GenerateVerifiersTaskConfig, GetCircuitZKitConfig } from "./types/tasks";
 import { CompileFlags, ResolvedFileWithDependencies } from "./types/compile";
 
 import { getAllDirsMatchingSync, getNormalizedFullPath } from "./utils/path-utils";
-import { CIRCOM_CIRCUITS_CACHE_FILENAME } from "./constants";
+import { CIRCOM_CIRCUITS_CACHE_FILENAME, COMPILER_VERSION } from "./constants";
 import { HardhatZKitError } from "./errors";
 
 extendConfig(zkitConfigExtender);
@@ -39,6 +40,7 @@ const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfi
   const circuitsCacheFullPath: string = getNormalizedFullPath(env.config.paths.cache, CIRCOM_CIRCUITS_CACHE_FILENAME);
 
   await createCircuitsCache(circuitsCacheFullPath);
+  await createReporter();
 
   const compilationFilesManager: CompilationFilesManager = new CompilationFilesManager(
     {
@@ -59,22 +61,30 @@ const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfi
     c: taskArgs.c || env.config.zkit.compilationSettings.c,
   };
 
+  const quiet: boolean = taskArgs.quiet || env.config.zkit.quiet;
+
+  if (!quiet) {
+    Reporter!.reportCompilationSettings(COMPILER_VERSION, compileFlags);
+  }
+
   const resolvedFilesWithDependencies: ResolvedFileWithDependencies[] =
-    await compilationFilesManager.getResolvedFilesToCompile(compileFlags, taskArgs.force);
+    await compilationFilesManager.getResolvedFilesToCompile(compileFlags, taskArgs.force, quiet);
 
   const compilationProcessor: CompilationProcessor = new CompilationProcessor(
     compilationFilesManager.getCircuitsDirFullPath(),
     compilationFilesManager.getArtifactsDirFullPath(),
     compilationFilesManager.getPtauDirFullPath(),
     {
-      quiet: taskArgs.quiet || env.config.zkit.compilationSettings.quiet,
-      compilerVersion: "0.2.18",
+      compilerVersion: COMPILER_VERSION,
       compileFlags,
     },
-    env.config,
+    env,
   );
 
-  await compilationProcessor.compile(resolvedFilesWithDependencies.map((file) => file.resolvedFile));
+  await compilationProcessor.compile(
+    resolvedFilesWithDependencies.map((file) => file.resolvedFile),
+    quiet,
+  );
 
   for (const resolvedFileWithDependencies of resolvedFilesWithDependencies) {
     for (const file of [resolvedFileWithDependencies.resolvedFile, ...resolvedFileWithDependencies.dependencies]) {

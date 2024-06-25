@@ -15,6 +15,7 @@ import { CircomCircuitsCache } from "../../cache/CircomCircuitsCache";
 import { getNormalizedFullPath } from "../../utils/path-utils";
 import { MAIN_COMPONENT_REG_EXP } from "../../constants";
 import { HardhatZKitError } from "../../errors";
+import { Reporter } from "../../reporter/Reporter";
 
 export class CompilationFilesManager {
   private readonly _zkitConfig: ZKitConfig;
@@ -32,6 +33,7 @@ export class CompilationFilesManager {
   public async getResolvedFilesToCompile(
     compileFlags: CompileFlags,
     force: boolean,
+    quiet: boolean = true,
   ): Promise<ResolvedFileWithDependencies[]> {
     const circuitsSourcePaths: string[] = await getAllFilesMatching(this.getCircuitsDirFullPath(), (f) =>
       f.endsWith(".circom"),
@@ -67,6 +69,13 @@ export class CompilationFilesManager {
     if (!force) {
       resolvedFilesWithDependencies = resolvedFilesWithDependencies.filter((file) =>
         this._needsCompilation(file, compileFlags),
+      );
+    }
+
+    if (!quiet) {
+      Reporter!.reportCircuitsListToCompile(
+        resolvedFilesToCompile,
+        resolvedFilesWithDependencies.map((file) => file.resolvedFile),
       );
     }
 

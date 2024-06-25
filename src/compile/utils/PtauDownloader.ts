@@ -4,9 +4,10 @@ import path from "path";
 import { MAX_PTAU_ID } from "../../constants";
 import { HardhatZKitError } from "../../errors";
 import { downloadFile } from "../../utils/utils";
+import { Reporter } from "../../reporter/Reporter";
 
 export class PtauDownloader {
-  public static async downloadPtau(ptauDirFullPath: string, ptauId: number): Promise<string> {
+  public static async downloadPtau(ptauDirFullPath: string, ptauId: number, quiet: boolean = true): Promise<string> {
     if (ptauId > MAX_PTAU_ID) {
       throw new HardhatZKitError(
         `Circuits has too many constraints. The maximum ptauId to download is ${this.getMaxPtauID()}. Consider passing "ptauDir=PATH_TO_LOCAL_DIR" with existing ptau files.`,
@@ -20,7 +21,11 @@ export class PtauDownloader {
 
     fs.mkdirSync(ptauDirFullPath, { recursive: true });
 
-    await downloadFile(ptauFilePath, url);
+    if (!quiet) {
+      Reporter!.reportPtauFileDownloadingInfo(ptauFilePath, url);
+    }
+
+    await downloadFile(ptauFilePath, url, quiet);
 
     return ptauFilePath;
   }

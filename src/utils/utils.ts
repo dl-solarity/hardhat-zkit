@@ -2,6 +2,8 @@ import fs from "fs";
 import path from "path";
 import https from "https";
 
+import { Reporter } from "../reporter/Reporter";
+
 /**
  * Reads a directory recursively and calls the callback for each file.
  *
@@ -37,21 +39,53 @@ export function readDirRecursively(dir: string, callback: (dir: string, file: st
  * @param {string} url - The URL to download the file from.
  * @returns {Promise<boolean>} Whether the file was downloaded successfully.
  */
-export async function downloadFile(file: string, url: string): Promise<boolean> {
+export async function downloadFile(file: string, url: string, quiet: boolean): Promise<boolean> {
   const fileStream = fs.createWriteStream(file);
 
   return new Promise((resolve, reject) => {
     const request = https.get(url, (response) => {
+      if (response.statusCode !== 200) {
+        console.error(`Unable to download file. Status code: ${response.statusCode}`);
+        return;
+      }
+
+      if (!quiet) {
+        const totalSize = parseInt(response.headers["content-length"] || "0", 10);
+
+        Reporter!.createAndStartProgressBar(
+          {
+            formatValue: Reporter!.formatToMB,
+            format: "Downloading [{bar}] {percentage}% | {value}/{total} MB | Time elapsed: {duration}s",
+            hideCursor: true,
+          },
+          totalSize,
+          0,
+        );
+      }
+
       response.pipe(fileStream);
+
+      if (!quiet) {
+        response.on("data", (chunk) => {
+          Reporter!.updateProgressBar(chunk.length);
+        });
+      }
+
+      fileStream.on("finish", () => {
+        Reporter!.stopProgressBar();
+        Reporter!.reportPtauFileDownloadingFinish();
+        resolve(true);
+      });
+
+      fileStream.on("error", (err) => {
+        Reporter!.stopProgressBar();
+        fs.unlink(file, () => reject(err));
+      });
     });
 
     fileStream.on("finish", () => resolve(true));
 
     request.on("error", (err) => {
-      fs.unlink(file, () => reject(err));
-    });
-
-    fileStream.on("error", (err) => {
       fs.unlink(file, () => reject(err));
     });
 

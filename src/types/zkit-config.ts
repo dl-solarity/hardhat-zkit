@@ -4,11 +4,11 @@ export type ZKitConfig = {
   verifiersDir: string;
   ptauDir: string | undefined;
   ptauDownload: boolean;
+  quiet: boolean;
 };
 
 export type CompilationSettings = FileFilterSettings & {
   artifactsDir: string;
-  quiet: boolean;
   c: boolean;
   sym: boolean;
   json: boolean;
