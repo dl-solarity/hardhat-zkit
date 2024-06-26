@@ -17,7 +17,7 @@ import { getNormalizedFullPath } from "../../utils/path-utils";
 import { HardhatZKitError } from "../../errors";
 import { PTAU_FILE_REG_EXP } from "../../constants";
 import { readDirRecursively } from "../../utils/utils";
-import { Reporter } from "../../reporter/Reporter";
+import { Reporter, SpinnerProcessor } from "../../reporter";
 
 export class CompilationProcessor {
   private readonly _zkitConfig: ZKitConfig;
@@ -36,29 +36,25 @@ export class CompilationProcessor {
     this._verbose = hre.hardhatArguments.verbose;
   }
 
-  public async compile(filesToCompile: ResolvedFile[], quiet: boolean = true) {
+  public async compile(filesToCompile: ResolvedFile[]) {
     if (filesToCompile.length > 0) {
       const tempDir: string = path.join(os.tmpdir(), ".zkit", uuid());
       fs.mkdirSync(tempDir, { recursive: true });
 
-      if (!quiet) {
-        Reporter!.reportCompilationProcessHeader();
-      }
+      Reporter!.reportCompilationProcessHeader();
 
       const compilationInfoArr: CompilationInfo[] = await this._getCompilationInfoArr(tempDir, filesToCompile);
 
-      await this._compileCircuits(compilationInfoArr, quiet);
+      await this._compileCircuits(compilationInfoArr);
 
-      const ptauFilePath: string = await this._getPtauFile(compilationInfoArr, quiet);
+      const ptauFilePath: string = await this._getPtauFile(compilationInfoArr);
 
-      await this._generateZKeyFiles(ptauFilePath, compilationInfoArr, quiet);
-      await this._generateVKeyFile(compilationInfoArr, quiet);
+      await this._generateZKeyFiles(ptauFilePath, compilationInfoArr);
+      await this._generateVKeyFile(compilationInfoArr);
 
       await this._moveFromTemDirToArtifacts(compilationInfoArr);
 
-      if (!quiet) {
-        Reporter!.reportCompilationResult(compilationInfoArr);
-      }
+      Reporter!.reportCompilationResult(compilationInfoArr);
 
       fs.rmSync(tempDir, { recursive: true, force: true });
     } else {
@@ -66,17 +62,13 @@ export class CompilationProcessor {
     }
   }
 
-  private async _compileCircuits(compilationInfoArr: CompilationInfo[], quiet: boolean) {
+  private async _compileCircuits(compilationInfoArr: CompilationInfo[]) {
     for (const info of compilationInfoArr) {
       const spinnerId: string = `${info.circuitName}-compile`;
 
-      if (!quiet) {
-        Reporter!.createSpinner(spinnerId, `Compiling ${info.circuitName} circuit`);
-      }
+      SpinnerProcessor!.createSpinner(spinnerId, `Compiling ${info.circuitName} circuit`);
 
       fs.mkdirSync(info.tempArtifactsPath, { recursive: true });
-
-      const startTime: number = Date.now();
 
       await this._compiler.compile({
         circuitFullPath: info.resolvedFile.absolutePath,
@@ -85,30 +77,23 @@ export class CompilationProcessor {
         quiet: !this._verbose,
       });
 
-      if (!quiet) {
-        Reporter!.reportCircuitCompilationResult(spinnerId, info.circuitName, startTime);
-      }
+      Reporter!.reportCircuitCompilationResult(spinnerId, info.circuitName);
     }
   }
 
-  private async _generateZKeyFiles(ptauFilePath: string, compilationInfoArr: CompilationInfo[], quiet: boolean) {
+  private async _generateZKeyFiles(ptauFilePath: string, compilationInfoArr: CompilationInfo[]) {
     const contributions: number = this._zkitConfig.compilationSettings.contributions;
     const contributionTemplate: ContributionTemplateType = this._zkitConfig.compilationSettings.contributionTemplate;
 
-    if (!quiet) {
-      Reporter!.reportZKeyFilesGenerationHeader(contributions);
-    }
+    Reporter!.reportZKeyFilesGenerationHeader(contributions);
 
     for (const info of compilationInfoArr) {
       const r1csFile = getNormalizedFullPath(info.tempArtifactsPath, `${info.circuitName}.r1cs`);
       const zKeyFile = getNormalizedFullPath(info.tempArtifactsPath, `${info.circuitName}.zkey`);
 
       const spinnerId: string = `${info.circuitName}-generate-zkey`;
-      const startTime: number = Date.now();
 
-      if (!quiet) {
-        Reporter!.createSpinner(spinnerId, `Generating ZKey file for ${info.circuitName} circuit`);
-      }
+      SpinnerProcessor!.createSpinner(spinnerId, `Generating ZKey file for ${info.circuitName} circuit`);
 
       if (contributionTemplate === "groth16") {
         await snarkjs.zKey.newZKey(r1csFile, ptauFilePath, zKeyFile);
@@ -130,24 +115,17 @@ export class CompilationProcessor {
         throw new HardhatZKitError(`Unsupported contribution template - ${contributionTemplate}`);
       }
 
-      if (!quiet) {
-        Reporter!.reportZKeyFileGenerationResult(spinnerId, info.circuitName, contributions, startTime);
-      }
+      Reporter!.reportZKeyFileGenerationResult(spinnerId, info.circuitName, contributions);
     }
   }
 
-  private async _generateVKeyFile(compilationInfoArr: CompilationInfo[], quiet: boolean) {
-    if (!quiet) {
-      Reporter!.reportVKeyFilesGenerationHeader();
-    }
+  private async _generateVKeyFile(compilationInfoArr: CompilationInfo[]) {
+    Reporter!.reportVKeyFilesGenerationHeader();
 
     for (const info of compilationInfoArr) {
       const spinnerId: string = `${info.circuitName}-generate-zkey`;
-      const startTime: number = Date.now();
 
-      if (!quiet) {
-        Reporter!.createSpinner(spinnerId, `Generating VKey file for ${info.circuitName} circuit`);
-      }
+      SpinnerProcessor!.createSpinner(spinnerId, `Generating VKey file for ${info.circuitName} circuit`);
 
       const zkeyFile = getNormalizedFullPath(info.tempArtifactsPath, `${info.circuitName}.zkey`);
       const vKeyFile = getNormalizedFullPath(info.tempArtifactsPath, `${info.circuitName}.vkey.json`);
@@ -156,9 +134,7 @@ export class CompilationProcessor {
 
       fs.writeFileSync(vKeyFile, JSON.stringify(vKeyData));
 
-      if (!quiet) {
-        Reporter!.reportVKeyFileGenerationResult(spinnerId, info.circuitName, startTime);
-      }
+      Reporter!.reportVKeyFileGenerationResult(spinnerId, info.circuitName);
     }
   }
 
@@ -200,7 +176,7 @@ export class CompilationProcessor {
     );
   }
 
-  private async _getPtauFile(compilationInfoArr: CompilationInfo[], quiet: boolean): Promise<string> {
+  private async _getPtauFile(compilationInfoArr: CompilationInfo[]): Promise<string> {
     const circuitsConstraintsNumber: number[] = await Promise.all(
       compilationInfoArr.map(async (info: CompilationInfo) => {
         const constraintsNumber: number = this._getConstraintsNumber(info);
@@ -237,14 +213,12 @@ export class CompilationProcessor {
       ? getNormalizedFullPath(this._ptauDirFullPath, entry.name)
       : undefined;
 
-    if (!quiet) {
-      Reporter!.reportPtauFileInfo(maxConstraintsNumber, ptauId, ptauFileFullPath);
-    }
+    Reporter!.reportPtauFileInfo(maxConstraintsNumber, ptauId, ptauFileFullPath);
 
     if (ptauFileFullPath) {
       return ptauFileFullPath;
     } else {
-      return PtauDownloader.downloadPtau(this._ptauDirFullPath, ptauId, quiet);
+      return PtauDownloader.downloadPtau(this._ptauDirFullPath, ptauId);
     }
   }
 

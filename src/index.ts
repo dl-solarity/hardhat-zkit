@@ -15,7 +15,7 @@ import { zkitConfigExtender } from "./config/config";
 
 import { CircomCircuitsCache, createCircuitsCache } from "./cache/CircomCircuitsCache";
 import { CompilationFilesManager, CompilationProcessor } from "./compile/core";
-import { Reporter, createReporter } from "./reporter/Reporter";
+import { Reporter, createReporter, createSpinnerProcessor, createProgressBarProcessor } from "./reporter";
 
 import { CompileTaskConfig, GenerateVerifiersTaskConfig, GetCircuitZKitConfig } from "./types/tasks";
 import { CompileFlags, ResolvedFileWithDependencies } from "./types/compile";
@@ -40,7 +40,9 @@ const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfi
   const circuitsCacheFullPath: string = getNormalizedFullPath(env.config.paths.cache, CIRCOM_CIRCUITS_CACHE_FILENAME);
 
   await createCircuitsCache(circuitsCacheFullPath);
-  await createReporter();
+  createReporter(taskArgs.quiet || env.config.zkit.quiet);
+  createSpinnerProcessor();
+  createProgressBarProcessor();
 
   const compilationFilesManager: CompilationFilesManager = new CompilationFilesManager(
     {
@@ -61,14 +63,10 @@ const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfi
     c: taskArgs.c || env.config.zkit.compilationSettings.c,
   };
 
-  const quiet: boolean = taskArgs.quiet || env.config.zkit.quiet;
-
-  if (!quiet) {
-    Reporter!.reportCompilationSettings(COMPILER_VERSION, compileFlags);
-  }
+  Reporter!.reportCompilationSettings(COMPILER_VERSION, compileFlags);
 
   const resolvedFilesWithDependencies: ResolvedFileWithDependencies[] =
-    await compilationFilesManager.getResolvedFilesToCompile(compileFlags, taskArgs.force, quiet);
+    await compilationFilesManager.getResolvedFilesToCompile(compileFlags, taskArgs.force);
 
   const compilationProcessor: CompilationProcessor = new CompilationProcessor(
     compilationFilesManager.getCircuitsDirFullPath(),
@@ -81,10 +79,7 @@ const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfi
     env,
   );
 
-  await compilationProcessor.compile(
-    resolvedFilesWithDependencies.map((file) => file.resolvedFile),
-    quiet,
-  );
+  await compilationProcessor.compile(resolvedFilesWithDependencies.map((file) => file.resolvedFile));
 
   for (const resolvedFileWithDependencies of resolvedFilesWithDependencies) {
     for (const file of [resolvedFileWithDependencies.resolvedFile, ...resolvedFileWithDependencies.dependencies]) {

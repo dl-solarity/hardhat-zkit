@@ -33,7 +33,6 @@ export class CompilationFilesManager {
   public async getResolvedFilesToCompile(
     compileFlags: CompileFlags,
     force: boolean,
-    quiet: boolean = true,
   ): Promise<ResolvedFileWithDependencies[]> {
     const circuitsSourcePaths: string[] = await getAllFilesMatching(this.getCircuitsDirFullPath(), (f) =>
       f.endsWith(".circom"),
@@ -72,12 +71,10 @@ export class CompilationFilesManager {
       );
     }
 
-    if (!quiet) {
-      Reporter!.reportCircuitsListToCompile(
-        resolvedFilesToCompile,
-        resolvedFilesWithDependencies.map((file) => file.resolvedFile),
-      );
-    }
+    Reporter!.reportCircuitListToCompile(
+      resolvedFilesToCompile,
+      resolvedFilesWithDependencies.map((file) => file.resolvedFile),
+    );
 
     return resolvedFilesWithDependencies;
   }

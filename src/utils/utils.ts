@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import https from "https";
 
-import { Reporter } from "../reporter/Reporter";
+import { Reporter, ProgressBarProcessor } from "../reporter";
 
 /**
  * Reads a directory recursively and calls the callback for each file.
@@ -39,7 +39,7 @@ export function readDirRecursively(dir: string, callback: (dir: string, file: st
  * @param {string} url - The URL to download the file from.
  * @returns {Promise<boolean>} Whether the file was downloaded successfully.
  */
-export async function downloadFile(file: string, url: string, quiet: boolean): Promise<boolean> {
+export async function downloadFile(file: string, url: string): Promise<boolean> {
   const fileStream = fs.createWriteStream(file);
 
   return new Promise((resolve, reject) => {
@@ -49,12 +49,12 @@ export async function downloadFile(file: string, url: string, quiet: boolean): P
         return;
       }
 
-      if (!quiet) {
+      if (!Reporter!.isQuiet()) {
         const totalSize = parseInt(response.headers["content-length"] || "0", 10);
 
-        Reporter!.createAndStartProgressBar(
+        ProgressBarProcessor!.createAndStartProgressBar(
           {
-            formatValue: Reporter!.formatToMB,
+            formatValue: ProgressBarProcessor!.formatToMB,
             format: "Downloading [{bar}] {percentage}% | {value}/{total} MB | Time elapsed: {duration}s",
             hideCursor: true,
           },
@@ -65,20 +65,20 @@ export async function downloadFile(file: string, url: string, quiet: boolean): P
 
       response.pipe(fileStream);
 
-      if (!quiet) {
+      if (!Reporter!.isQuiet()) {
         response.on("data", (chunk) => {
-          Reporter!.updateProgressBar(chunk.length);
+          ProgressBarProcessor!.updateProgressBar(chunk.length);
         });
       }
 
       fileStream.on("finish", () => {
-        Reporter!.stopProgressBar();
+        ProgressBarProcessor!.stopProgressBar();
         Reporter!.reportPtauFileDownloadingFinish();
         resolve(true);
       });
 
       fileStream.on("error", (err) => {
-        Reporter!.stopProgressBar();
+        ProgressBarProcessor!.stopProgressBar();
         fs.unlink(file, () => reject(err));
       });
     });

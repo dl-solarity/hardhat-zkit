@@ -2,91 +2,27 @@
 import debug from "debug";
 import chalk from "chalk";
 import CliTable3 from "cli-table3";
-import ora, { Ora } from "ora";
-import { Bar, Options, Preset, Presets, ValueType } from "cli-progress";
 
 import { ResolvedFile } from "hardhat/types";
 import { emoji } from "hardhat/internal/cli/emoji";
+import { pluralize } from "hardhat/internal/util/strings";
 
 import { CompilationInfo, CompileFlags, CompilerVersion } from "../types/compile";
-import { MB_SIZE } from "../constants";
+import { SpinnerProcessor } from "./SpinnerProcessor";
 
 class BaseReporter {
-  private _progressBar: Bar | null = null;
-  private _idToSpinner: Map<string, Ora> = new Map();
+  constructor(private _quiet: boolean) {}
 
-  public formatToMB(v: number, options: Options, type: ValueType): string {
-    const toMb = (value: number): string => {
-      return (value / MB_SIZE).toFixed(2);
-    };
-
-    switch (type) {
-      case "percentage":
-        return options.autopaddingChar ? (options.autopaddingChar + v).slice(-3) : v.toString();
-      case "total":
-        return toMb(v);
-      case "value":
-        return toMb(v);
-      default:
-        return v.toString();
-    }
+  public setQuiet(newValue: boolean) {
+    this._quiet = newValue;
   }
 
-  public createAndStartProgressBar(
-    barOptions: Options,
-    totalValue: number,
-    startValue: number,
-    barPreset: Preset = Presets.shades_classic,
-  ) {
-    this._progressBar = new Bar(barOptions, barPreset);
-
-    this._progressBar.start(totalValue, startValue);
-  }
-
-  public updateProgressBar(addedChunk: number) {
-    if (!this._progressBar) return;
-
-    this._progressBar.increment(addedChunk);
-  }
-
-  public stopProgressBar() {
-    if (!this._progressBar) return;
-
-    this._progressBar.stop();
-
-    this._progressBar = null;
-  }
-
-  public createSpinner(spinnerId: string, options?: string | ora.Options) {
-    const spinner: Ora = ora(options).start();
-
-    this._idToSpinner.set(spinnerId, spinner);
-  }
-
-  public succeedSpinner(spinnerId: string, succeedMessage: string) {
-    const spinner = this._idToSpinner.get(spinnerId);
-
-    if (spinner) {
-      spinner.succeed(succeedMessage);
-    }
-
-    this._idToSpinner.delete(spinnerId);
-  }
-
-  public stopAndPersistSpinner(spinnerId: string, options: ora.PersistOptions) {
-    const spinner = this._idToSpinner.get(spinnerId);
-
-    if (spinner) {
-      spinner.stopAndPersist(options);
-    }
-
-    this._idToSpinner.delete(spinnerId);
-  }
-
-  public reportCircuitsListToCompile(
+  public reportCircuitListToCompile(
     allResolvedFilesToCompile: ResolvedFile[],
     filteredResolvedFilesToCompile: ResolvedFile[],
   ) {
+    if (this.isQuiet()) return;
+
     if (filteredResolvedFilesToCompile.length > 0) {
       let filesToCompileMessage: string = `\n${chalk.bold("Circuits to compile:")}\n`;
 
@@ -113,6 +49,8 @@ class BaseReporter {
   }
 
   public reportCompilationSettings(compilerVersion: CompilerVersion, compileFlags: CompileFlags) {
+    if (this.isQuiet()) return;
+
     let output: string = "";
 
     output += `\n${chalk.bold("Compilation settings:")}\n`;
@@ -130,6 +68,8 @@ class BaseReporter {
   }
 
   public reportCompilationProcessHeader() {
+    if (this.isQuiet()) return;
+
     let output: string = "";
 
     output += `\n${chalk.bold("Start compilation process:")}\n`;
@@ -139,13 +79,19 @@ class BaseReporter {
     console.log(output);
   }
 
-  public reportCircuitCompilationResult(spinnerId: string, circuitName: string, startCompilationTime: number) {
-    const compilationTime: string = ((Date.now() - startCompilationTime) / 1000).toFixed(2);
+  public reportCircuitCompilationResult(spinnerId: string, circuitName: string) {
+    if (this.isQuiet()) return;
 
-    this.succeedSpinner(spinnerId, `Compiled ${circuitName} ${chalk.grey(`(${compilationTime} s)`)}`);
+    const compilationTimeMessage: string = this._getSpinnerWorkingTimeMessage(
+      SpinnerProcessor!.getWorkingTime(spinnerId),
+    );
+
+    SpinnerProcessor!.succeedSpinner(spinnerId, `Compiled ${chalk.italic(circuitName)} ${compilationTimeMessage}`);
   }
 
   public reportPtauFileInfo(maxConstraintsNumber: number, ptauId: number, ptauFileFullPath?: string) {
+    if (this.isQuiet()) return;
+
     let output: string = "";
 
     output += `\n${chalk.italic.cyan("Second phase - Ptau file setup")}\n`;
@@ -164,6 +110,8 @@ class BaseReporter {
   }
 
   public reportPtauFileDownloadingInfo(ptauFilePath: string, downloadUrl: string) {
+    if (this.isQuiet()) return;
+
     let output: string = "";
 
     output += `\nPtau downloading info:\n`;
@@ -174,10 +122,14 @@ class BaseReporter {
   }
 
   public reportPtauFileDownloadingFinish() {
+    if (this.isQuiet()) return;
+
     console.log(`\n${emoji("✅ ", `${chalk.green("✔ ")}`)}Ptau file successfully downloaded`);
   }
 
   public reportZKeyFilesGenerationHeader(contributions: number) {
+    if (this.isQuiet()) return;
+
     let output: string = "";
 
     output += `\n${chalk.italic.cyan("Third phase - Generating ZKey files for circuits")}\n`;
@@ -192,22 +144,24 @@ class BaseReporter {
     console.log(output);
   }
 
-  public reportZKeyFileGenerationResult(
-    spinnerId: string,
-    circuitName: string,
-    contributionsNumber: number,
-    startGenerationTime: number,
-  ) {
-    const generationTime: string = ((Date.now() - startGenerationTime) / 1000).toFixed(2);
-    const contributionMessage: string = contributionsNumber !== 0 ? `with ${contributionsNumber} contributions ` : "";
+  public reportZKeyFileGenerationResult(spinnerId: string, circuitName: string, contributionsNumber: number) {
+    if (this.isQuiet()) return;
 
-    this.succeedSpinner(
+    const generationTimeMessage: string | undefined = this._getSpinnerWorkingTimeMessage(
+      SpinnerProcessor!.getWorkingTime(spinnerId),
+    );
+    const contributionMessage: string =
+      contributionsNumber !== 0 ? `with ${contributionsNumber} ${pluralize(contributionsNumber, "contribution")} ` : "";
+
+    SpinnerProcessor!.succeedSpinner(
       spinnerId,
-      `Generated ZKey file for ${circuitName} circuit ${contributionMessage}${chalk.grey(`(${generationTime} s)`)}`,
+      `Generated ZKey file for ${chalk.italic(circuitName)} circuit ${contributionMessage}${generationTimeMessage}`,
     );
   }
 
   public reportVKeyFilesGenerationHeader() {
+    if (this.isQuiet()) return;
+
     let output: string = "";
 
     output += `\n${chalk.italic.cyan("Fourth phase - Generating VKey files for circuits")}\n`;
@@ -217,16 +171,22 @@ class BaseReporter {
     console.log(output);
   }
 
-  public reportVKeyFileGenerationResult(spinnerId: string, circuitName: string, startGenerationTime: number) {
-    const generationTime: string = ((Date.now() - startGenerationTime) / 1000).toFixed(2);
+  public reportVKeyFileGenerationResult(spinnerId: string, circuitName: string) {
+    if (this.isQuiet()) return;
 
-    this.succeedSpinner(
+    const generationTimeMessage: string = this._getSpinnerWorkingTimeMessage(
+      SpinnerProcessor!.getWorkingTime(spinnerId),
+    );
+
+    SpinnerProcessor!.succeedSpinner(
       spinnerId,
-      `Generated VKey file for ${circuitName} circuit ${chalk.grey(`(${generationTime} s)`)}`,
+      `Generated VKey file for ${chalk.italic(circuitName)} circuit ${generationTimeMessage}`,
     );
   }
 
   public reportCompilationResult(compilationInfoArr: CompilationInfo[]) {
+    if (this.isQuiet()) return;
+
     let output: string = "";
     const circuitsMessage: string =
       compilationInfoArr.length > 1 ? `${compilationInfoArr.length} circuits` : `one circuit`;
@@ -265,22 +225,32 @@ class BaseReporter {
   }
 
   public reportNothingToCompile() {
+    if (this.isQuiet()) return;
+
     console.log(`\n${emoji("🤷‍♂️ ")}${chalk.bold("Nothing to compile...")}${emoji(" 🤷‍♂️")}`);
   }
 
   public verboseLog(namespace: string, message: string) {
     debug(namespace)(message);
   }
+
+  public isQuiet(): boolean {
+    return this._quiet;
+  }
+
+  private _getSpinnerWorkingTimeMessage(workingTime: string | undefined): string {
+    return workingTime ? chalk.grey(`(${workingTime} s)`) : "";
+  }
 }
 
 export let Reporter: BaseReporter | null = null;
 
-export async function createReporter() {
+export function createReporter(quiet: boolean) {
   if (Reporter) {
     return;
   }
 
-  Reporter = new BaseReporter();
+  Reporter = new BaseReporter(quiet);
 }
 
 /**
