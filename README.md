@@ -1,4 +1,4 @@
-![](https://github.com/dl-solarity/hardhat-zkit/assets/47551140/334a8ac4-a751-4bba-a6ab-2443995f9e1d)
+![](https://github.com/dl-solarity/hardhat-zkit/assets/47551140/938bf108-194d-45de-a6f1-7280aaa0c8c1)
 
 [![npm](https://img.shields.io/npm/v/@solarity/hardhat-zkit.svg)](https://www.npmjs.com/package/@solarity/hardhat-zkit)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
