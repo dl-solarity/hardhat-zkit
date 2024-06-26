@@ -38,12 +38,7 @@ export class CompilationFilesManager {
       f.endsWith(".circom"),
     );
 
-    const filteredCircuitsSourcePaths: string[] = this._filterSourcePaths(
-      circuitsSourcePaths,
-      this._zkitConfig.compilationSettings,
-    );
-
-    const sourceNames: string[] = await this._getSourceNamesFromSourcePaths(filteredCircuitsSourcePaths);
+    const sourceNames: string[] = await this._getSourceNamesFromSourcePaths(circuitsSourcePaths);
 
     const dependencyGraph: DependencyGraph = await this._getDependencyGraph(sourceNames);
 
@@ -71,12 +66,17 @@ export class CompilationFilesManager {
       );
     }
 
-    Reporter!.reportCircuitListToCompile(
-      resolvedFilesToCompile,
-      resolvedFilesWithDependencies.map((file) => file.resolvedFile),
+    const filteredFilesWithDependencies: ResolvedFileWithDependencies[] = this._filterResolvedFilesToCompile(
+      resolvedFilesWithDependencies,
+      this._zkitConfig.compilationSettings,
     );
 
-    return resolvedFilesWithDependencies;
+    Reporter!.reportCircuitListToCompile(
+      resolvedFilesWithDependencies.map((file) => file.resolvedFile),
+      filteredFilesWithDependencies.map((file) => file.resolvedFile),
+    );
+
+    return filteredFilesWithDependencies;
   }
 
   public getCircuitsDirFullPath(): string {
@@ -100,7 +100,10 @@ export class CompilationFilesManager {
     }
   }
 
-  protected _filterSourcePaths(sourcePaths: string[], filterSettings: FileFilterSettings): string[] {
+  protected _filterResolvedFilesToCompile(
+    resolvedFilesWithDependencies: ResolvedFileWithDependencies[],
+    filterSettings: FileFilterSettings,
+  ): ResolvedFileWithDependencies[] {
     const contains = (circuitsRoot: string, pathList: string[], source: any) => {
       const isSubPath = (parent: string, child: string) => {
         const parentTokens = parent.split(path.posix.sep).filter((i) => i.length);
@@ -116,10 +119,12 @@ export class CompilationFilesManager {
 
     const circuitsRoot = this.getCircuitsDirFullPath();
 
-    return sourcePaths.filter((sourceName: string) => {
+    return resolvedFilesWithDependencies.filter((fileWithDep: ResolvedFileWithDependencies) => {
+      const circuitPath: string = fileWithDep.resolvedFile.absolutePath;
+
       return (
-        (filterSettings.onlyFiles.length == 0 || contains(circuitsRoot, filterSettings.onlyFiles, sourceName)) &&
-        !contains(circuitsRoot, filterSettings.skipFiles, sourceName)
+        (filterSettings.onlyFiles.length == 0 || contains(circuitsRoot, filterSettings.onlyFiles, circuitPath)) &&
+        !contains(circuitsRoot, filterSettings.skipFiles, circuitPath)
       );
     });
   }

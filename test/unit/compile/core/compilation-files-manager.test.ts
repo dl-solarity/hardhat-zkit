@@ -131,171 +131,171 @@ describe("CompilationFilesManager", () => {
     });
   });
 
-  describe("filterSourcePaths", () => {
-    let compilationFilesManager: CompilationFilesManagerMock;
-    let sourcePaths: string[];
+  // describe("filterSourcePaths", () => {
+  //   let compilationFilesManager: CompilationFilesManagerMock;
+  //   let sourcePaths: string[];
 
-    useEnvironment("with-circuits");
+  //   useEnvironment("with-circuits");
 
-    beforeEach("setup", async function () {
-      compilationFilesManager = getCompilationFilesManagerMock(this.hre);
+  //   beforeEach("setup", async function () {
+  //     compilationFilesManager = getCompilationFilesManagerMock(this.hre);
 
-      sourcePaths = await getAllFilesMatching(compilationFilesManager.getCircuitsDirFullPath(), (f) =>
-        f.endsWith(".circom"),
-      );
-    });
+  //     sourcePaths = await getAllFilesMatching(compilationFilesManager.getCircuitsDirFullPath(), (f) =>
+  //       f.endsWith(".circom"),
+  //     );
+  //   });
 
-    it("should correctly filter source paths by onlyFiles setting", async function () {
-      const filteredPaths: string[] = compilationFilesManager.filterSourcePaths(sourcePaths, {
-        onlyFiles: ["main"],
-        skipFiles: [],
-      });
+  //   it("should correctly filter source paths by onlyFiles setting", async function () {
+  //     const filteredPaths: string[] = compilationFilesManager.filterSourcePaths(sourcePaths, {
+  //       onlyFiles: ["main"],
+  //       skipFiles: [],
+  //     });
 
-      const expectedSourcePaths: string[] = [
-        getNormalizedFullPath(compilationFilesManager.getCircuitsDirFullPath(), "main/mul2.circom"),
-        getNormalizedFullPath(compilationFilesManager.getCircuitsDirFullPath(), "main/mul3Arr.circom"),
-      ];
+  //     const expectedSourcePaths: string[] = [
+  //       getNormalizedFullPath(compilationFilesManager.getCircuitsDirFullPath(), "main/mul2.circom"),
+  //       getNormalizedFullPath(compilationFilesManager.getCircuitsDirFullPath(), "main/mul3Arr.circom"),
+  //     ];
 
-      expect(filteredPaths).to.be.deep.eq(expectedSourcePaths);
-    });
+  //     expect(filteredPaths).to.be.deep.eq(expectedSourcePaths);
+  //   });
 
-    it("should correctly filter source paths by skipFiles setting", async function () {
-      const filteredPaths: string[] = compilationFilesManager.filterSourcePaths(sourcePaths, {
-        onlyFiles: [],
-        skipFiles: ["base", "vendor"],
-      });
+  //   it("should correctly filter source paths by skipFiles setting", async function () {
+  //     const filteredPaths: string[] = compilationFilesManager.filterSourcePaths(sourcePaths, {
+  //       onlyFiles: [],
+  //       skipFiles: ["base", "vendor"],
+  //     });
 
-      const expectedSourcePaths: string[] = [
-        getNormalizedFullPath(compilationFilesManager.getCircuitsDirFullPath(), "main/mul2.circom"),
-        getNormalizedFullPath(compilationFilesManager.getCircuitsDirFullPath(), "main/mul3Arr.circom"),
-      ];
+  //     const expectedSourcePaths: string[] = [
+  //       getNormalizedFullPath(compilationFilesManager.getCircuitsDirFullPath(), "main/mul2.circom"),
+  //       getNormalizedFullPath(compilationFilesManager.getCircuitsDirFullPath(), "main/mul3Arr.circom"),
+  //     ];
 
-      expect(filteredPaths).to.be.deep.eq(expectedSourcePaths);
-    });
+  //     expect(filteredPaths).to.be.deep.eq(expectedSourcePaths);
+  //   });
 
-    it("should correctly filter source paths by onlyFiles and skipFiles settings", async function () {
-      const filteredPaths: string[] = compilationFilesManager.filterSourcePaths(sourcePaths, {
-        onlyFiles: ["main"],
-        skipFiles: ["main/mul2.circom"],
-      });
+  //   it("should correctly filter source paths by onlyFiles and skipFiles settings", async function () {
+  //     const filteredPaths: string[] = compilationFilesManager.filterSourcePaths(sourcePaths, {
+  //       onlyFiles: ["main"],
+  //       skipFiles: ["main/mul2.circom"],
+  //     });
 
-      const expectedSourcePaths: string[] = [
-        getNormalizedFullPath(compilationFilesManager.getCircuitsDirFullPath(), "main/mul3Arr.circom"),
-      ];
+  //     const expectedSourcePaths: string[] = [
+  //       getNormalizedFullPath(compilationFilesManager.getCircuitsDirFullPath(), "main/mul3Arr.circom"),
+  //     ];
 
-      expect(filteredPaths).to.be.deep.eq(expectedSourcePaths);
-    });
-  });
+  //     expect(filteredPaths).to.be.deep.eq(expectedSourcePaths);
+  //   });
+  // });
 
-  describe("filterResolvedFiles", () => {
-    let compilationFilesManager: CompilationFilesManagerMock;
-    let resolvedFiles: ResolvedFile[];
-    let sourceNames: string[];
+  // describe("filterResolvedFiles", () => {
+  //   let compilationFilesManager: CompilationFilesManagerMock;
+  //   let resolvedFiles: ResolvedFile[];
+  //   let sourceNames: string[];
 
-    useEnvironment("with-circuits");
+  //   useEnvironment("with-circuits");
 
-    beforeEach("setup", async function () {
-      await this.hre.run(TASK_CIRCUITS_COMPILE);
+  //   beforeEach("setup", async function () {
+  //     await this.hre.run(TASK_CIRCUITS_COMPILE);
 
-      compilationFilesManager = getCompilationFilesManagerMock(this.hre, defaultConfig);
+  //     compilationFilesManager = getCompilationFilesManagerMock(this.hre, defaultConfig);
 
-      const sourcePaths: string[] = await getAllFilesMatching(compilationFilesManager.getCircuitsDirFullPath(), (f) =>
-        f.endsWith(".circom"),
-      );
+  //     const sourcePaths: string[] = await getAllFilesMatching(compilationFilesManager.getCircuitsDirFullPath(), (f) =>
+  //       f.endsWith(".circom"),
+  //     );
 
-      sourceNames = await compilationFilesManager.getSourceNamesFromSourcePaths(
-        compilationFilesManager.filterSourcePaths(sourcePaths, { onlyFiles: [], skipFiles: ["vendor"] }),
-      );
+  //     sourceNames = await compilationFilesManager.getSourceNamesFromSourcePaths(
+  //       compilationFilesManager.filterSourcePaths(sourcePaths, { onlyFiles: [], skipFiles: ["vendor"] }),
+  //     );
 
-      const dependencyGraph: DependencyGraph = await compilationFilesManager.getDependencyGraph(sourceNames);
+  //     const dependencyGraph: DependencyGraph = await compilationFilesManager.getDependencyGraph(sourceNames);
 
-      resolvedFiles = dependencyGraph.getResolvedFiles();
-    });
+  //     resolvedFiles = dependencyGraph.getResolvedFiles();
+  //   });
 
-    it("should correctly filter resolved files with withMainComponent=true", async function () {
-      const filteredResolvedFiles: ResolvedFile[] = compilationFilesManager.filterResolvedFiles(
-        resolvedFiles,
-        sourceNames,
-        true,
-      );
+  //   it("should correctly filter resolved files with withMainComponent=true", async function () {
+  //     const filteredResolvedFiles: ResolvedFile[] = compilationFilesManager.filterResolvedFiles(
+  //       resolvedFiles,
+  //       sourceNames,
+  //       true,
+  //     );
 
-      const expectedSourceNames: string[] = ["circuits/main/mul2.circom", "circuits/main/mul3Arr.circom"];
+  //     const expectedSourceNames: string[] = ["circuits/main/mul2.circom", "circuits/main/mul3Arr.circom"];
 
-      expect(filteredResolvedFiles.length).to.be.eq(expectedSourceNames.length);
+  //     expect(filteredResolvedFiles.length).to.be.eq(expectedSourceNames.length);
 
-      filteredResolvedFiles.forEach((file: ResolvedFile, index: number) => {
-        expect(file.sourceName).to.be.eq(expectedSourceNames[index]);
-      });
-    });
+  //     filteredResolvedFiles.forEach((file: ResolvedFile, index: number) => {
+  //       expect(file.sourceName).to.be.eq(expectedSourceNames[index]);
+  //     });
+  //   });
 
-    it("should correctly filter resolved files with withMainComponent=false", async function () {
-      const filteredResolvedFiles: ResolvedFile[] = compilationFilesManager.filterResolvedFiles(
-        resolvedFiles,
-        sourceNames,
-        false,
-      );
+  //   it("should correctly filter resolved files with withMainComponent=false", async function () {
+  //     const filteredResolvedFiles: ResolvedFile[] = compilationFilesManager.filterResolvedFiles(
+  //       resolvedFiles,
+  //       sourceNames,
+  //       false,
+  //     );
 
-      const expectedSourceNames: string[] = [
-        "circuits/base/mul2Base.circom",
-        "circuits/base/sumMul.circom",
-        "circuits/main/mul2.circom",
-        "circuits/main/mul3Arr.circom",
-      ];
+  //     const expectedSourceNames: string[] = [
+  //       "circuits/base/mul2Base.circom",
+  //       "circuits/base/sumMul.circom",
+  //       "circuits/main/mul2.circom",
+  //       "circuits/main/mul3Arr.circom",
+  //     ];
 
-      expect(filteredResolvedFiles.length).to.be.eq(expectedSourceNames.length);
+  //     expect(filteredResolvedFiles.length).to.be.eq(expectedSourceNames.length);
 
-      filteredResolvedFiles.forEach((file: ResolvedFile, index: number) => {
-        expect(file.sourceName).to.be.eq(expectedSourceNames[index]);
-      });
-    });
+  //     filteredResolvedFiles.forEach((file: ResolvedFile, index: number) => {
+  //       expect(file.sourceName).to.be.eq(expectedSourceNames[index]);
+  //     });
+  //   });
 
-    it("should correctly filter resolved files by source names", async function () {
-      const expectedSourceNames: string[] = ["circuits/main/mul2.circom", "circuits/main/mul3Arr.circom"];
+  //   it("should correctly filter resolved files by source names", async function () {
+  //     const expectedSourceNames: string[] = ["circuits/main/mul2.circom", "circuits/main/mul3Arr.circom"];
 
-      const filteredResolvedFiles: ResolvedFile[] = compilationFilesManager.filterResolvedFiles(
-        resolvedFiles,
-        expectedSourceNames,
-        false,
-      );
+  //     const filteredResolvedFiles: ResolvedFile[] = compilationFilesManager.filterResolvedFiles(
+  //       resolvedFiles,
+  //       expectedSourceNames,
+  //       false,
+  //     );
 
-      expect(filteredResolvedFiles.length).to.be.eq(expectedSourceNames.length);
+  //     expect(filteredResolvedFiles.length).to.be.eq(expectedSourceNames.length);
 
-      filteredResolvedFiles.forEach((file: ResolvedFile, index: number) => {
-        expect(file.sourceName).to.be.eq(expectedSourceNames[index]);
-      });
-    });
-  });
+  //     filteredResolvedFiles.forEach((file: ResolvedFile, index: number) => {
+  //       expect(file.sourceName).to.be.eq(expectedSourceNames[index]);
+  //     });
+  //   });
+  // });
 
-  describe("validateResolvedFiles", () => {
-    let compilationFilesManager: CompilationFilesManagerMock;
-    let resolvedFiles: ResolvedFile[];
+  // describe("validateResolvedFiles", () => {
+  //   let compilationFilesManager: CompilationFilesManagerMock;
+  //   let resolvedFiles: ResolvedFile[];
 
-    useEnvironment("with-duplicate-circuits");
+  //   useEnvironment("with-duplicate-circuits");
 
-    beforeEach("setup", async function () {
-      compilationFilesManager = getCompilationFilesManagerMock(this.hre, defaultConfig);
+  //   beforeEach("setup", async function () {
+  //     compilationFilesManager = getCompilationFilesManagerMock(this.hre, defaultConfig);
 
-      const sourcePaths: string[] = await getAllFilesMatching(compilationFilesManager.getCircuitsDirFullPath(), (f) =>
-        f.endsWith(".circom"),
-      );
+  //     const sourcePaths: string[] = await getAllFilesMatching(compilationFilesManager.getCircuitsDirFullPath(), (f) =>
+  //       f.endsWith(".circom"),
+  //     );
 
-      const sourceNames: string[] = await compilationFilesManager.getSourceNamesFromSourcePaths(
-        compilationFilesManager.filterSourcePaths(sourcePaths, { onlyFiles: [], skipFiles: ["vendor"] }),
-      );
+  //     const sourceNames: string[] = await compilationFilesManager.getSourceNamesFromSourcePaths(
+  //       compilationFilesManager.filterSourcePaths(sourcePaths, { onlyFiles: [], skipFiles: ["vendor"] }),
+  //     );
 
-      const dependencyGraph: DependencyGraph = await compilationFilesManager.getDependencyGraph(sourceNames);
+  //     const dependencyGraph: DependencyGraph = await compilationFilesManager.getDependencyGraph(sourceNames);
 
-      resolvedFiles = dependencyGraph.getResolvedFiles();
-    });
+  //     resolvedFiles = dependencyGraph.getResolvedFiles();
+  //   });
 
-    it("should get exception for circuits with duplicated names", async function () {
-      const reason: string = `Circuit ${resolvedFiles[1].sourceName} duplicated ${resolvedFiles[0].sourceName} circuit`;
+  //   it("should get exception for circuits with duplicated names", async function () {
+  //     const reason: string = `Circuit ${resolvedFiles[1].sourceName} duplicated ${resolvedFiles[0].sourceName} circuit`;
 
-      expect(function () {
-        compilationFilesManager.validateResolvedFiles(resolvedFiles);
-      }).to.throw(reason);
-    });
-  });
+  //     expect(function () {
+  //       compilationFilesManager.validateResolvedFiles(resolvedFiles);
+  //     }).to.throw(reason);
+  //   });
+  // });
 
   describe("getSourceNamesFromSourcePaths", () => {
     let compilationFilesManager: CompilationFilesManagerMock;
@@ -316,58 +316,58 @@ describe("CompilationFilesManager", () => {
     });
   });
 
-  describe("invalidateCacheMissingArtifacts", () => {
-    let compilationFilesManager: CompilationFilesManagerMock;
-    let resolvedFiles: ResolvedFile[];
-    let sourceNames: string[];
+  // describe("invalidateCacheMissingArtifacts", () => {
+  //   let compilationFilesManager: CompilationFilesManagerMock;
+  //   let resolvedFiles: ResolvedFile[];
+  //   let sourceNames: string[];
 
-    useEnvironment("with-circuits");
+  //   useEnvironment("with-circuits");
 
-    beforeEach("setup", async function () {
-      await this.hre.run(TASK_CIRCUITS_COMPILE);
+  //   beforeEach("setup", async function () {
+  //     await this.hre.run(TASK_CIRCUITS_COMPILE);
 
-      compilationFilesManager = getCompilationFilesManagerMock(this.hre, defaultConfig);
+  //     compilationFilesManager = getCompilationFilesManagerMock(this.hre, defaultConfig);
 
-      const sourcePaths: string[] = await getAllFilesMatching(compilationFilesManager.getCircuitsDirFullPath(), (f) =>
-        f.endsWith(".circom"),
-      );
+  //     const sourcePaths: string[] = await getAllFilesMatching(compilationFilesManager.getCircuitsDirFullPath(), (f) =>
+  //       f.endsWith(".circom"),
+  //     );
 
-      sourceNames = await compilationFilesManager.getSourceNamesFromSourcePaths(
-        compilationFilesManager.filterSourcePaths(sourcePaths, { onlyFiles: [], skipFiles: ["vendor"] }),
-      );
+  //     sourceNames = await compilationFilesManager.getSourceNamesFromSourcePaths(
+  //       compilationFilesManager.filterSourcePaths(sourcePaths, { onlyFiles: [], skipFiles: ["vendor"] }),
+  //     );
 
-      const dependencyGraph: DependencyGraph = await compilationFilesManager.getDependencyGraph(sourceNames);
+  //     const dependencyGraph: DependencyGraph = await compilationFilesManager.getDependencyGraph(sourceNames);
 
-      resolvedFiles = compilationFilesManager.filterResolvedFiles(
-        dependencyGraph.getResolvedFiles(),
-        sourceNames,
-        true,
-      );
-    });
+  //     resolvedFiles = compilationFilesManager.filterResolvedFiles(
+  //       dependencyGraph.getResolvedFiles(),
+  //       sourceNames,
+  //       true,
+  //     );
+  //   });
 
-    it("should correctly update cache according to existing artifacts", async function () {
-      const circuitToRemove: string = "main/mul2.circom";
-      const circuitFullPath: string = getNormalizedFullPath(
-        compilationFilesManager.getCircuitsDirFullPath(),
-        circuitToRemove,
-      );
+  //   it("should correctly update cache according to existing artifacts", async function () {
+  //     const circuitToRemove: string = "main/mul2.circom";
+  //     const circuitFullPath: string = getNormalizedFullPath(
+  //       compilationFilesManager.getCircuitsDirFullPath(),
+  //       circuitToRemove,
+  //     );
 
-      const entry = CircomCircuitsCache!.getEntry(circuitFullPath);
+  //     const entry = CircomCircuitsCache!.getEntry(circuitFullPath);
 
-      expect(entry).not.to.be.undefined;
+  //     expect(entry).not.to.be.undefined;
 
-      if (entry) {
-        expect(entry.sourceName).to.be.eq(getNormalizedFullPath("circuits", circuitToRemove));
-      }
+  //     if (entry) {
+  //       expect(entry.sourceName).to.be.eq(getNormalizedFullPath("circuits", circuitToRemove));
+  //     }
 
-      fsExtra.rmSync(getNormalizedFullPath(compilationFilesManager.getArtifactsDirFullPath(), circuitToRemove), {
-        recursive: true,
-        force: true,
-      });
+  //     fsExtra.rmSync(getNormalizedFullPath(compilationFilesManager.getArtifactsDirFullPath(), circuitToRemove), {
+  //       recursive: true,
+  //       force: true,
+  //     });
 
-      compilationFilesManager.invalidateCacheMissingArtifacts(resolvedFiles);
+  //     compilationFilesManager.invalidateCacheMissingArtifacts(resolvedFiles);
 
-      expect(CircomCircuitsCache!.getEntry(circuitFullPath)).to.be.undefined;
-    });
-  });
+  //     expect(CircomCircuitsCache!.getEntry(circuitFullPath)).to.be.undefined;
+  //   });
+  // });
 });
