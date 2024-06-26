@@ -6,7 +6,7 @@ import { FileFilterSettings } from "../../../../src/types/zkit-config";
 import { CompileFlags, ResolvedFileWithDependencies } from "../../../../src/types/compile";
 
 export class CompilationFilesManagerMock extends CompilationFilesManager {
-  public filterSourcePaths(
+  public filterResolvedFilesToCompile(
     resolvedFilesWithDependencies: ResolvedFileWithDependencies[],
     filterSettings: FileFilterSettings,
   ): ResolvedFileWithDependencies[] {

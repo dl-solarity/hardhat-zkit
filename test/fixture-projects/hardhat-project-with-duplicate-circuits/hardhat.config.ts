@@ -9,8 +9,8 @@ const defaultConfig: HardhatUserConfig = {
     compilationSettings: {
       artifactsDir: "zkit/artifacts",
       skipFiles: ["vendor"],
-      quiet: true,
     },
+    quiet: true,
     verifiersDir: "contracts/verifiers",
     ptauDir: "zkit/ptau",
     ptauDownload: true,
