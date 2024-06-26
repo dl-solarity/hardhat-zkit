@@ -16,6 +16,7 @@ export type GenerateVerifiersTaskConfig = {
   verifiersDir?: string;
   noCompile: boolean;
   quiet: boolean;
+  force: boolean;
 };
 
 export type GetCircuitZKitConfig = {

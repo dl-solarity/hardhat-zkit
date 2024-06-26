@@ -66,7 +66,9 @@ export class CompilationProcessor {
     for (const info of compilationInfoArr) {
       const spinnerId: string = `${info.circuitName}-compile`;
 
-      SpinnerProcessor!.createSpinner(spinnerId, `Compiling ${info.circuitName} circuit`);
+      if (!Reporter!.isQuiet()) {
+        SpinnerProcessor!.createSpinner(spinnerId, `Compiling ${info.circuitName} circuit`);
+      }
 
       fs.mkdirSync(info.tempArtifactsPath, { recursive: true });
 
@@ -93,7 +95,9 @@ export class CompilationProcessor {
 
       const spinnerId: string = `${info.circuitName}-generate-zkey`;
 
-      SpinnerProcessor!.createSpinner(spinnerId, `Generating ZKey file for ${info.circuitName} circuit`);
+      if (!Reporter!.isQuiet()) {
+        SpinnerProcessor!.createSpinner(spinnerId, `Generating ZKey file for ${info.circuitName} circuit`);
+      }
 
       if (contributionTemplate === "groth16") {
         await snarkjs.zKey.newZKey(r1csFile, ptauFilePath, zKeyFile);
@@ -125,7 +129,9 @@ export class CompilationProcessor {
     for (const info of compilationInfoArr) {
       const spinnerId: string = `${info.circuitName}-generate-zkey`;
 
-      SpinnerProcessor!.createSpinner(spinnerId, `Generating VKey file for ${info.circuitName} circuit`);
+      if (!Reporter!.isQuiet()) {
+        SpinnerProcessor!.createSpinner(spinnerId, `Generating VKey file for ${info.circuitName} circuit`);
+      }
 
       const zkeyFile = getNormalizedFullPath(info.tempArtifactsPath, `${info.circuitName}.zkey`);
       const vKeyFile = getNormalizedFullPath(info.tempArtifactsPath, `${info.circuitName}.vkey.json`);

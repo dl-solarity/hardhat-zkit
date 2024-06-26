@@ -15,7 +15,13 @@ import { zkitConfigExtender } from "./config/config";
 
 import { CircomCircuitsCache, createCircuitsCache } from "./cache/CircomCircuitsCache";
 import { CompilationFilesManager, CompilationProcessor } from "./compile/core";
-import { Reporter, createReporter, createSpinnerProcessor, createProgressBarProcessor } from "./reporter";
+import {
+  Reporter,
+  createReporter,
+  createSpinnerProcessor,
+  createProgressBarProcessor,
+  SpinnerProcessor,
+} from "./reporter";
 
 import { CompileTaskConfig, GenerateVerifiersTaskConfig, GetCircuitZKitConfig } from "./types/tasks";
 import { CompileFlags, ResolvedFileWithDependencies } from "./types/compile";
@@ -102,36 +108,53 @@ const generateVerifiers: ActionType<GenerateVerifiersTaskConfig> = async (
   env: HardhatRuntimeEnvironment,
 ) => {
   if (!taskArgs.noCompile) {
-    await env.run(TASK_CIRCUITS_COMPILE, { artifactsDir: taskArgs.artifactsDir, quiet: taskArgs.quiet });
+    await env.run(TASK_CIRCUITS_COMPILE, {
+      artifactsDir: taskArgs.artifactsDir,
+      quiet: taskArgs.quiet,
+      force: taskArgs.force,
+    });
+  } else {
+    createReporter(taskArgs.quiet || env.config.zkit.quiet);
+    createSpinnerProcessor();
+    createProgressBarProcessor();
   }
 
-  const artifactsDirFullPath = getNormalizedFullPath(
+  const artifactsDirFullPath: string = getNormalizedFullPath(
     env.config.paths.root,
     taskArgs.artifactsDir ?? env.config.zkit.compilationSettings.artifactsDir,
   );
-  const verifiersDirFullPath = getNormalizedFullPath(
+  const verifiersDirFullPath: string = getNormalizedFullPath(
     env.config.paths.root,
     taskArgs.verifiersDir ?? env.config.zkit.verifiersDir,
   );
 
   const artifactsDirArr: string[] = getAllDirsMatchingSync(artifactsDirFullPath, (f) => f.endsWith(".circom"));
 
-  await Promise.all(
-    artifactsDirArr.map(async (artifactDirPath: string) => {
-      await new CircuitZKit({
-        circuitName: path.parse(artifactDirPath).name,
-        circuitArtifactsPath: artifactDirPath,
-        verifierDirPath: verifiersDirFullPath,
-      }).createVerifier();
-    }),
-  );
+  Reporter!.reportVerifiersGenerationInfo(artifactsDirFullPath, verifiersDirFullPath);
+
+  for (const artifactDirPath of artifactsDirArr) {
+    const circuitName: string = path.parse(artifactDirPath).name;
+    const spinnerId: string = `${circuitName}-verifier-generation`;
+
+    if (!Reporter!.isQuiet()) {
+      SpinnerProcessor!.createSpinner(spinnerId, `Generating Solidity verifier contract for ${circuitName} circuit`);
+    }
+
+    await new CircuitZKit({
+      circuitName,
+      circuitArtifactsPath: artifactDirPath,
+      verifierDirPath: verifiersDirFullPath,
+    }).createVerifier();
+
+    Reporter!.reportVerifierGenerationResult(spinnerId, circuitName);
+  }
 };
 
 const getCircuitZKit: ActionType<GetCircuitZKitConfig> = async (
   taskArgs: GetCircuitZKitConfig,
   env: HardhatRuntimeEnvironment,
 ): Promise<CircuitZKit> => {
-  const artifactsDirFullPath = getNormalizedFullPath(
+  const artifactsDirFullPath: string = getNormalizedFullPath(
     env.config.paths.root,
     taskArgs.artifactsDir ?? env.config.zkit.compilationSettings.artifactsDir,
   );
@@ -152,7 +175,7 @@ const getCircuitZKit: ActionType<GetCircuitZKitConfig> = async (
     );
   }
 
-  const verifiersDirFullPath = getNormalizedFullPath(
+  const verifiersDirFullPath: string = getNormalizedFullPath(
     env.config.paths.root,
     taskArgs.verifiersDir ?? env.config.zkit.verifiersDir,
   );
@@ -180,6 +203,7 @@ task(TASK_GENERATE_VERIFIERS, "Generate verifiers for circuits")
   .addOptionalParam("artifactsDir", "The circuits artifacts directory path.", undefined, types.string)
   .addOptionalParam("verifiersDir", "The generated verifiers directory path.", undefined, types.string)
   .addFlag("noCompile", "No compile flag")
+  .addFlag("force", "The force flag.")
   .addFlag("quiet", "The quiet flag.")
   .setAction(generateVerifiers);
 

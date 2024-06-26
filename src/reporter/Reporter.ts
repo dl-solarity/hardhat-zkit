@@ -230,6 +230,33 @@ class BaseReporter {
     console.log(`\n${emoji("🤷‍♂️ ")}${chalk.bold("Nothing to compile...")}${emoji(" 🤷‍♂️")}`);
   }
 
+  public reportVerifiersGenerationInfo(artifactsDirFullPath: string, verifiersDirFullPath: string) {
+    if (this.isQuiet()) return;
+
+    let output: string = "";
+
+    output += `\n${chalk.bold("Verifiers generation info:")}\n`;
+    output += `\n> Artifacts directory full path - ${chalk.underline(artifactsDirFullPath)}`;
+    output += `\n> Verifiers directory full path - ${chalk.underline(verifiersDirFullPath)}\n`;
+
+    output += `\n${chalk.bold("Starting generation of Solidity verifier contracts...")}\n`;
+
+    console.log(output);
+  }
+
+  public reportVerifierGenerationResult(spinnerId: string, circuitName: string) {
+    if (this.isQuiet()) return;
+
+    const generationTimeMessage: string = this._getSpinnerWorkingTimeMessage(
+      SpinnerProcessor!.getWorkingTime(spinnerId),
+    );
+
+    SpinnerProcessor!.succeedSpinner(
+      spinnerId,
+      `Generated Solidity verifier contract for ${chalk.italic(circuitName)} circuit ${generationTimeMessage}`,
+    );
+  }
+
   public verboseLog(namespace: string, message: string) {
     debug(namespace)(message);
   }
