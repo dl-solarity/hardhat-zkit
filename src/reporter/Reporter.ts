@@ -7,7 +7,7 @@ import { ResolvedFile } from "hardhat/types";
 import { emoji } from "hardhat/internal/cli/emoji";
 import { pluralize } from "hardhat/internal/util/strings";
 
-import { CompilationInfo, CompileFlags, CompilerVersion } from "../types/compile";
+import { CompilationInfo, CompilerVersion } from "../types/compile";
 import { SpinnerProcessor } from "./SpinnerProcessor";
 
 class BaseReporter {
@@ -48,21 +48,12 @@ class BaseReporter {
     }
   }
 
-  public reportCompilationSettings(compilerVersion: CompilerVersion, compileFlags: CompileFlags) {
+  public reportCompilerVersion(compilerVersion: CompilerVersion) {
     if (this.isQuiet()) return;
 
     let output: string = "";
 
-    output += `\n${chalk.bold("Compilation settings:")}\n`;
-
-    output += `\n> Compiler version: ${chalk.bold(compilerVersion)}`;
-    output += "\n> Compile flags:";
-
-    for (const [key, value] of Object.entries(compileFlags)) {
-      const paddedKey: string = `--${key}:`.padEnd(8).padStart(12);
-
-      output += `\n${chalk.bold(paddedKey)}${value ? chalk.green(value) : chalk.red(value)}`;
-    }
+    output += `\n${chalk.bold("Compiler version:")} ${chalk.green(compilerVersion)}`;
 
     console.log(output);
   }
@@ -257,8 +248,8 @@ class BaseReporter {
     );
   }
 
-  public verboseLog(namespace: string, message: string) {
-    debug(namespace)(message);
+  public verboseLog(namespace: string, formatterStr: string, logArgs: any[] = []) {
+    debug(`hardhat-zkit:${namespace}`)(formatterStr, ...logArgs);
   }
 
   public isQuiet(): boolean {

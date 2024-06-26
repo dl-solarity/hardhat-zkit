@@ -69,7 +69,8 @@ const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfi
     c: taskArgs.c || env.config.zkit.compilationSettings.c,
   };
 
-  Reporter!.reportCompilationSettings(COMPILER_VERSION, compileFlags);
+  Reporter!.reportCompilerVersion(COMPILER_VERSION);
+  Reporter!.verboseLog("index", "Compile flags: %O", [compileFlags]);
 
   const resolvedFilesWithDependencies: ResolvedFileWithDependencies[] =
     await compilationFilesManager.getResolvedFilesToCompile(compileFlags, taskArgs.force);

@@ -34,6 +34,15 @@ export class CompilationProcessor {
     this._zkitConfig = hre.config.zkit;
     this._compiler = CircomCompilerFactory.createCircomCompiler(_config.compilerVersion);
     this._verbose = hre.hardhatArguments.verbose;
+
+    Reporter!.verboseLog("compilation-processor", "Created CompilationProcessor with params: %O", [
+      {
+        circuitsDirFullPath: _circuitsDirFullPath,
+        artifactsDirFullPath: _artifactsDirFullPath,
+        ptauDirFullPath: _ptauDirFullPath,
+        config: _config,
+      },
+    ]);
   }
 
   public async compile(filesToCompile: ResolvedFile[]) {
@@ -41,6 +50,7 @@ export class CompilationProcessor {
       const tempDir: string = path.join(os.tmpdir(), ".zkit", uuid());
       fs.mkdirSync(tempDir, { recursive: true });
 
+      Reporter!.verboseLog("compilation-processor", "Compilation temp directory: %s", [tempDir]);
       Reporter!.reportCompilationProcessHeader();
 
       const compilationInfoArr: CompilationInfo[] = await this._getCompilationInfoArr(tempDir, filesToCompile);
@@ -93,6 +103,11 @@ export class CompilationProcessor {
       const r1csFile = getNormalizedFullPath(info.tempArtifactsPath, `${info.circuitName}.r1cs`);
       const zKeyFile = getNormalizedFullPath(info.tempArtifactsPath, `${info.circuitName}.zkey`);
 
+      Reporter!.verboseLog("compilation-processor:zkey", "Generating ZKey file for %s circuit with params %o", [
+        info.circuitName,
+        { r1csFile, zKeyFile },
+      ]);
+
       const spinnerId: string = `${info.circuitName}-generate-zkey`;
 
       if (!Reporter!.isQuiet()) {
@@ -127,14 +142,19 @@ export class CompilationProcessor {
     Reporter!.reportVKeyFilesGenerationHeader();
 
     for (const info of compilationInfoArr) {
+      const zkeyFile = getNormalizedFullPath(info.tempArtifactsPath, `${info.circuitName}.zkey`);
+      const vKeyFile = getNormalizedFullPath(info.tempArtifactsPath, `${info.circuitName}.vkey.json`);
+
+      Reporter!.verboseLog("compilation-processor:vkey", "Generating VKey file for %s circuit with params %o", [
+        info.circuitName,
+        { zkeyFile, vKeyFile },
+      ]);
+
       const spinnerId: string = `${info.circuitName}-generate-zkey`;
 
       if (!Reporter!.isQuiet()) {
         SpinnerProcessor!.createSpinner(spinnerId, `Generating VKey file for ${info.circuitName} circuit`);
       }
-
-      const zkeyFile = getNormalizedFullPath(info.tempArtifactsPath, `${info.circuitName}.zkey`);
-      const vKeyFile = getNormalizedFullPath(info.tempArtifactsPath, `${info.circuitName}.vkey.json`);
 
       const vKeyData = await snarkjs.zKey.exportVerificationKey(zkeyFile);
 
@@ -159,6 +179,10 @@ export class CompilationProcessor {
         if (fs.existsSync(correspondingOutFile)) {
           fs.rmSync(correspondingOutFile);
         }
+
+        Reporter!.verboseLog("compilation-processor:copying", "Copying file from temp directory to artifacts: %o", [
+          { file, correspondingOutFile },
+        ]);
 
         fs.copyFileSync(file, correspondingOutFile);
       });
@@ -200,6 +224,10 @@ export class CompilationProcessor {
     if (fs.existsSync(this._ptauDirFullPath)) {
       entries = fs.readdirSync(this._ptauDirFullPath, { withFileTypes: true });
     }
+
+    Reporter!.verboseLog("compilation-processor", "Found entries in ptau directory: %o", [
+      entries.map((entry) => entry.name),
+    ]);
 
     const entry = entries.find((entry) => {
       if (!entry.isFile()) {

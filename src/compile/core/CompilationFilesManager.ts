@@ -40,6 +40,8 @@ export class CompilationFilesManager {
 
     const sourceNames: string[] = await this._getSourceNamesFromSourcePaths(circuitsSourcePaths);
 
+    Reporter!.verboseLog("compilation-files-manager", "All circuits source names: %o", [sourceNames]);
+
     const dependencyGraph: DependencyGraph = await this._getDependencyGraph(sourceNames);
 
     const resolvedFilesToCompile: ResolvedFile[] = this._filterResolvedFiles(
@@ -47,6 +49,10 @@ export class CompilationFilesManager {
       sourceNames,
       true,
     );
+
+    Reporter!.verboseLog("compilation-files-manager", "All circuit source names to compile: %o", [
+      resolvedFilesToCompile.map((file) => file.sourceName),
+    ]);
 
     this._validateResolvedFiles(resolvedFilesToCompile);
     this._invalidateCacheMissingArtifacts(resolvedFilesToCompile);
@@ -61,6 +67,8 @@ export class CompilationFilesManager {
     }
 
     if (!force) {
+      Reporter!.verboseLog("compilation-files-manager", "Force flag disabled. Start filtering...");
+
       resolvedFilesWithDependencies = resolvedFilesWithDependencies.filter((file) =>
         this._needsCompilation(file, compileFlags),
       );
@@ -71,9 +79,16 @@ export class CompilationFilesManager {
       this._zkitConfig.compilationSettings,
     );
 
+    const filteredResolvedFilesToCompile: ResolvedFile[] = filteredFilesWithDependencies.map(
+      (file) => file.resolvedFile,
+    );
+
+    Reporter!.verboseLog("compilation-files-manager", "Filtered circuit source names to compile: %o", [
+      filteredResolvedFilesToCompile.map((file) => file.sourceName),
+    ]);
     Reporter!.reportCircuitListToCompile(
       resolvedFilesWithDependencies.map((file) => file.resolvedFile),
-      filteredFilesWithDependencies.map((file) => file.resolvedFile),
+      filteredResolvedFilesToCompile,
     );
 
     return filteredFilesWithDependencies;
@@ -166,6 +181,8 @@ export class CompilationFilesManager {
 
     resolvedFiles.forEach((file: ResolvedFile) => {
       const circuitName = path.parse(file.absolutePath).name;
+
+      Reporter!.verboseLog("compilation-files-manager", "Validating %s circuit for duplicates", [circuitName]);
 
       if (circuitsNameCount[circuitName]) {
         throw new HardhatZKitError(
