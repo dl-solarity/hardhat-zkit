@@ -1,7 +1,7 @@
 {
   "name": "@solarity/hardhat-zkit",
-  "version": "0.0.1",
-  "description": "Hardhat <> Circom development kit",
+  "version": "0.1.0",
+  "description": "The ultimate environment for building with Circom",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
   "files": [
