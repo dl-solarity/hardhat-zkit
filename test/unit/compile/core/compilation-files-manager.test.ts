@@ -126,7 +126,7 @@ describe("CompilationFilesManager", () => {
           ptauDir: undefined,
         });
 
-        expect(compilationFilesManager.getPtauDirFullPath()).to.be.eq(path.join(os.homedir(), ".zkit", ".ptau"));
+        expect(compilationFilesManager.getPtauDirFullPath()).to.be.eq(path.join(os.homedir(), ".zkit", "ptau"));
       });
     });
   });
