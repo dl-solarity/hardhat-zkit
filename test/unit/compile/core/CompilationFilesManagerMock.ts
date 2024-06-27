@@ -2,13 +2,15 @@ import { ResolvedFile } from "hardhat/types/builtin-tasks";
 
 import { CompilationFilesManager } from "../../../../src/compile/core";
 import { DependencyGraph } from "../../../../src/compile/dependencies";
-import { CircomCircuitsCache } from "../../../../src/cache/CircomCircuitsCache";
 import { FileFilterSettings } from "../../../../src/types/zkit-config";
 import { CompileFlags, ResolvedFileWithDependencies } from "../../../../src/types/compile";
 
 export class CompilationFilesManagerMock extends CompilationFilesManager {
-  public filterSourcePaths(sourcePaths: string[], filterSettings: FileFilterSettings): string[] {
-    return this._filterSourcePaths(sourcePaths, filterSettings);
+  public filterResolvedFilesToCompile(
+    resolvedFilesWithDependencies: ResolvedFileWithDependencies[],
+    filterSettings: FileFilterSettings,
+  ): ResolvedFileWithDependencies[] {
+    return this._filterResolvedFilesToCompile(resolvedFilesWithDependencies, filterSettings);
   }
 
   public filterResolvedFiles(

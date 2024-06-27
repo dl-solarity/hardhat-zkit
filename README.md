@@ -16,6 +16,7 @@ This hardhat plugin is a zero-config, one-stop Circom development environment th
 - Developer-oriented abstractions that simplify `r1cs`, `zkey`, `vkey`, and `witness` generation processes.
 - Recompilation of only the modified circuits.
 - Automatic downloads of phase-1 `ptau` files.
+- Quick phase-2 contributions to `zkey` files.
 - Invisible `wasm`-based Circom compiler management.
 - Zero platform-specific dependencies: everything is in TypeScript.
 - Extensive development and testing API.
@@ -60,8 +61,8 @@ module.exports = {
       sym: false,
       contributionTemplate: "groth16",
       contributions: 1,
-      quiet: false,
     },
+    quiet: false,
     verifiersDir: "contracts/verifiers",
     ptauDir: undefined,
     ptauDownload: true,
@@ -80,8 +81,8 @@ Where:
   - `json` - The flag to output the constraints in json format.
   - `sym` - The flag to output the constraint system in an annotated mode.
   - `contributionTemplate` - The option to indicate which proving system to use.
-  - `contributions` - The number of phase-2 contributions to make if `groth16` is chosen.
-  - `quiet` - The flag indicating whether to suppress the output.
+  - `contributions` - The number of phase-2 `zkey` contributions to make if `groth16` is chosen.
+- `quiet` - The flag indicating whether to suppress the output.
 - `verifiersDir` - The directory where to generate the Solidity verifiers.
 - `ptauDir` - The directory where to look for the `ptau` files. `$HOME/.zkit/ptau/` by default.
 - `ptauDownload` - The flag to allow automatic dowload of required `ptau` files.

@@ -6,7 +6,6 @@ import { CompileFlags } from "./circom-compiler";
 export type CompilationProccessorConfig = {
   compilerVersion: CompilerVersion;
   compileFlags: CompileFlags;
-  quiet: boolean;
 };
 
 export type CompilationInfo = {
@@ -14,4 +13,5 @@ export type CompilationInfo = {
   tempArtifactsPath: string;
   artifactsPath: string;
   resolvedFile: ResolvedFile;
+  constraintsNumber: number;
 };

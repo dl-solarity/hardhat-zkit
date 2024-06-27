@@ -8,8 +8,8 @@ const defaultConfig: HardhatUserConfig = {
     circuitsDir: "circuits",
     compilationSettings: {
       skipFiles: ["vendor"],
-      quiet: true,
     },
+    quiet: true,
     verifiersDir: "contracts/verifiers",
     ptauDir: "zkit/ptau",
     ptauDownload: true,

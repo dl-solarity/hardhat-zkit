@@ -15,12 +15,13 @@ import { zkitConfigExtender } from "./config/config";
 
 import { CircomCircuitsCache, createCircuitsCache } from "./cache/CircomCircuitsCache";
 import { CompilationFilesManager, CompilationProcessor } from "./compile/core";
+import { Reporter, createReporter } from "./reporter";
 
 import { CompileTaskConfig, GenerateVerifiersTaskConfig, GetCircuitZKitConfig } from "./types/tasks";
 import { CompileFlags, ResolvedFileWithDependencies } from "./types/compile";
 
 import { getAllDirsMatchingSync, getNormalizedFullPath } from "./utils/path-utils";
-import { CIRCOM_CIRCUITS_CACHE_FILENAME } from "./constants";
+import { CIRCOM_CIRCUITS_CACHE_FILENAME, COMPILER_VERSION } from "./constants";
 import { HardhatZKitError } from "./errors";
 
 extendConfig(zkitConfigExtender);
@@ -39,6 +40,7 @@ const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfi
   const circuitsCacheFullPath: string = getNormalizedFullPath(env.config.paths.cache, CIRCOM_CIRCUITS_CACHE_FILENAME);
 
   await createCircuitsCache(circuitsCacheFullPath);
+  createReporter(taskArgs.quiet || env.config.zkit.quiet);
 
   const compilationFilesManager: CompilationFilesManager = new CompilationFilesManager(
     {
@@ -59,6 +61,9 @@ const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfi
     c: taskArgs.c || env.config.zkit.compilationSettings.c,
   };
 
+  Reporter!.reportCompilerVersion(COMPILER_VERSION);
+  Reporter!.verboseLog("index", "Compile flags: %O", [compileFlags]);
+
   const resolvedFilesWithDependencies: ResolvedFileWithDependencies[] =
     await compilationFilesManager.getResolvedFilesToCompile(compileFlags, taskArgs.force);
 
@@ -67,11 +72,10 @@ const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfi
     compilationFilesManager.getArtifactsDirFullPath(),
     compilationFilesManager.getPtauDirFullPath(),
     {
-      quiet: taskArgs.quiet || env.config.zkit.compilationSettings.quiet,
-      compilerVersion: "0.2.18",
+      compilerVersion: COMPILER_VERSION,
       compileFlags,
     },
-    env.config,
+    env,
   );
 
   await compilationProcessor.compile(resolvedFilesWithDependencies.map((file) => file.resolvedFile));
@@ -97,36 +101,49 @@ const generateVerifiers: ActionType<GenerateVerifiersTaskConfig> = async (
   env: HardhatRuntimeEnvironment,
 ) => {
   if (!taskArgs.noCompile) {
-    await env.run(TASK_CIRCUITS_COMPILE, { artifactsDir: taskArgs.artifactsDir, quiet: taskArgs.quiet });
+    await env.run(TASK_CIRCUITS_COMPILE, {
+      artifactsDir: taskArgs.artifactsDir,
+      quiet: taskArgs.quiet,
+      force: taskArgs.force,
+    });
+  } else {
+    createReporter(taskArgs.quiet || env.config.zkit.quiet);
   }
 
-  const artifactsDirFullPath = getNormalizedFullPath(
+  const artifactsDirFullPath: string = getNormalizedFullPath(
     env.config.paths.root,
     taskArgs.artifactsDir ?? env.config.zkit.compilationSettings.artifactsDir,
   );
-  const verifiersDirFullPath = getNormalizedFullPath(
+  const verifiersDirFullPath: string = getNormalizedFullPath(
     env.config.paths.root,
     taskArgs.verifiersDir ?? env.config.zkit.verifiersDir,
   );
 
   const artifactsDirArr: string[] = getAllDirsMatchingSync(artifactsDirFullPath, (f) => f.endsWith(".circom"));
 
-  await Promise.all(
-    artifactsDirArr.map(async (artifactDirPath: string) => {
-      await new CircuitZKit({
-        circuitName: path.parse(artifactDirPath).name,
-        circuitArtifactsPath: artifactDirPath,
-        verifierDirPath: verifiersDirFullPath,
-      }).createVerifier();
-    }),
-  );
+  Reporter!.verboseLog("index", "Verifiers generation info: %o", [{ artifactsDirFullPath, verifiersDirFullPath }]);
+
+  Reporter!.reportVerifiersGenerationHeader();
+
+  for (const artifactDirPath of artifactsDirArr) {
+    const circuitName: string = path.parse(artifactDirPath).name;
+    const spinnerId: string | null = Reporter!.reportVerifierGenerationStartWithSpinner(circuitName);
+
+    await new CircuitZKit({
+      circuitName,
+      circuitArtifactsPath: artifactDirPath,
+      verifierDirPath: verifiersDirFullPath,
+    }).createVerifier();
+
+    Reporter!.reportVerifierGenerationResult(spinnerId, circuitName);
+  }
 };
 
 const getCircuitZKit: ActionType<GetCircuitZKitConfig> = async (
   taskArgs: GetCircuitZKitConfig,
   env: HardhatRuntimeEnvironment,
 ): Promise<CircuitZKit> => {
-  const artifactsDirFullPath = getNormalizedFullPath(
+  const artifactsDirFullPath: string = getNormalizedFullPath(
     env.config.paths.root,
     taskArgs.artifactsDir ?? env.config.zkit.compilationSettings.artifactsDir,
   );
@@ -137,17 +154,17 @@ const getCircuitZKit: ActionType<GetCircuitZKitConfig> = async (
 
   if (foundPaths.length === 0) {
     throw new HardhatZKitError(
-      `The artifacts for '${taskArgs.circuitName}' circuit do not exist. Please compile circuits`,
+      `The artifacts for '${taskArgs.circuitName}' circuit do not exist. Please compile the circuits.`,
     );
   }
 
   if (foundPaths.length > 1) {
     throw new HardhatZKitError(
-      `Invalid circuit name ${taskArgs.circuitName}. Multiple artifacts found along ${foundPaths} paths`,
+      `Invalid circuit name ${taskArgs.circuitName}. Multiple artifacts found along ${foundPaths} paths.`,
     );
   }
 
-  const verifiersDirFullPath = getNormalizedFullPath(
+  const verifiersDirFullPath: string = getNormalizedFullPath(
     env.config.paths.root,
     taskArgs.verifiersDir ?? env.config.zkit.verifiersDir,
   );
@@ -160,22 +177,43 @@ const getCircuitZKit: ActionType<GetCircuitZKitConfig> = async (
   });
 };
 
-task(TASK_CIRCUITS_COMPILE, "Compile circuits")
-  .addOptionalParam("artifactsDir", "The circuits artifacts directory path.", undefined, types.string)
-  .addOptionalParam("ptauDir", "The ptau files directory path.", undefined, types.string)
-  .addOptionalParam("ptauDownload", "The ptau download flag parameter.", true, types.boolean)
-  .addFlag("force", "The force flag.")
-  .addFlag("sym", "The sym flag.")
-  .addFlag("json", "The json flag.")
-  .addFlag("c", "The c flag.")
-  .addFlag("quiet", "The quiet flag.")
+task(TASK_CIRCUITS_COMPILE, "Compile Circom circuits and generate all necessary artifacts")
+  .addOptionalParam(
+    "artifactsDir",
+    "Relative path to the directory where compilation artifacts will be saved.",
+    undefined,
+    types.string,
+  )
+  .addOptionalParam(
+    "ptauDir",
+    "Absolute or relative path to the directory where Ptau files will be searched for.",
+    undefined,
+    types.string,
+  )
+  .addOptionalParam("ptauDownload", "Flag that indicates if Ptau files dowloading is allowed.", true, types.boolean)
+  .addFlag("sym", "Outputs witness in sym file in the compilation artifacts directory.")
+  .addFlag("json", "Outputs constraints in json file in the compilation artifacts directory.")
+  .addFlag("c", "Enables the generation of cpp files in the compilation artifacts directory.")
+  .addFlag("force", "Force compilation ignoring cache.")
+  .addFlag("quiet", "Suppresses logs during the compilation process.")
   .setAction(compile);
 
-task(TASK_GENERATE_VERIFIERS, "Generate verifiers for circuits")
-  .addOptionalParam("artifactsDir", "The circuits artifacts directory path.", undefined, types.string)
-  .addOptionalParam("verifiersDir", "The generated verifiers directory path.", undefined, types.string)
-  .addFlag("noCompile", "No compile flag")
-  .addFlag("quiet", "The quiet flag.")
+task(TASK_GENERATE_VERIFIERS, "Generate Solidity verifier contracts for Circom circuits")
+  .addOptionalParam(
+    "artifactsDir",
+    "Relative path to the directory with compilation artifacts.",
+    undefined,
+    types.string,
+  )
+  .addOptionalParam(
+    "verifiersDir",
+    "Relative path to the directory where the generated Solidity verifier contracts will be saved.",
+    undefined,
+    types.string,
+  )
+  .addFlag("noCompile", "Disable compilation before verifiers generation.")
+  .addFlag("force", "Force compilation ignoring cache.")
+  .addFlag("quiet", "Suppresses logs during the verifier generation process.")
   .setAction(generateVerifiers);
 
 subtask(TASK_ZKIT_GET_CIRCUIT_ZKIT)

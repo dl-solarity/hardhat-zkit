@@ -9,12 +9,12 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { getAllFilesMatching } from "hardhat/internal/util/fs-utils";
 
 import { CompilationFilesManager } from "../../../../src/compile/core";
-import { CircomCircuitsCache } from "../../../../src/cache/CircomCircuitsCache";
+import { CircomCircuitsCache, createCircuitsCache } from "../../../../src/cache/CircomCircuitsCache";
 import { DependencyGraph, ResolvedFile } from "../../../../src/compile/dependencies";
-import { CompilationFilesManagerConfig } from "../../../../src/types/compile";
+import { createReporter } from "../../../../src/reporter";
+import { CompilationFilesManagerConfig, ResolvedFileWithDependencies } from "../../../../src/types/compile";
 import { getNormalizedFullPath } from "../../../../src/utils/path-utils";
 import { TASK_CIRCUITS_COMPILE } from "../../../../src/task-names";
-import { CIRCOM_CIRCUITS_CACHE_FILENAME } from "../../../../src/constants";
 import { useEnvironment } from "../../../helpers";
 import { CompilationFilesManagerMock } from "./CompilationFilesManagerMock";
 
@@ -126,64 +126,94 @@ describe("CompilationFilesManager", () => {
           ptauDir: undefined,
         });
 
-        expect(compilationFilesManager.getPtauDirFullPath()).to.be.eq(path.join(os.homedir(), ".zkit", ".ptau"));
+        expect(compilationFilesManager.getPtauDirFullPath()).to.be.eq(path.join(os.homedir(), ".zkit", "ptau"));
       });
     });
   });
 
-  describe("filterSourcePaths", () => {
+  describe("filterResolvedFilesToCompile", () => {
     let compilationFilesManager: CompilationFilesManagerMock;
-    let sourcePaths: string[];
+    let resolvedFilesWithDependencies: ResolvedFileWithDependencies[] = [];
+    let sourceNames: string[];
 
     useEnvironment("with-circuits");
 
     beforeEach("setup", async function () {
-      compilationFilesManager = getCompilationFilesManagerMock(this.hre);
+      await this.hre.run(TASK_CIRCUITS_COMPILE);
 
-      sourcePaths = await getAllFilesMatching(compilationFilesManager.getCircuitsDirFullPath(), (f) =>
+      compilationFilesManager = getCompilationFilesManagerMock(this.hre, defaultConfig);
+
+      const sourcePaths: string[] = await getAllFilesMatching(compilationFilesManager.getCircuitsDirFullPath(), (f) =>
         f.endsWith(".circom"),
+      );
+
+      sourceNames = await compilationFilesManager.getSourceNamesFromSourcePaths(sourcePaths);
+
+      const dependencyGraph: DependencyGraph = await compilationFilesManager.getDependencyGraph(sourceNames);
+
+      const resolvedFilesToCompile: ResolvedFile[] = compilationFilesManager.filterResolvedFiles(
+        dependencyGraph.getResolvedFiles(),
+        sourceNames,
+        true,
+      );
+
+      for (const file of resolvedFilesToCompile) {
+        resolvedFilesWithDependencies.push({
+          resolvedFile: file,
+          dependencies: dependencyGraph.getTransitiveDependencies(file).map((dep) => dep.dependency),
+        });
+      }
+    });
+
+    afterEach("clean", async () => {
+      resolvedFilesWithDependencies = [];
+    });
+
+    it("should correctly filter resolve files by onlyFiles setting", async function () {
+      const filteredFiles: ResolvedFileWithDependencies[] = compilationFilesManager.filterResolvedFilesToCompile(
+        resolvedFilesWithDependencies,
+        { onlyFiles: ["main"], skipFiles: [] },
+      );
+
+      const expectedSourcePaths: string[] = [
+        getNormalizedFullPath(compilationFilesManager.getCircuitsDirFullPath(), "main/mul2.circom"),
+        getNormalizedFullPath(compilationFilesManager.getCircuitsDirFullPath(), "main/mul3Arr.circom"),
+      ];
+
+      expect(filteredFiles.map((fileWithDep) => fileWithDep.resolvedFile.absolutePath)).to.be.deep.eq(
+        expectedSourcePaths,
       );
     });
 
-    it("should correctly filter source paths by onlyFiles setting", async function () {
-      const filteredPaths: string[] = compilationFilesManager.filterSourcePaths(sourcePaths, {
-        onlyFiles: ["main"],
-        skipFiles: [],
-      });
-
-      const expectedSourcePaths: string[] = [
-        getNormalizedFullPath(compilationFilesManager.getCircuitsDirFullPath(), "main/mul2.circom"),
-        getNormalizedFullPath(compilationFilesManager.getCircuitsDirFullPath(), "main/mul3Arr.circom"),
-      ];
-
-      expect(filteredPaths).to.be.deep.eq(expectedSourcePaths);
-    });
-
     it("should correctly filter source paths by skipFiles setting", async function () {
-      const filteredPaths: string[] = compilationFilesManager.filterSourcePaths(sourcePaths, {
-        onlyFiles: [],
-        skipFiles: ["base", "vendor"],
-      });
+      const filteredFiles: ResolvedFileWithDependencies[] = compilationFilesManager.filterResolvedFilesToCompile(
+        resolvedFilesWithDependencies,
+        { onlyFiles: [], skipFiles: ["base", "vendor"] },
+      );
 
       const expectedSourcePaths: string[] = [
         getNormalizedFullPath(compilationFilesManager.getCircuitsDirFullPath(), "main/mul2.circom"),
         getNormalizedFullPath(compilationFilesManager.getCircuitsDirFullPath(), "main/mul3Arr.circom"),
       ];
 
-      expect(filteredPaths).to.be.deep.eq(expectedSourcePaths);
+      expect(filteredFiles.map((fileWithDep) => fileWithDep.resolvedFile.absolutePath)).to.be.deep.eq(
+        expectedSourcePaths,
+      );
     });
 
     it("should correctly filter source paths by onlyFiles and skipFiles settings", async function () {
-      const filteredPaths: string[] = compilationFilesManager.filterSourcePaths(sourcePaths, {
-        onlyFiles: ["main"],
-        skipFiles: ["main/mul2.circom"],
-      });
+      const filteredFiles: ResolvedFileWithDependencies[] = compilationFilesManager.filterResolvedFilesToCompile(
+        resolvedFilesWithDependencies,
+        { onlyFiles: ["main"], skipFiles: ["main/mul2.circom"] },
+      );
 
       const expectedSourcePaths: string[] = [
         getNormalizedFullPath(compilationFilesManager.getCircuitsDirFullPath(), "main/mul3Arr.circom"),
       ];
 
-      expect(filteredPaths).to.be.deep.eq(expectedSourcePaths);
+      expect(filteredFiles.map((fileWithDep) => fileWithDep.resolvedFile.absolutePath)).to.be.deep.eq(
+        expectedSourcePaths,
+      );
     });
   });
 
@@ -203,9 +233,7 @@ describe("CompilationFilesManager", () => {
         f.endsWith(".circom"),
       );
 
-      sourceNames = await compilationFilesManager.getSourceNamesFromSourcePaths(
-        compilationFilesManager.filterSourcePaths(sourcePaths, { onlyFiles: [], skipFiles: ["vendor"] }),
-      );
+      sourceNames = await compilationFilesManager.getSourceNamesFromSourcePaths(sourcePaths);
 
       const dependencyGraph: DependencyGraph = await compilationFilesManager.getDependencyGraph(sourceNames);
 
@@ -219,7 +247,11 @@ describe("CompilationFilesManager", () => {
         true,
       );
 
-      const expectedSourceNames: string[] = ["circuits/main/mul2.circom", "circuits/main/mul3Arr.circom"];
+      const expectedSourceNames: string[] = [
+        "circuits/main/mul2.circom",
+        "circuits/main/mul3Arr.circom",
+        "circuits/vendor/sumMul.circom",
+      ];
 
       expect(filteredResolvedFiles.length).to.be.eq(expectedSourceNames.length);
 
@@ -240,6 +272,7 @@ describe("CompilationFilesManager", () => {
         "circuits/base/sumMul.circom",
         "circuits/main/mul2.circom",
         "circuits/main/mul3Arr.circom",
+        "circuits/vendor/sumMul.circom",
       ];
 
       expect(filteredResolvedFiles.length).to.be.eq(expectedSourceNames.length);
@@ -273,16 +306,16 @@ describe("CompilationFilesManager", () => {
     useEnvironment("with-duplicate-circuits");
 
     beforeEach("setup", async function () {
+      createCircuitsCache();
+      createReporter(true);
+
       compilationFilesManager = getCompilationFilesManagerMock(this.hre, defaultConfig);
 
       const sourcePaths: string[] = await getAllFilesMatching(compilationFilesManager.getCircuitsDirFullPath(), (f) =>
         f.endsWith(".circom"),
       );
 
-      const sourceNames: string[] = await compilationFilesManager.getSourceNamesFromSourcePaths(
-        compilationFilesManager.filterSourcePaths(sourcePaths, { onlyFiles: [], skipFiles: ["vendor"] }),
-      );
-
+      const sourceNames: string[] = await compilationFilesManager.getSourceNamesFromSourcePaths(sourcePaths);
       const dependencyGraph: DependencyGraph = await compilationFilesManager.getDependencyGraph(sourceNames);
 
       resolvedFiles = dependencyGraph.getResolvedFiles();
@@ -332,9 +365,7 @@ describe("CompilationFilesManager", () => {
         f.endsWith(".circom"),
       );
 
-      sourceNames = await compilationFilesManager.getSourceNamesFromSourcePaths(
-        compilationFilesManager.filterSourcePaths(sourcePaths, { onlyFiles: [], skipFiles: ["vendor"] }),
-      );
+      sourceNames = await compilationFilesManager.getSourceNamesFromSourcePaths(sourcePaths);
 
       const dependencyGraph: DependencyGraph = await compilationFilesManager.getDependencyGraph(sourceNames);
 

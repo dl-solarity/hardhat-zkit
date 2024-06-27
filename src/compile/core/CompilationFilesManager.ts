@@ -15,6 +15,7 @@ import { CircomCircuitsCache } from "../../cache/CircomCircuitsCache";
 import { getNormalizedFullPath } from "../../utils/path-utils";
 import { MAIN_COMPONENT_REG_EXP } from "../../constants";
 import { HardhatZKitError } from "../../errors";
+import { Reporter } from "../../reporter/Reporter";
 
 export class CompilationFilesManager {
   private readonly _zkitConfig: ZKitConfig;
@@ -37,12 +38,9 @@ export class CompilationFilesManager {
       f.endsWith(".circom"),
     );
 
-    const filteredCircuitsSourcePaths: string[] = this._filterSourcePaths(
-      circuitsSourcePaths,
-      this._zkitConfig.compilationSettings,
-    );
+    const sourceNames: string[] = await this._getSourceNamesFromSourcePaths(circuitsSourcePaths);
 
-    const sourceNames: string[] = await this._getSourceNamesFromSourcePaths(filteredCircuitsSourcePaths);
+    Reporter!.verboseLog("compilation-files-manager", "All circuits source names: %o", [sourceNames]);
 
     const dependencyGraph: DependencyGraph = await this._getDependencyGraph(sourceNames);
 
@@ -51,6 +49,10 @@ export class CompilationFilesManager {
       sourceNames,
       true,
     );
+
+    Reporter!.verboseLog("compilation-files-manager", "All circuit source names to compile: %o", [
+      resolvedFilesToCompile.map((file) => file.sourceName),
+    ]);
 
     this._validateResolvedFiles(resolvedFilesToCompile);
     this._invalidateCacheMissingArtifacts(resolvedFilesToCompile);
@@ -65,12 +67,31 @@ export class CompilationFilesManager {
     }
 
     if (!force) {
+      Reporter!.verboseLog("compilation-files-manager", "Force flag disabled. Start filtering...");
+
       resolvedFilesWithDependencies = resolvedFilesWithDependencies.filter((file) =>
         this._needsCompilation(file, compileFlags),
       );
     }
 
-    return resolvedFilesWithDependencies;
+    const filteredFilesWithDependencies: ResolvedFileWithDependencies[] = this._filterResolvedFilesToCompile(
+      resolvedFilesWithDependencies,
+      this._zkitConfig.compilationSettings,
+    );
+
+    const filteredResolvedFilesToCompile: ResolvedFile[] = filteredFilesWithDependencies.map(
+      (file) => file.resolvedFile,
+    );
+
+    Reporter!.verboseLog("compilation-files-manager", "Filtered circuit source names to compile: %o", [
+      filteredResolvedFilesToCompile.map((file) => file.sourceName),
+    ]);
+    Reporter!.reportCircuitListToCompile(
+      resolvedFilesWithDependencies.map((file) => file.resolvedFile),
+      filteredResolvedFilesToCompile,
+    );
+
+    return filteredFilesWithDependencies;
   }
 
   public getCircuitsDirFullPath(): string {
@@ -90,11 +111,14 @@ export class CompilationFilesManager {
     if (ptauDir) {
       return path.isAbsolute(ptauDir) ? ptauDir : getNormalizedFullPath(this._projectPaths.root, ptauDir);
     } else {
-      return path.join(os.homedir(), ".zkit", ".ptau");
+      return path.join(os.homedir(), ".zkit", "ptau");
     }
   }
 
-  protected _filterSourcePaths(sourcePaths: string[], filterSettings: FileFilterSettings): string[] {
+  protected _filterResolvedFilesToCompile(
+    resolvedFilesWithDependencies: ResolvedFileWithDependencies[],
+    filterSettings: FileFilterSettings,
+  ): ResolvedFileWithDependencies[] {
     const contains = (circuitsRoot: string, pathList: string[], source: any) => {
       const isSubPath = (parent: string, child: string) => {
         const parentTokens = parent.split(path.posix.sep).filter((i) => i.length);
@@ -110,10 +134,12 @@ export class CompilationFilesManager {
 
     const circuitsRoot = this.getCircuitsDirFullPath();
 
-    return sourcePaths.filter((sourceName: string) => {
+    return resolvedFilesWithDependencies.filter((fileWithDep: ResolvedFileWithDependencies) => {
+      const circuitPath: string = fileWithDep.resolvedFile.absolutePath;
+
       return (
-        (filterSettings.onlyFiles.length == 0 || contains(circuitsRoot, filterSettings.onlyFiles, sourceName)) &&
-        !contains(circuitsRoot, filterSettings.skipFiles, sourceName)
+        (filterSettings.onlyFiles.length == 0 || contains(circuitsRoot, filterSettings.onlyFiles, circuitPath)) &&
+        !contains(circuitsRoot, filterSettings.skipFiles, circuitPath)
       );
     });
   }
@@ -155,6 +181,8 @@ export class CompilationFilesManager {
 
     resolvedFiles.forEach((file: ResolvedFile) => {
       const circuitName = path.parse(file.absolutePath).name;
+
+      Reporter!.verboseLog("compilation-files-manager", "Validating %s circuit for duplicates", [circuitName]);
 
       if (circuitsNameCount[circuitName]) {
         throw new HardhatZKitError(

@@ -4,6 +4,7 @@ import path from "path";
 import { MAX_PTAU_ID } from "../../constants";
 import { HardhatZKitError } from "../../errors";
 import { downloadFile } from "../../utils/utils";
+import { Reporter } from "../../reporter/Reporter";
 
 export class PtauDownloader {
   public static async downloadPtau(ptauDirFullPath: string, ptauId: number): Promise<string> {
@@ -20,7 +21,11 @@ export class PtauDownloader {
 
     fs.mkdirSync(ptauDirFullPath, { recursive: true });
 
-    await downloadFile(ptauFilePath, url);
+    Reporter!.reportPtauFileDownloadingInfo(ptauFilePath, url);
+
+    if (!(await downloadFile(ptauFilePath, url))) {
+      throw new HardhatZKitError(`Failed to download a Ptau file. Please try again or download manually.`);
+    }
 
     return ptauFilePath;
   }
