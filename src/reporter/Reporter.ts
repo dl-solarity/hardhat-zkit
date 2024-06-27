@@ -7,11 +7,19 @@ import { ResolvedFile } from "hardhat/types";
 import { emoji } from "hardhat/internal/cli/emoji";
 import { pluralize } from "hardhat/internal/util/strings";
 
-import { CompilationInfo, CompilerVersion } from "../types/compile";
 import { SpinnerProcessor } from "./SpinnerProcessor";
+import { ProgressBarProcessor } from "./ProgressBarProcessor";
+import { CompilationInfo, CompilerVersion } from "../types/compile";
+import { Options } from "ora";
 
 class BaseReporter {
-  constructor(private _quiet: boolean) {}
+  private _spinnerProcessor: SpinnerProcessor;
+  private _progressBarProcessor: ProgressBarProcessor;
+
+  constructor(private _quiet: boolean) {
+    this._spinnerProcessor = new SpinnerProcessor();
+    this._progressBarProcessor = new ProgressBarProcessor();
+  }
 
   public setQuiet(newValue: boolean) {
     this._quiet = newValue;
@@ -65,19 +73,23 @@ class BaseReporter {
 
     output += `\n${chalk.bold("Start compilation process:")}\n`;
 
-    output += `\n${chalk.italic.cyan("First phase - Circuits compilation")}\n`;
+    output += `\n${chalk.italic.cyan("First step - Circuits compilation")}\n`;
 
     console.log(output);
   }
 
-  public reportCircuitCompilationResult(spinnerId: string, circuitName: string) {
-    if (this.isQuiet()) return;
+  public reportCircuitCompilationStartWithSpinner(circuitName: string): string | null {
+    return this._startSpinner(circuitName, "compile", `Compiling ${circuitName} circuit`);
+  }
+
+  public reportCircuitCompilationResult(spinnerId: string | null, circuitName: string) {
+    if (this.isQuiet() || !spinnerId) return;
 
     const compilationTimeMessage: string = this._getSpinnerWorkingTimeMessage(
-      SpinnerProcessor!.getWorkingTime(spinnerId),
+      this._spinnerProcessor.getWorkingTime(spinnerId),
     );
 
-    SpinnerProcessor!.succeedSpinner(spinnerId, `Compiled ${chalk.italic(circuitName)} ${compilationTimeMessage}`);
+    this._spinnerProcessor.succeedSpinner(spinnerId, `Compiled ${chalk.italic(circuitName)} ${compilationTimeMessage}`);
   }
 
   public reportPtauFileInfo(maxConstraintsNumber: number, ptauId: number, ptauFileFullPath?: string) {
@@ -85,7 +97,7 @@ class BaseReporter {
 
     let output: string = "";
 
-    output += `\n${chalk.italic.cyan("Second phase - Ptau file setup")}\n`;
+    output += `\n${chalk.italic.cyan("Second step - Ptau file setup")}\n`;
 
     output += `\nPtau file info:\n`;
     output += `\n> Max circuits constraints number - ${maxConstraintsNumber}`;
@@ -115,7 +127,17 @@ class BaseReporter {
   public reportPtauFileDownloadingFinish() {
     if (this.isQuiet()) return;
 
+    this._progressBarProcessor.stopProgressBar();
+
     console.log(`\n${emoji("✅ ", `${chalk.green("✔ ")}`)}Ptau file successfully downloaded`);
+  }
+
+  public reportPtauFileDownloadingError() {
+    if (this.isQuiet()) return;
+
+    this._progressBarProcessor.stopProgressBar();
+
+    console.log(`\n${emoji("❌ ", `${chalk.red("X ")}`)}Ptau file downloading failed`);
   }
 
   public reportZKeyFilesGenerationHeader(contributions: number) {
@@ -123,10 +145,10 @@ class BaseReporter {
 
     let output: string = "";
 
-    output += `\n${chalk.italic.cyan("Third phase - Generating ZKey files for circuits")}\n`;
+    output += `\n${chalk.italic.cyan("Third step - Generating ZKey files for circuits")}\n`;
 
     if (contributions > 0) {
-      output += `\n> Contributions to ZKey file ${chalk.green("enabled")}`;
+      output += `\n> Phase-2 contributions to ZKey file ${chalk.green("enabled")}`;
       output += `\n> Contributions count: ${contributions}\n`;
     }
 
@@ -135,16 +157,20 @@ class BaseReporter {
     console.log(output);
   }
 
-  public reportZKeyFileGenerationResult(spinnerId: string, circuitName: string, contributionsNumber: number) {
-    if (this.isQuiet()) return;
+  public reportZKeyFileGenerationStartWithSpinner(circuitName: string): string | null {
+    return this._startSpinner(circuitName, "generate-zkey", `Generating ZKey file for ${circuitName} circuit`);
+  }
+
+  public reportZKeyFileGenerationResult(spinnerId: string | null, circuitName: string, contributionsNumber: number) {
+    if (this.isQuiet() || !spinnerId) return;
 
     const generationTimeMessage: string | undefined = this._getSpinnerWorkingTimeMessage(
-      SpinnerProcessor!.getWorkingTime(spinnerId),
+      this._spinnerProcessor.getWorkingTime(spinnerId),
     );
     const contributionMessage: string =
       contributionsNumber !== 0 ? `with ${contributionsNumber} ${pluralize(contributionsNumber, "contribution")} ` : "";
 
-    SpinnerProcessor!.succeedSpinner(
+    this._spinnerProcessor.succeedSpinner(
       spinnerId,
       `Generated ZKey file for ${chalk.italic(circuitName)} circuit ${contributionMessage}${generationTimeMessage}`,
     );
@@ -162,14 +188,18 @@ class BaseReporter {
     console.log(output);
   }
 
-  public reportVKeyFileGenerationResult(spinnerId: string, circuitName: string) {
-    if (this.isQuiet()) return;
+  public reportVKeyFileGenerationStartWithSpinner(circuitName: string): string | null {
+    return this._startSpinner(circuitName, "generate-vkey", `Generating VKey file for ${circuitName} circuit`);
+  }
+
+  public reportVKeyFileGenerationResult(spinnerId: string | null, circuitName: string) {
+    if (this.isQuiet() || !spinnerId) return;
 
     const generationTimeMessage: string = this._getSpinnerWorkingTimeMessage(
-      SpinnerProcessor!.getWorkingTime(spinnerId),
+      this._spinnerProcessor.getWorkingTime(spinnerId),
     );
 
-    SpinnerProcessor!.succeedSpinner(
+    this._spinnerProcessor.succeedSpinner(
       spinnerId,
       `Generated VKey file for ${chalk.italic(circuitName)} circuit ${generationTimeMessage}`,
     );
@@ -210,7 +240,7 @@ class BaseReporter {
       table.push([{ content: info.circuitName }, { content: info.constraintsNumber.toString(), hAlign: "right" }]);
     }
 
-    output += table.toString();
+    output += `\n${table.toString()}\n`;
 
     console.log(output);
   }
@@ -218,34 +248,56 @@ class BaseReporter {
   public reportNothingToCompile() {
     if (this.isQuiet()) return;
 
-    console.log(`\n${emoji("🤷‍♂️ ")}${chalk.bold("Nothing to compile...")}${emoji(" 🤷‍♂️")}`);
+    console.log(`\n${chalk.bold("Nothing to compile.")}\n`);
   }
 
-  public reportVerifiersGenerationInfo(artifactsDirFullPath: string, verifiersDirFullPath: string) {
+  public reportVerifiersGenerationHeader() {
     if (this.isQuiet()) return;
 
     let output: string = "";
-
-    output += `\n${chalk.bold("Verifiers generation info:")}\n`;
-    output += `\n> Artifacts directory full path - ${chalk.underline(artifactsDirFullPath)}`;
-    output += `\n> Verifiers directory full path - ${chalk.underline(verifiersDirFullPath)}\n`;
 
     output += `\n${chalk.bold("Starting generation of Solidity verifier contracts...")}\n`;
 
     console.log(output);
   }
 
-  public reportVerifierGenerationResult(spinnerId: string, circuitName: string) {
-    if (this.isQuiet()) return;
+  public reportVerifierGenerationStartWithSpinner(circuitName: string): string | null {
+    return this._startSpinner(
+      circuitName,
+      "verifier-generation",
+      `Generating Solidity verifier contract for ${circuitName} circuit`,
+    );
+  }
+
+  public reportVerifierGenerationResult(spinnerId: string | null, circuitName: string) {
+    if (this.isQuiet() || !spinnerId) return;
 
     const generationTimeMessage: string = this._getSpinnerWorkingTimeMessage(
-      SpinnerProcessor!.getWorkingTime(spinnerId),
+      this._spinnerProcessor.getWorkingTime(spinnerId),
     );
 
-    SpinnerProcessor!.succeedSpinner(
+    this._spinnerProcessor.succeedSpinner(
       spinnerId,
       `Generated Solidity verifier contract for ${chalk.italic(circuitName)} circuit ${generationTimeMessage}`,
     );
+  }
+
+  public reportStartFileDownloadingWithProgressBar(totalValue: number, startValue: number) {
+    if (this.isQuiet()) return;
+
+    this._progressBarProcessor.createAndStartProgressBar(
+      {
+        formatValue: this._progressBarProcessor.formatToMB,
+        format: "Downloading [{bar}] {percentage}% | {value}/{total} MB | Time elapsed: {duration}s",
+        hideCursor: true,
+      },
+      totalValue,
+      startValue,
+    );
+  }
+
+  public updateProgressBarValue(valueToAdd: number) {
+    this._progressBarProcessor.updateProgressBar(valueToAdd);
   }
 
   public verboseLog(namespace: string, formatterStr: string, logArgs: any[] = []) {
@@ -258,6 +310,16 @@ class BaseReporter {
 
   private _getSpinnerWorkingTimeMessage(workingTime: string | undefined): string {
     return workingTime ? chalk.grey(`(${workingTime} s)`) : "";
+  }
+
+  private _startSpinner(circuitName: string, spinnerIdSuffix: string, spinnerOptions: string | Options): string | null {
+    if (this.isQuiet()) return null;
+
+    const spinnerId: string = `${circuitName}-${spinnerIdSuffix}`;
+
+    this._spinnerProcessor.createSpinner(spinnerId, spinnerOptions);
+
+    return spinnerId;
   }
 }
 

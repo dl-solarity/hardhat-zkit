@@ -1,8 +1,8 @@
-import ora, { Options, Ora, PersistOptions } from "ora";
+import ora, { Options, Ora } from "ora";
 
 import { SpinnerData } from "../types/reporter/spinner-processor";
 
-class BaseSpinnerProcessor {
+export class SpinnerProcessor {
   private _idToSpinnerData: Map<string, SpinnerData> = new Map();
 
   public createSpinner(spinnerId: string, options?: string | Options) {
@@ -21,16 +21,6 @@ class BaseSpinnerProcessor {
     this._idToSpinnerData.delete(spinnerId);
   }
 
-  public stopAndPersistSpinner(spinnerId: string, options: PersistOptions) {
-    const spinnerData = this._idToSpinnerData.get(spinnerId);
-
-    if (!spinnerData) return "";
-
-    spinnerData.spinner.stopAndPersist(options);
-
-    this._idToSpinnerData.delete(spinnerId);
-  }
-
   public getWorkingTime(spinnerId: string, fractionDigits: number = 2): string | undefined {
     const spinnerData = this._idToSpinnerData.get(spinnerId);
 
@@ -40,14 +30,4 @@ class BaseSpinnerProcessor {
       return undefined;
     }
   }
-}
-
-export let SpinnerProcessor: BaseSpinnerProcessor | null = null;
-
-export async function createSpinnerProcessor() {
-  if (SpinnerProcessor) {
-    return;
-  }
-
-  SpinnerProcessor = new BaseSpinnerProcessor();
 }

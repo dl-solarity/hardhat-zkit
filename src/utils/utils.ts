@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import https from "https";
 
-import { Reporter, ProgressBarProcessor } from "../reporter";
+import { Reporter } from "../reporter";
 
 /**
  * Reads a directory recursively and calls the callback for each file.
@@ -49,36 +49,23 @@ export async function downloadFile(file: string, url: string): Promise<boolean> 
         return;
       }
 
-      if (!Reporter!.isQuiet()) {
-        const totalSize = parseInt(response.headers["content-length"] || "0", 10);
+      const totalSize = parseInt(response.headers["content-length"] || "0", 10);
 
-        ProgressBarProcessor!.createAndStartProgressBar(
-          {
-            formatValue: ProgressBarProcessor!.formatToMB,
-            format: "Downloading [{bar}] {percentage}% | {value}/{total} MB | Time elapsed: {duration}s",
-            hideCursor: true,
-          },
-          totalSize,
-          0,
-        );
-      }
+      Reporter!.reportStartFileDownloadingWithProgressBar(totalSize, 0);
 
       response.pipe(fileStream);
 
-      if (!Reporter!.isQuiet()) {
-        response.on("data", (chunk) => {
-          ProgressBarProcessor!.updateProgressBar(chunk.length);
-        });
-      }
+      response.on("data", (chunk) => {
+        Reporter!.updateProgressBarValue(chunk.length);
+      });
 
       fileStream.on("finish", () => {
-        ProgressBarProcessor!.stopProgressBar();
         Reporter!.reportPtauFileDownloadingFinish();
         resolve(true);
       });
 
       fileStream.on("error", (err) => {
-        ProgressBarProcessor!.stopProgressBar();
+        Reporter!.reportPtauFileDownloadingError();
         fs.unlink(file, () => reject(err));
       });
     });

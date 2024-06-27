@@ -23,7 +23,9 @@ export class PtauDownloader {
 
     Reporter!.reportPtauFileDownloadingInfo(ptauFilePath, url);
 
-    await downloadFile(ptauFilePath, url);
+    if (!(await downloadFile(ptauFilePath, url))) {
+      throw new HardhatZKitError(`Failed to download Ptau file. Please try again or download manually!`);
+    }
 
     return ptauFilePath;
   }

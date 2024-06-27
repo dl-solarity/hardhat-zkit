@@ -111,7 +111,7 @@ export class CompilationFilesManager {
     if (ptauDir) {
       return path.isAbsolute(ptauDir) ? ptauDir : getNormalizedFullPath(this._projectPaths.root, ptauDir);
     } else {
-      return path.join(os.homedir(), ".zkit", ".ptau");
+      return path.join(os.homedir(), ".zkit", "ptau");
     }
   }
 

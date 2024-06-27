@@ -17,7 +17,7 @@ import { getNormalizedFullPath } from "../../utils/path-utils";
 import { HardhatZKitError } from "../../errors";
 import { PTAU_FILE_REG_EXP } from "../../constants";
 import { readDirRecursively } from "../../utils/utils";
-import { Reporter, SpinnerProcessor } from "../../reporter";
+import { Reporter } from "../../reporter";
 
 export class CompilationProcessor {
   private readonly _zkitConfig: ZKitConfig;
@@ -74,11 +74,7 @@ export class CompilationProcessor {
 
   private async _compileCircuits(compilationInfoArr: CompilationInfo[]) {
     for (const info of compilationInfoArr) {
-      const spinnerId: string = `${info.circuitName}-compile`;
-
-      if (!Reporter!.isQuiet()) {
-        SpinnerProcessor!.createSpinner(spinnerId, `Compiling ${info.circuitName} circuit`);
-      }
+      const spinnerId: string | null = Reporter!.reportCircuitCompilationStartWithSpinner(info.circuitName);
 
       fs.mkdirSync(info.tempArtifactsPath, { recursive: true });
 
@@ -108,11 +104,7 @@ export class CompilationProcessor {
         { r1csFile, zKeyFile },
       ]);
 
-      const spinnerId: string = `${info.circuitName}-generate-zkey`;
-
-      if (!Reporter!.isQuiet()) {
-        SpinnerProcessor!.createSpinner(spinnerId, `Generating ZKey file for ${info.circuitName} circuit`);
-      }
+      const spinnerId: string | null = Reporter!.reportZKeyFileGenerationStartWithSpinner(info.circuitName);
 
       if (contributionTemplate === "groth16") {
         await snarkjs.zKey.newZKey(r1csFile, ptauFilePath, zKeyFile);
@@ -150,11 +142,7 @@ export class CompilationProcessor {
         { zkeyFile, vKeyFile },
       ]);
 
-      const spinnerId: string = `${info.circuitName}-generate-zkey`;
-
-      if (!Reporter!.isQuiet()) {
-        SpinnerProcessor!.createSpinner(spinnerId, `Generating VKey file for ${info.circuitName} circuit`);
-      }
+      const spinnerId: string | null = Reporter!.reportVKeyFileGenerationStartWithSpinner(info.circuitName);
 
       const vKeyData = await snarkjs.zKey.exportVerificationKey(zkeyFile);
 

@@ -15,13 +15,7 @@ import { zkitConfigExtender } from "./config/config";
 
 import { CircomCircuitsCache, createCircuitsCache } from "./cache/CircomCircuitsCache";
 import { CompilationFilesManager, CompilationProcessor } from "./compile/core";
-import {
-  Reporter,
-  createReporter,
-  createSpinnerProcessor,
-  createProgressBarProcessor,
-  SpinnerProcessor,
-} from "./reporter";
+import { Reporter, createReporter } from "./reporter";
 
 import { CompileTaskConfig, GenerateVerifiersTaskConfig, GetCircuitZKitConfig } from "./types/tasks";
 import { CompileFlags, ResolvedFileWithDependencies } from "./types/compile";
@@ -47,8 +41,6 @@ const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfi
 
   await createCircuitsCache(circuitsCacheFullPath);
   createReporter(taskArgs.quiet || env.config.zkit.quiet);
-  createSpinnerProcessor();
-  createProgressBarProcessor();
 
   const compilationFilesManager: CompilationFilesManager = new CompilationFilesManager(
     {
@@ -116,8 +108,6 @@ const generateVerifiers: ActionType<GenerateVerifiersTaskConfig> = async (
     });
   } else {
     createReporter(taskArgs.quiet || env.config.zkit.quiet);
-    createSpinnerProcessor();
-    createProgressBarProcessor();
   }
 
   const artifactsDirFullPath: string = getNormalizedFullPath(
@@ -131,15 +121,13 @@ const generateVerifiers: ActionType<GenerateVerifiersTaskConfig> = async (
 
   const artifactsDirArr: string[] = getAllDirsMatchingSync(artifactsDirFullPath, (f) => f.endsWith(".circom"));
 
-  Reporter!.reportVerifiersGenerationInfo(artifactsDirFullPath, verifiersDirFullPath);
+  Reporter!.verboseLog("index", "Verifiers generation info: %o", [{ artifactsDirFullPath, verifiersDirFullPath }]);
+
+  Reporter!.reportVerifiersGenerationHeader();
 
   for (const artifactDirPath of artifactsDirArr) {
     const circuitName: string = path.parse(artifactDirPath).name;
-    const spinnerId: string = `${circuitName}-verifier-generation`;
-
-    if (!Reporter!.isQuiet()) {
-      SpinnerProcessor!.createSpinner(spinnerId, `Generating Solidity verifier contract for ${circuitName} circuit`);
-    }
+    const spinnerId: string | null = Reporter!.reportVerifierGenerationStartWithSpinner(circuitName);
 
     await new CircuitZKit({
       circuitName,

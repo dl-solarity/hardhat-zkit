@@ -1,8 +1,8 @@
 import { Bar, Options, Preset, Presets, ValueType } from "cli-progress";
 
-import { MB_SIZE } from "../constants";
+import { BYTES_IN_MB } from "../constants";
 
-class BaseProgressBarProcessor {
+export class ProgressBarProcessor {
   private _progressBar: Bar | null = null;
 
   public createAndStartProgressBar(
@@ -32,7 +32,7 @@ class BaseProgressBarProcessor {
 
   public formatToMB(v: number, options: Options, type: ValueType): string {
     const toMb = (value: number): string => {
-      return (value / MB_SIZE).toFixed(2);
+      return (value / BYTES_IN_MB).toFixed(2);
     };
 
     switch (type) {
@@ -46,14 +46,4 @@ class BaseProgressBarProcessor {
         return v.toString();
     }
   }
-}
-
-export let ProgressBarProcessor: BaseProgressBarProcessor | null = null;
-
-export async function createProgressBarProcessor() {
-  if (ProgressBarProcessor) {
-    return;
-  }
-
-  ProgressBarProcessor = new BaseProgressBarProcessor();
 }
