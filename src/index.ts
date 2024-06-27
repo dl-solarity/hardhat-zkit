@@ -154,13 +154,13 @@ const getCircuitZKit: ActionType<GetCircuitZKitConfig> = async (
 
   if (foundPaths.length === 0) {
     throw new HardhatZKitError(
-      `The artifacts for '${taskArgs.circuitName}' circuit do not exist. Please compile circuits`,
+      `The artifacts for '${taskArgs.circuitName}' circuit do not exist. Please compile the circuits.`,
     );
   }
 
   if (foundPaths.length > 1) {
     throw new HardhatZKitError(
-      `Invalid circuit name ${taskArgs.circuitName}. Multiple artifacts found along ${foundPaths} paths`,
+      `Invalid circuit name ${taskArgs.circuitName}. Multiple artifacts found along ${foundPaths} paths.`,
     );
   }
 
@@ -177,7 +177,7 @@ const getCircuitZKit: ActionType<GetCircuitZKitConfig> = async (
   });
 };
 
-task(TASK_CIRCUITS_COMPILE, "Compile circom circuits and generate all necessary artifacts")
+task(TASK_CIRCUITS_COMPILE, "Compile Circom circuits and generate all necessary artifacts")
   .addOptionalParam(
     "artifactsDir",
     "Relative path to the directory where compilation artifacts will be saved.",
@@ -190,15 +190,15 @@ task(TASK_CIRCUITS_COMPILE, "Compile circom circuits and generate all necessary 
     undefined,
     types.string,
   )
-  .addOptionalParam("ptauDownload", "Flag that indicates if downloading Ptau files is allowed.", true, types.boolean)
+  .addOptionalParam("ptauDownload", "Flag that indicates if Ptau files dowloading is allowed.", true, types.boolean)
   .addFlag("sym", "Outputs witness in sym file in the compilation artifacts directory.")
   .addFlag("json", "Outputs constraints in json file in the compilation artifacts directory.")
   .addFlag("c", "Enables the generation of cpp files in the compilation artifacts directory.")
   .addFlag("force", "Force compilation ignoring cache.")
-  .addFlag("quiet", "Makes the compilation process less verbose.")
+  .addFlag("quiet", "Suppresses logs during the compilation process.")
   .setAction(compile);
 
-task(TASK_GENERATE_VERIFIERS, "Generate Solidity verifier contracts for circuits")
+task(TASK_GENERATE_VERIFIERS, "Generate Solidity verifier contracts for Circom circuits")
   .addOptionalParam(
     "artifactsDir",
     "Relative path to the directory with compilation artifacts.",
@@ -211,9 +211,9 @@ task(TASK_GENERATE_VERIFIERS, "Generate Solidity verifier contracts for circuits
     undefined,
     types.string,
   )
-  .addFlag("noCompile", "Disable compilation process before verifiers generation.")
+  .addFlag("noCompile", "Disable compilation before verifiers generation.")
   .addFlag("force", "Force compilation ignoring cache.")
-  .addFlag("quiet", "Makes the verifier generation process less verbose.")
+  .addFlag("quiet", "Suppresses logs during the verifier generation process.")
   .setAction(generateVerifiers);
 
 subtask(TASK_ZKIT_GET_CIRCUIT_ZKIT)

@@ -71,7 +71,7 @@ class BaseReporter {
 
     let output: string = "";
 
-    output += `\n${chalk.bold("Start compilation process:")}\n`;
+    output += `\n${chalk.bold("Starting compilation process:")}\n`;
 
     output += `\n${chalk.italic.cyan("First step - Circuits compilation")}\n`;
 

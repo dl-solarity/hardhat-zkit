@@ -45,7 +45,7 @@ export async function downloadFile(file: string, url: string): Promise<boolean> 
   return new Promise((resolve, reject) => {
     const request = https.get(url, (response) => {
       if (response.statusCode !== 200) {
-        console.error(`Unable to download file. Status code: ${response.statusCode}`);
+        console.error(`Unable to download file. Status code: ${response.statusCode}.`);
         return;
       }
 
