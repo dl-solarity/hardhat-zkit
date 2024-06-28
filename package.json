@@ -41,7 +41,7 @@
     "coverage": "nyc mocha --recursive 'test/**/*.ts' --exit",
     "clean-tests": "npm run clean --workspaces",
     "lint-fix": "prettier --write \"./**/*.ts\" && eslint \"{src,test}/**/*.{js,ts}\" --cache --fix",
-    "publish-to-npm": "npm run compile && npm run lint-fix && npm publish ./ --access public"
+    "publish-to-npm": "npm run build && npm run lint-fix && npm publish ./ --access public"
   },
   "nyc": {
     "reporter": [
