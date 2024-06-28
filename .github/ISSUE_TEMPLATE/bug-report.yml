@@ -11,7 +11,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: "Project version"
+      label: "hardhat-zkit version"
       placeholder: "1.2.3"
     validations:
       required: true
