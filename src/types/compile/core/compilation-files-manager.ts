@@ -1,6 +1,7 @@
 import { ResolvedFile } from "hardhat/types/builtin-tasks";
 
-export type ResolvedFileWithDependencies = {
+export type ResolvedFileInfo = {
+  circuitName: string;
   resolvedFile: ResolvedFile;
   dependencies: ResolvedFile[];
 };

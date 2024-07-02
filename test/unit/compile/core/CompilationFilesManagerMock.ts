@@ -3,22 +3,22 @@ import { ResolvedFile } from "hardhat/types/builtin-tasks";
 import { CompilationFilesManager } from "../../../../src/compile/core";
 import { DependencyGraph } from "../../../../src/compile/dependencies";
 import { FileFilterSettings } from "../../../../src/types/zkit-config";
-import { CompileFlags, ResolvedFileWithDependencies } from "../../../../src/types/compile";
+import { CompileFlags, ResolvedFileInfo } from "../../../../src/types/compile";
 
 export class CompilationFilesManagerMock extends CompilationFilesManager {
   public filterResolvedFilesToCompile(
-    resolvedFilesWithDependencies: ResolvedFileWithDependencies[],
+    resolvedFilesInfo: ResolvedFileInfo[],
     filterSettings: FileFilterSettings,
-  ): ResolvedFileWithDependencies[] {
-    return this._filterResolvedFilesToCompile(resolvedFilesWithDependencies, filterSettings);
+  ): ResolvedFileInfo[] {
+    return this._filterResolvedFilesToCompile(resolvedFilesInfo, filterSettings);
   }
 
   public filterResolvedFiles(
     resolvedFiles: ResolvedFile[],
     sourceNames: string[],
-    withMainComponent: boolean,
-  ): ResolvedFile[] {
-    return this._filterResolvedFiles(resolvedFiles, sourceNames, withMainComponent);
+    dependencyGraph: DependencyGraph,
+  ): ResolvedFileInfo[] {
+    return this._filterResolvedFiles(resolvedFiles, sourceNames, dependencyGraph);
   }
 
   public async getSourceNamesFromSourcePaths(sourcePaths: string[]): Promise<string[]> {
@@ -33,18 +33,15 @@ export class CompilationFilesManagerMock extends CompilationFilesManager {
     return this._hasMainComponent(resolvedFile);
   }
 
-  public validateResolvedFiles(resolvedFiles: ResolvedFile[]) {
-    this._validateResolvedFiles(resolvedFiles);
+  public validateResolvedFiles(resolvedFilesInfo: ResolvedFileInfo[]) {
+    this._validateResolvedFiles(resolvedFilesInfo);
   }
 
-  public invalidateCacheMissingArtifacts(resolvedFiles: ResolvedFile[]) {
-    return this._invalidateCacheMissingArtifacts(resolvedFiles);
+  public invalidateCacheMissingArtifacts(resolvedFilesInfo: ResolvedFileInfo[]) {
+    return this._invalidateCacheMissingArtifacts(resolvedFilesInfo);
   }
 
-  public needsCompilation(
-    resolvedFilesWithDependencies: ResolvedFileWithDependencies,
-    compileFlags: CompileFlags,
-  ): boolean {
-    return this._needsCompilation(resolvedFilesWithDependencies, compileFlags);
+  public needsCompilation(resolvedFileInfo: ResolvedFileInfo, compileFlags: CompileFlags): boolean {
+    return this._needsCompilation(resolvedFileInfo, compileFlags);
   }
 }

@@ -18,7 +18,7 @@ import { CompilationFilesManager, CompilationProcessor } from "./compile/core";
 import { Reporter, createReporter } from "./reporter";
 
 import { CompileTaskConfig, GenerateVerifiersTaskConfig, GetCircuitZKitConfig } from "./types/tasks";
-import { CompileFlags, ResolvedFileWithDependencies } from "./types/compile";
+import { CompileFlags, ResolvedFileInfo } from "./types/compile";
 
 import { getAllDirsMatchingSync, getNormalizedFullPath } from "./utils/path-utils";
 import { CIRCOM_CIRCUITS_CACHE_FILENAME, COMPILER_VERSION } from "./constants";
@@ -64,8 +64,10 @@ const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfi
   Reporter!.reportCompilerVersion(COMPILER_VERSION);
   Reporter!.verboseLog("index", "Compile flags: %O", [compileFlags]);
 
-  const resolvedFilesWithDependencies: ResolvedFileWithDependencies[] =
-    await compilationFilesManager.getResolvedFilesToCompile(compileFlags, taskArgs.force);
+  const resolvedFilesInfo: ResolvedFileInfo[] = await compilationFilesManager.getResolvedFilesToCompile(
+    compileFlags,
+    taskArgs.force,
+  );
 
   const compilationProcessor: CompilationProcessor = new CompilationProcessor(
     compilationFilesManager.getCircuitsDirFullPath(),
@@ -78,10 +80,10 @@ const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfi
     env,
   );
 
-  await compilationProcessor.compile(resolvedFilesWithDependencies.map((file) => file.resolvedFile));
+  await compilationProcessor.compile(resolvedFilesInfo);
 
-  for (const resolvedFileWithDependencies of resolvedFilesWithDependencies) {
-    for (const file of [resolvedFileWithDependencies.resolvedFile, ...resolvedFileWithDependencies.dependencies]) {
+  for (const fileInfo of resolvedFilesInfo) {
+    for (const file of [fileInfo.resolvedFile, ...fileInfo.dependencies]) {
       CircomCircuitsCache!.addFile(file.absolutePath, {
         lastModificationDate: file.lastModificationDate.valueOf(),
         contentHash: file.contentHash,

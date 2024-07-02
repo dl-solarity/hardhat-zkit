@@ -10,6 +10,7 @@ export type CompilationProccessorConfig = {
 
 export type CompilationInfo = {
   circuitName: string;
+  circuitFileName: string;
   tempArtifactsPath: string;
   artifactsPath: string;
   resolvedFile: ResolvedFile;

@@ -58,7 +58,7 @@ describe("CircomCompiler", () => {
       );
 
       const reason: string =
-        "Compilation failed with an unknown error. Consider passing 'quiet=false' flag to see the compilation error.";
+        "Compilation failed with an unknown error. Use '--verbose' hardhat flag to see the compilation error.";
 
       await expect(
         circomCompiler.compile({

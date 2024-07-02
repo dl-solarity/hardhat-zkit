@@ -8,15 +8,13 @@ import * as snarkjs from "snarkjs";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 import { CircomCompilerFactory } from "./CircomCompilerFactory";
-import { ICircomCompiler, CompilationProccessorConfig, CompilationInfo } from "../../types/compile";
+import { ICircomCompiler, CompilationProccessorConfig, CompilationInfo, ResolvedFileInfo } from "../../types/compile";
 import { ContributionTemplateType, ZKitConfig } from "../../types/zkit-config";
 
-import { ResolvedFile } from "../dependencies";
 import { PtauDownloader } from "../utils/PtauDownloader";
-import { getNormalizedFullPath } from "../../utils/path-utils";
+import { getNormalizedFullPath, renameFilesRecursively, readDirRecursively } from "../../utils/path-utils";
 import { HardhatZKitError } from "../../errors";
 import { PTAU_FILE_REG_EXP } from "../../constants";
-import { readDirRecursively } from "../../utils/utils";
 import { Reporter } from "../../reporter";
 
 export class CompilationProcessor {
@@ -45,15 +43,15 @@ export class CompilationProcessor {
     ]);
   }
 
-  public async compile(filesToCompile: ResolvedFile[]) {
-    if (filesToCompile.length > 0) {
+  public async compile(filesInfoToCompile: ResolvedFileInfo[]) {
+    if (filesInfoToCompile.length > 0) {
       const tempDir: string = path.join(os.tmpdir(), ".zkit", uuid());
       fs.mkdirSync(tempDir, { recursive: true });
 
       Reporter!.verboseLog("compilation-processor", "Compilation temp directory: %s", [tempDir]);
       Reporter!.reportCompilationProcessHeader();
 
-      const compilationInfoArr: CompilationInfo[] = await this._getCompilationInfoArr(tempDir, filesToCompile);
+      const compilationInfoArr: CompilationInfo[] = await this._getCompilationInfoArr(tempDir, filesInfoToCompile);
 
       await this._compileCircuits(compilationInfoArr);
 
@@ -84,6 +82,10 @@ export class CompilationProcessor {
         compileFlags: this._config.compileFlags,
         quiet: !this._verbose,
       });
+
+      if (info.circuitFileName !== info.circuitName) {
+        renameFilesRecursively(info.tempArtifactsPath, info.circuitFileName, info.circuitName);
+      }
 
       Reporter!.reportCircuitCompilationResult(spinnerId, info.circuitName);
     }
@@ -153,6 +155,10 @@ export class CompilationProcessor {
   }
 
   private async _moveFromTemDirToArtifacts(compilationInfoArr: CompilationInfo[]) {
+    if (fs.existsSync(this._artifactsDirFullPath)) {
+      fs.rmSync(this._artifactsDirFullPath, { recursive: true, force: true });
+    }
+
     compilationInfoArr.forEach((info: CompilationInfo) => {
       fs.mkdirSync(info.artifactsPath, { recursive: true });
 
@@ -177,17 +183,21 @@ export class CompilationProcessor {
     });
   }
 
-  private async _getCompilationInfoArr(tempDir: string, filesToCompile: ResolvedFile[]): Promise<CompilationInfo[]> {
+  private async _getCompilationInfoArr(
+    tempDir: string,
+    filesInfoToCompile: ResolvedFileInfo[],
+  ): Promise<CompilationInfo[]> {
     return Promise.all(
-      filesToCompile.map(async (file: ResolvedFile): Promise<CompilationInfo> => {
-        const circuitName: string = path.parse(file.absolutePath).name;
-        const tempArtifactsPath: string = getNormalizedFullPath(tempDir, file.sourceName);
-
+      filesInfoToCompile.map(async (fileInfo: ResolvedFileInfo): Promise<CompilationInfo> => {
         return {
-          circuitName: circuitName,
-          artifactsPath: file.absolutePath.replace(this._circuitsDirFullPath, this._artifactsDirFullPath),
-          tempArtifactsPath,
-          resolvedFile: file,
+          circuitName: fileInfo.circuitName,
+          circuitFileName: path.parse(fileInfo.resolvedFile.absolutePath).name,
+          artifactsPath: fileInfo.resolvedFile.absolutePath.replace(
+            this._circuitsDirFullPath,
+            this._artifactsDirFullPath,
+          ),
+          tempArtifactsPath: getNormalizedFullPath(tempDir, fileInfo.resolvedFile.sourceName),
+          resolvedFile: fileInfo.resolvedFile,
           constraintsNumber: 0,
         };
       }),
