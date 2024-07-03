@@ -60,7 +60,7 @@ export class CompilationProcessor {
       await this._generateZKeyFiles(ptauFilePath, compilationInfoArr);
       await this._generateVKeyFile(compilationInfoArr);
 
-      await this._moveFromTemDirToArtifacts(compilationInfoArr);
+      await this._moveFromTempDirToArtifacts(compilationInfoArr);
 
       Reporter!.reportCompilationResult(compilationInfoArr);
 
@@ -154,7 +154,7 @@ export class CompilationProcessor {
     }
   }
 
-  private async _moveFromTemDirToArtifacts(compilationInfoArr: CompilationInfo[]) {
+  private async _moveFromTempDirToArtifacts(compilationInfoArr: CompilationInfo[]) {
     compilationInfoArr.forEach((info: CompilationInfo) => {
       fs.mkdirSync(info.artifactsPath, { recursive: true });
 

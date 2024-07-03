@@ -168,7 +168,7 @@ const getCircuitZKit: ActionType<GetCircuitZKitConfig> = async (
     const tokens: string[] = circuitName.split(":");
 
     if (tokens.length > 2) {
-      throw new HardhatZKitError(`Invalid full circuit name ${circuitName}`);
+      throw new HardhatZKitError(`Invalid full circuit name ${circuitName}.`);
     }
 
     sourceName = tokens[0];

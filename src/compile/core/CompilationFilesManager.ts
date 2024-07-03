@@ -151,7 +151,7 @@ export class CompilationFilesManager {
           dependencies: dependencyGraph.getTransitiveDependencies(file).map((dep) => dep.dependency),
         });
       } else if (matches.length > 1) {
-        throw new HardhatZKitError(`Multiple definition of 'main component' in file ${file.sourceName}`);
+        throw new HardhatZKitError(`Multiple definition of 'main component' in the file ${file.sourceName}.`);
       }
     }
 
