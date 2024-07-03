@@ -199,7 +199,7 @@ const getCircuitZKit: ActionType<GetCircuitZKitConfig> = async (
 
   if (foundPaths.length > 1) {
     throw new HardhatZKitError(
-      `Multiple artifacts are found for '${circuitName}' circuit. Please pass the full path to the circuit`,
+      `Multiple artifacts are found for '${circuitName}' circuit. Please provide the full circuit name.`,
     );
   }
 

@@ -16,7 +16,7 @@ This hardhat plugin is a zero-config, one-stop Circom development environment th
 - Developer-oriented abstractions that simplify `r1cs`, `zkey`, `vkey`, and `witness` generation processes.
 - Recompilation of only the modified circuits.
 - Automatic downloads of phase-1 `ptau` files.
-- Quick phase-2 contributions to `zkey` files.
+- Convenient phase-2 contributions to `zkey` files.
 - Invisible `wasm`-based Circom compiler management.
 - Zero platform-specific dependencies: everything is in TypeScript.
 - Extensive development and testing API.
@@ -85,14 +85,14 @@ Where:
 - `quiet` - The flag indicating whether to suppress the output.
 - `verifiersDir` - The directory where to generate the Solidity verifiers.
 - `ptauDir` - The directory where to look for the `ptau` files. `$HOME/.zkit/ptau/` by default.
-- `ptauDownload` - The flag to allow automatic dowload of required `ptau` files.
+- `ptauDownload` - The flag to allow automatic download of required `ptau` files.
 
 ### Tasks
 
 There are several hardhat tasks that the plugin provides:
 
 - `zkit:compile` task that compiles or recompiles the modified circuits that have the main component.
-- `zkit:verifiers` task that generates Solidity verifiers for all the available circuit artifacts.
+- `zkit:verifiers` task that generates Solidity verifiers for all the previously compiled circuits.
 
 To view the available options, run the help command:
 
@@ -168,7 +168,7 @@ In case there are conflicts between circuit file names and `main` component name
 Where:
 
 - `circuitSourceName` - Path to the circuit file from the project root.
-- `circuitName` - Сircuit `main` component name.
+- `circuitName` - Circuit `main` component name.
 
 > [!IMPORTANT] 
 > Check out the [`zkit`](https://github.com/dl-solarity/zkit) documentation to understand zkit objects capabilities.
