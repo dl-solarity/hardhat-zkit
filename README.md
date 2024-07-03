@@ -92,7 +92,7 @@ Where:
 There are several hardhat tasks that the plugin provides:
 
 - `zkit:compile` task that compiles or recompiles the modified circuits that have the main component.
-- `zkit:verifiers` task that generates Solidity verifiers for all the available circuits.
+- `zkit:verifiers` task that generates Solidity verifiers for all the available circuit artifacts.
 
 To view the available options, run the help command:
 
@@ -113,8 +113,10 @@ The plugin extends the hardhat environment with the `zkit` object that allows ci
 
 <tr>
 <td>
-  
+
 ```circom
+// file location: ./circuits/multiplier.circom
+
 pragma circom 2.0.0;
 
 template Multiplier(){
@@ -135,7 +137,8 @@ component main = Multiplier();
 import { zkit } from "hardhat";
 
 async function main() {
-  const circuit = await zkit.getCircuit("multiplier"); // "multiplier" is the file name
+  const circuit = await zkit.getCircuit("Multiplier");
+  // OR const circuit = await zkit.getCircuit("circuits/multiplier.circom:Multiplier");
 
   const proof = await circuit.generateProof({ in1: "4", in2: "2" });
 
@@ -156,9 +159,16 @@ main()
 
 ---
 
-- **`getCircuit(<filename>) -> zkit`**
+- **`getCircuit(<fullCircuitName|circuitName>) -> zkit`**
 
-The method accepts the filename of the circuit where its `main` component is defined. Returns the instanciated zkit object.
+The method accepts the name of the `main` component of the circuit, the object of which should be created. Returns the instanciated zkit object.
+
+In case there are conflicts between circuit file names and `main` component names, you should use the `fullCircuitName`, which has the following form: `circuitSourceName:circuitName`.
+
+Where:
+
+- `circuitSourceName` - Path to the circuit file from the project root.
+- `circuitName` - Сircuit `main` component name.
 
 > [!IMPORTANT] 
 > Check out the [`zkit`](https://github.com/dl-solarity/zkit) documentation to understand zkit objects capabilities.
