@@ -1,4 +1,5 @@
 import path from "path";
+import fs from "fs";
 
 import { lazyObject } from "hardhat/plugins";
 import { extendConfig, extendEnvironment, task, subtask, types } from "hardhat/config";
@@ -128,7 +129,17 @@ const generateVerifiers: ActionType<GenerateVerifiersTaskConfig> = async (
   Reporter!.reportVerifiersGenerationHeader();
 
   for (const artifactDirPath of artifactsDirArr) {
-    const circuitName: string = path.parse(artifactDirPath).name;
+    const r1csFileName: string | undefined = fs.readdirSync(artifactDirPath).find((dirEntry: string) => {
+      return dirEntry.endsWith(".r1cs");
+    });
+
+    if (!r1csFileName) {
+      throw new HardhatZKitError(
+        `Failed to generate verifier for the ${artifactDirPath} artifacts. Please recompile circuits and try again.`,
+      );
+    }
+
+    const circuitName: string = path.parse(r1csFileName).name;
     const spinnerId: string | null = Reporter!.reportVerifierGenerationStartWithSpinner(circuitName);
 
     await new CircuitZKit({
@@ -150,19 +161,45 @@ const getCircuitZKit: ActionType<GetCircuitZKitConfig> = async (
     taskArgs.artifactsDir ?? env.config.zkit.compilationSettings.artifactsDir,
   );
 
-  const foundPaths: string[] = getAllDirsMatchingSync(artifactsDirFullPath, (fullPath: string): boolean => {
-    return fullPath.endsWith(`${taskArgs.circuitName}.circom`);
-  });
+  let sourceName: string | null = null;
+  let circuitName = taskArgs.circuitName;
+
+  if (circuitName.includes(":")) {
+    const tokens: string[] = circuitName.split(":");
+
+    if (tokens.length > 2) {
+      throw new HardhatZKitError(`Invalid full circuit name ${circuitName}`);
+    }
+
+    sourceName = tokens[0];
+    circuitName = tokens[1];
+  }
+
+  let foundPaths: string[] = [];
+
+  if (!sourceName) {
+    foundPaths = getAllDirsMatchingSync(artifactsDirFullPath, (fullPath: string): boolean => {
+      return fs.existsSync(getNormalizedFullPath(fullPath, `${circuitName}.r1cs`));
+    });
+  } else {
+    const circuitsDirFullPath: string = getNormalizedFullPath(env.config.paths.root, env.config.zkit.circuitsDir);
+    const circuitArtifactsPath: string = getNormalizedFullPath(env.config.paths.root, sourceName).replace(
+      circuitsDirFullPath,
+      artifactsDirFullPath,
+    );
+
+    if (fs.existsSync(getNormalizedFullPath(circuitArtifactsPath, `${circuitName}.r1cs`))) {
+      foundPaths.push(circuitArtifactsPath);
+    }
+  }
 
   if (foundPaths.length === 0) {
-    throw new HardhatZKitError(
-      `The artifacts for '${taskArgs.circuitName}' circuit do not exist. Please compile the circuits.`,
-    );
+    throw new HardhatZKitError(`The artifacts for '${circuitName}' circuit do not exist. Please compile the circuits.`);
   }
 
   if (foundPaths.length > 1) {
     throw new HardhatZKitError(
-      `Invalid circuit name ${taskArgs.circuitName}. Multiple artifacts found along ${foundPaths} paths.`,
+      `Multiple artifacts are found for '${circuitName}' circuit. Please pass the full path to the circuit`,
     );
   }
 
@@ -172,7 +209,7 @@ const getCircuitZKit: ActionType<GetCircuitZKitConfig> = async (
   );
 
   return new CircuitZKit({
-    circuitName: taskArgs.circuitName,
+    circuitName,
     circuitArtifactsPath: foundPaths[0],
     verifierDirPath: verifiersDirFullPath,
     templateType: taskArgs.verifierTemplateType ?? "groth16",

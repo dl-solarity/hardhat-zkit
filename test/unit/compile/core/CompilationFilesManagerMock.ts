@@ -29,14 +29,6 @@ export class CompilationFilesManagerMock extends CompilationFilesManager {
     return this._getDependencyGraph(sourceNames);
   }
 
-  public hasMainComponent(resolvedFile: ResolvedFile): boolean {
-    return this._hasMainComponent(resolvedFile);
-  }
-
-  public validateResolvedFiles(resolvedFilesInfo: ResolvedFileInfo[]) {
-    this._validateResolvedFiles(resolvedFilesInfo);
-  }
-
   public invalidateCacheMissingArtifacts(resolvedFilesInfo: ResolvedFileInfo[]) {
     return this._invalidateCacheMissingArtifacts(resolvedFilesInfo);
   }

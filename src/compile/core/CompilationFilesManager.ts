@@ -51,7 +51,6 @@ export class CompilationFilesManager {
       resolvedFilesInfoToCompile.map((fileInfo) => fileInfo.resolvedFile.sourceName),
     ]);
 
-    this._validateResolvedFiles(resolvedFilesInfoToCompile);
     this._invalidateCacheMissingArtifacts(resolvedFilesInfoToCompile);
 
     if (!force) {
@@ -173,30 +172,8 @@ export class CompilationFilesManager {
     return DependencyGraph.createFromResolvedFiles(resolver, resolvedFiles);
   }
 
-  protected _hasMainComponent(resolvedFile: ResolvedFile): boolean {
-    return new RegExp(MAIN_COMPONENT_REG_EXP).test(resolvedFile.content.rawContent);
-  }
-
   protected _getRemappings(): Record<string, string> {
     return {};
-  }
-
-  protected _validateResolvedFiles(resolvedFilesInfo: ResolvedFileInfo[]) {
-    const circuitsNameCount = {} as Record<string, ResolvedFileInfo>;
-
-    resolvedFilesInfo.forEach((fileInfo: ResolvedFileInfo) => {
-      const circuitName = path.parse(fileInfo.resolvedFile.absolutePath).name;
-
-      Reporter!.verboseLog("compilation-files-manager", "Validating %s circuit for duplicates", [circuitName]);
-
-      if (circuitsNameCount[circuitName]) {
-        throw new HardhatZKitError(
-          `Circuit ${fileInfo.resolvedFile.sourceName} duplicated ${circuitsNameCount[circuitName].resolvedFile.sourceName} circuit`,
-        );
-      }
-
-      circuitsNameCount[circuitName] = fileInfo;
-    });
   }
 
   protected _invalidateCacheMissingArtifacts(resolvedFilesInfo: ResolvedFileInfo[]) {

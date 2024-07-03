@@ -155,10 +155,6 @@ export class CompilationProcessor {
   }
 
   private async _moveFromTemDirToArtifacts(compilationInfoArr: CompilationInfo[]) {
-    if (fs.existsSync(this._artifactsDirFullPath)) {
-      fs.rmSync(this._artifactsDirFullPath, { recursive: true, force: true });
-    }
-
     compilationInfoArr.forEach((info: CompilationInfo) => {
       fs.mkdirSync(info.artifactsPath, { recursive: true });
 
