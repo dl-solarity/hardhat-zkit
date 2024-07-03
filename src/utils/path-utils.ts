@@ -30,6 +30,53 @@ export function getAllDirsMatchingSync(
   return results.flat();
 }
 
+/**
+ * Reads a directory recursively and calls the callback for each file.
+ *
+ * @dev After Node.js 20.0.0 the `recursive` option is available.
+ *
+ * @param {string} dir - The directory to read.
+ * @param {(dir: string, file: string) => void} callback - The callback function.
+ */
+export function readDirRecursively(dir: string, callback: (dir: string, file: string) => void): void {
+  if (!fs.existsSync(dir)) {
+    return;
+  }
+
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+
+  for (const entry of entries) {
+    const entryPath = path.join(dir, entry.name);
+
+    if (entry.isDirectory()) {
+      readDirRecursively(entryPath, callback);
+    }
+
+    if (entry.isFile()) {
+      callback(dir, entryPath);
+    }
+  }
+}
+
+export function renameFilesRecursively(dir: string, searchValue: string, replaceValue: string) {
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+
+  for (const entry of entries) {
+    const oldEntryPath: string = path.join(dir, entry.name);
+    let newEntryPath: string = oldEntryPath;
+
+    if (entry.name.includes(searchValue)) {
+      newEntryPath = path.join(dir, entry.name.replace(searchValue, replaceValue));
+
+      fs.renameSync(oldEntryPath, newEntryPath);
+    }
+
+    if (entry.isDirectory()) {
+      renameFilesRecursively(newEntryPath, searchValue, replaceValue);
+    }
+  }
+}
+
 function readdirSync(absolutePathToDir: string) {
   try {
     return fs.readdirSync(absolutePathToDir);

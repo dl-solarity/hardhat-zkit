@@ -8,7 +8,7 @@ import { localPathToSourceName } from "hardhat/utils/source-names";
 import { ResolvedFile } from "hardhat/types/builtin-tasks";
 
 import { FileFilterSettings, ZKitConfig } from "../../types/zkit-config";
-import { CompileFlags, CompilationFilesManagerConfig, ResolvedFileWithDependencies } from "../../types/compile";
+import { CompileFlags, CompilationFilesManagerConfig, ResolvedFileInfo } from "../../types/compile";
 import { DependencyGraph, Parser, Resolver } from "../dependencies";
 import { CircomCircuitsCache } from "../../cache/CircomCircuitsCache";
 
@@ -30,10 +30,7 @@ export class CompilationFilesManager {
     this._projectPaths = hardhatConfig.paths;
   }
 
-  public async getResolvedFilesToCompile(
-    compileFlags: CompileFlags,
-    force: boolean,
-  ): Promise<ResolvedFileWithDependencies[]> {
+  public async getResolvedFilesToCompile(compileFlags: CompileFlags, force: boolean): Promise<ResolvedFileInfo[]> {
     const circuitsSourcePaths: string[] = await getAllFilesMatching(this.getCircuitsDirFullPath(), (f) =>
       f.endsWith(".circom"),
     );
@@ -44,54 +41,42 @@ export class CompilationFilesManager {
 
     const dependencyGraph: DependencyGraph = await this._getDependencyGraph(sourceNames);
 
-    const resolvedFilesToCompile: ResolvedFile[] = this._filterResolvedFiles(
+    let resolvedFilesInfoToCompile: ResolvedFileInfo[] = this._filterResolvedFiles(
       dependencyGraph.getResolvedFiles(),
       sourceNames,
-      true,
+      dependencyGraph,
     );
 
     Reporter!.verboseLog("compilation-files-manager", "All circuit source names to compile: %o", [
-      resolvedFilesToCompile.map((file) => file.sourceName),
+      resolvedFilesInfoToCompile.map((fileInfo) => fileInfo.resolvedFile.sourceName),
     ]);
 
-    this._validateResolvedFiles(resolvedFilesToCompile);
-    this._invalidateCacheMissingArtifacts(resolvedFilesToCompile);
-
-    let resolvedFilesWithDependencies: ResolvedFileWithDependencies[] = [];
-
-    for (const file of resolvedFilesToCompile) {
-      resolvedFilesWithDependencies.push({
-        resolvedFile: file,
-        dependencies: dependencyGraph.getTransitiveDependencies(file).map((dep) => dep.dependency),
-      });
-    }
+    this._invalidateCacheMissingArtifacts(resolvedFilesInfoToCompile);
 
     if (!force) {
       Reporter!.verboseLog("compilation-files-manager", "Force flag disabled. Start filtering...");
 
-      resolvedFilesWithDependencies = resolvedFilesWithDependencies.filter((file) =>
-        this._needsCompilation(file, compileFlags),
+      resolvedFilesInfoToCompile = resolvedFilesInfoToCompile.filter((fileInfo) =>
+        this._needsCompilation(fileInfo, compileFlags),
       );
     }
 
-    const filteredFilesWithDependencies: ResolvedFileWithDependencies[] = this._filterResolvedFilesToCompile(
-      resolvedFilesWithDependencies,
+    const filteredResolvedFilesInfo: ResolvedFileInfo[] = this._filterResolvedFilesToCompile(
+      resolvedFilesInfoToCompile,
       this._zkitConfig.compilationSettings,
     );
 
-    const filteredResolvedFilesToCompile: ResolvedFile[] = filteredFilesWithDependencies.map(
-      (file) => file.resolvedFile,
-    );
+    const filteredResolvedFilesToCompile: ResolvedFile[] = filteredResolvedFilesInfo.map((file) => file.resolvedFile);
 
     Reporter!.verboseLog("compilation-files-manager", "Filtered circuit source names to compile: %o", [
       filteredResolvedFilesToCompile.map((file) => file.sourceName),
     ]);
     Reporter!.reportCircuitListToCompile(
-      resolvedFilesWithDependencies.map((file) => file.resolvedFile),
+      resolvedFilesInfoToCompile.map((file) => file.resolvedFile),
       filteredResolvedFilesToCompile,
     );
 
-    return filteredFilesWithDependencies;
+    return filteredResolvedFilesInfo;
   }
 
   public getCircuitsDirFullPath(): string {
@@ -116,9 +101,9 @@ export class CompilationFilesManager {
   }
 
   protected _filterResolvedFilesToCompile(
-    resolvedFilesWithDependencies: ResolvedFileWithDependencies[],
+    resolvedFilesInfo: ResolvedFileInfo[],
     filterSettings: FileFilterSettings,
-  ): ResolvedFileWithDependencies[] {
+  ): ResolvedFileInfo[] {
     const contains = (circuitsRoot: string, pathList: string[], source: any) => {
       const isSubPath = (parent: string, child: string) => {
         const parentTokens = parent.split(path.posix.sep).filter((i) => i.length);
@@ -134,8 +119,8 @@ export class CompilationFilesManager {
 
     const circuitsRoot = this.getCircuitsDirFullPath();
 
-    return resolvedFilesWithDependencies.filter((fileWithDep: ResolvedFileWithDependencies) => {
-      const circuitPath: string = fileWithDep.resolvedFile.absolutePath;
+    return resolvedFilesInfo.filter((fileInfo: ResolvedFileInfo) => {
+      const circuitPath: string = fileInfo.resolvedFile.absolutePath;
 
       return (
         (filterSettings.onlyFiles.length == 0 || contains(circuitsRoot, filterSettings.onlyFiles, circuitPath)) &&
@@ -147,11 +132,30 @@ export class CompilationFilesManager {
   protected _filterResolvedFiles(
     resolvedFiles: ResolvedFile[],
     sourceNames: string[],
-    withMainComponent: boolean,
-  ): ResolvedFile[] {
-    return resolvedFiles.filter((file: ResolvedFile) => {
-      return (!withMainComponent || this._hasMainComponent(file)) && sourceNames.includes(file.sourceName);
-    });
+    dependencyGraph: DependencyGraph,
+  ): ResolvedFileInfo[] {
+    const resolvedFilesInfo: ResolvedFileInfo[] = [];
+
+    for (const file of resolvedFiles) {
+      const res = file.content.rawContent.matchAll(MAIN_COMPONENT_REG_EXP);
+      const matches: string[] = [];
+
+      for (const match of res) {
+        matches.push(match[1]);
+      }
+
+      if (matches.length == 1 && sourceNames.includes(file.sourceName)) {
+        resolvedFilesInfo.push({
+          circuitName: matches[0],
+          resolvedFile: file,
+          dependencies: dependencyGraph.getTransitiveDependencies(file).map((dep) => dep.dependency),
+        });
+      } else if (matches.length > 1) {
+        throw new HardhatZKitError(`Multiple definition of 'main component' in the file ${file.sourceName}.`);
+      }
+    }
+
+    return resolvedFilesInfo;
   }
 
   protected async _getSourceNamesFromSourcePaths(sourcePaths: string[]): Promise<string[]> {
@@ -168,54 +172,29 @@ export class CompilationFilesManager {
     return DependencyGraph.createFromResolvedFiles(resolver, resolvedFiles);
   }
 
-  protected _hasMainComponent(resolvedFile: ResolvedFile): boolean {
-    return new RegExp(MAIN_COMPONENT_REG_EXP).test(resolvedFile.content.rawContent);
-  }
-
   protected _getRemappings(): Record<string, string> {
     return {};
   }
 
-  protected _validateResolvedFiles(resolvedFiles: ResolvedFile[]) {
-    const circuitsNameCount = {} as Record<string, ResolvedFile>;
-
-    resolvedFiles.forEach((file: ResolvedFile) => {
-      const circuitName = path.parse(file.absolutePath).name;
-
-      Reporter!.verboseLog("compilation-files-manager", "Validating %s circuit for duplicates", [circuitName]);
-
-      if (circuitsNameCount[circuitName]) {
-        throw new HardhatZKitError(
-          `Circuit ${file.sourceName} duplicated ${circuitsNameCount[circuitName].sourceName} circuit`,
-        );
-      }
-
-      circuitsNameCount[circuitName] = file;
-    });
-  }
-
-  protected _invalidateCacheMissingArtifacts(resolvedFiles: ResolvedFile[]) {
+  protected _invalidateCacheMissingArtifacts(resolvedFilesInfo: ResolvedFileInfo[]) {
     const circuitsDirFullPath = this.getCircuitsDirFullPath();
     const artifactsDirFullPath = this.getArtifactsDirFullPath();
 
-    for (const file of resolvedFiles) {
-      const cacheEntry = CircomCircuitsCache!.getEntry(file.absolutePath);
+    for (const fileInfo of resolvedFilesInfo) {
+      const cacheEntry = CircomCircuitsCache!.getEntry(fileInfo.resolvedFile.absolutePath);
 
       if (cacheEntry === undefined) {
         continue;
       }
 
-      if (!fsExtra.existsSync(file.absolutePath.replace(circuitsDirFullPath, artifactsDirFullPath))) {
-        CircomCircuitsCache!.removeEntry(file.absolutePath);
+      if (!fsExtra.existsSync(fileInfo.resolvedFile.absolutePath.replace(circuitsDirFullPath, artifactsDirFullPath))) {
+        CircomCircuitsCache!.removeEntry(fileInfo.resolvedFile.absolutePath);
       }
     }
   }
 
-  protected _needsCompilation(
-    resolvedFilesWithDependencies: ResolvedFileWithDependencies,
-    compileFlags: CompileFlags,
-  ): boolean {
-    for (const file of [resolvedFilesWithDependencies.resolvedFile, ...resolvedFilesWithDependencies.dependencies]) {
+  protected _needsCompilation(resolvedFileInfo: ResolvedFileInfo, compileFlags: CompileFlags): boolean {
+    for (const file of [resolvedFileInfo.resolvedFile, ...resolvedFileInfo.dependencies]) {
       const hasChanged = CircomCircuitsCache!.hasFileChanged(file.absolutePath, file.contentHash, compileFlags);
 
       if (hasChanged) {

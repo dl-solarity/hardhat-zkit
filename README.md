@@ -16,7 +16,7 @@ This hardhat plugin is a zero-config, one-stop Circom development environment th
 - Developer-oriented abstractions that simplify `r1cs`, `zkey`, `vkey`, and `witness` generation processes.
 - Recompilation of only the modified circuits.
 - Automatic downloads of phase-1 `ptau` files.
-- Quick phase-2 contributions to `zkey` files.
+- Convenient phase-2 contributions to `zkey` files.
 - Invisible `wasm`-based Circom compiler management.
 - Zero platform-specific dependencies: everything is in TypeScript.
 - Extensive development and testing API.
@@ -85,14 +85,14 @@ Where:
 - `quiet` - The flag indicating whether to suppress the output.
 - `verifiersDir` - The directory where to generate the Solidity verifiers.
 - `ptauDir` - The directory where to look for the `ptau` files. `$HOME/.zkit/ptau/` by default.
-- `ptauDownload` - The flag to allow automatic dowload of required `ptau` files.
+- `ptauDownload` - The flag to allow automatic download of required `ptau` files.
 
 ### Tasks
 
 There are several hardhat tasks that the plugin provides:
 
 - `zkit:compile` task that compiles or recompiles the modified circuits that have the main component.
-- `zkit:verifiers` task that generates Solidity verifiers for all the available circuits.
+- `zkit:verifiers` task that generates Solidity verifiers for all the previously compiled circuits.
 
 To view the available options, run the help command:
 
@@ -113,8 +113,10 @@ The plugin extends the hardhat environment with the `zkit` object that allows ci
 
 <tr>
 <td>
-  
+
 ```circom
+// file location: ./circuits/multiplier.circom
+
 pragma circom 2.0.0;
 
 template Multiplier(){
@@ -135,7 +137,8 @@ component main = Multiplier();
 import { zkit } from "hardhat";
 
 async function main() {
-  const circuit = await zkit.getCircuit("multiplier"); // "multiplier" is the file name
+  const circuit = await zkit.getCircuit("Multiplier");
+  // OR const circuit = await zkit.getCircuit("circuits/multiplier.circom:Multiplier");
 
   const proof = await circuit.generateProof({ in1: "4", in2: "2" });
 
@@ -156,9 +159,16 @@ main()
 
 ---
 
-- **`getCircuit(<filename>) -> zkit`**
+- **`getCircuit(<fullCircuitName|circuitName>) -> zkit`**
 
-The method accepts the filename of the circuit where its `main` component is defined. Returns the instanciated zkit object.
+The method accepts the name of the `main` component of the circuit, the object of which should be created. Returns the instanciated zkit object.
+
+In case there are conflicts between circuit file names and `main` component names, you should use the `fullCircuitName`, which has the following form: `circuitSourceName:circuitName`.
+
+Where:
+
+- `circuitSourceName` - Path to the circuit file from the project root.
+- `circuitName` - Circuit `main` component name.
 
 > [!IMPORTANT] 
 > Check out the [`zkit`](https://github.com/dl-solarity/zkit) documentation to understand zkit objects capabilities.
