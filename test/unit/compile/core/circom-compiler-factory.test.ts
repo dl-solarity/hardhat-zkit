@@ -34,6 +34,7 @@ describe("CircomCompilerFactory", () => {
       await compiler.compile({
         circuitFullPath,
         artifactsFullPath,
+        linkLibraries: [],
         compileFlags: { ...defaultCompileFlags, sym: true },
         quiet: true,
       });
@@ -64,11 +65,13 @@ describe("CircomCompilerFactory", () => {
     it("should return correct compilation args", async function () {
       const circuitFullPath: string = "circuit-path";
       const artifactsFullPath: string = "artifacts-path";
+      const linkLibraries: string = "node_modules";
 
-      let expectedArgs: string[] = [circuitFullPath, "-o", artifactsFullPath, "--r1cs", "--wasm"];
+      let expectedArgs: string[] = [circuitFullPath, "-o", artifactsFullPath, "--r1cs", "--wasm", "-l", linkLibraries];
       let args: string[] = circomCompiler.getCompilationArgs({
         circuitFullPath,
         artifactsFullPath,
+        linkLibraries: [linkLibraries],
         compileFlags: defaultCompileFlags,
         quiet: true,
       });
@@ -79,6 +82,7 @@ describe("CircomCompilerFactory", () => {
       args = circomCompiler.getCompilationArgs({
         circuitFullPath,
         artifactsFullPath,
+        linkLibraries: [],
         compileFlags: { ...defaultCompileFlags, c: true, sym: true },
         quiet: true,
       });

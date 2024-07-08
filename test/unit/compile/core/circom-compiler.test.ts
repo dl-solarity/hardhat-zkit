@@ -2,10 +2,11 @@ import fsExtra from "fs-extra";
 
 import { expect } from "chai";
 
-import { useEnvironment } from "../../../helpers";
+import { getProjectRootPath, useEnvironment } from "../../../helpers";
 import { getNormalizedFullPath } from "../../../../src/utils/path-utils";
 import { CompileFlags } from "../../../../src/types/compile";
 import { CircomCompiler } from "../../../../src/compile/core";
+import { NODE_MODULES } from "../../../../src/constants";
 
 describe("CircomCompiler", () => {
   const defaultCompileFlags: CompileFlags = {
@@ -16,7 +17,7 @@ describe("CircomCompiler", () => {
     sym: false,
   };
 
-  describe("compile", () => {
+  describe("compile:without-libraries", () => {
     let circomCompiler: CircomCompiler;
 
     useEnvironment("with-circuits");
@@ -38,6 +39,7 @@ describe("CircomCompiler", () => {
       await circomCompiler.compile({
         circuitFullPath,
         artifactsFullPath,
+        linkLibraries: [],
         compileFlags: { ...defaultCompileFlags, sym: true },
         quiet: true,
       });
@@ -64,6 +66,7 @@ describe("CircomCompiler", () => {
         circomCompiler.compile({
           circuitFullPath,
           artifactsFullPath,
+          linkLibraries: [],
           compileFlags: defaultCompileFlags,
           quiet: true,
         }),
@@ -88,10 +91,45 @@ describe("CircomCompiler", () => {
         circomCompiler.compile({
           circuitFullPath,
           artifactsFullPath,
+          linkLibraries: [],
           compileFlags: defaultCompileFlags,
           quiet: false,
         }),
       ).to.be.rejectedWith(reason);
+
+      fsExtra.rmSync(artifactsFullPath, { recursive: true, force: true });
+    });
+  });
+
+  describe("compile:with-libraries", () => {
+    let circomCompiler: CircomCompiler;
+
+    useEnvironment("circuits-with-libraries");
+
+    beforeEach("setup", async function () {
+      circomCompiler = new CircomCompiler(fsExtra.readFileSync(require.resolve("@distributedlab/circom2/circom.wasm")));
+    });
+
+    it("should correctly compile circuit with library inclue", async function () {
+      const circuitFullPath: string = getNormalizedFullPath(this.hre.config.paths.root, "circuits/hash2.circom");
+      const artifactsFullPath: string = getNormalizedFullPath(
+        this.hre.config.paths.root,
+        "zkit/artifacts/test/hash2.circom",
+      );
+      const nodeModulesPath: string = getNormalizedFullPath(getProjectRootPath(), NODE_MODULES);
+
+      fsExtra.mkdirSync(artifactsFullPath, { recursive: true });
+      expect(fsExtra.readdirSync(artifactsFullPath)).to.be.deep.eq([]);
+
+      await circomCompiler.compile({
+        circuitFullPath,
+        artifactsFullPath,
+        linkLibraries: [nodeModulesPath],
+        compileFlags: { ...defaultCompileFlags, sym: true },
+        quiet: true,
+      });
+
+      expect(fsExtra.readdirSync(artifactsFullPath)).to.be.deep.eq(["hash2.r1cs", "hash2.sym", "hash2_js"]);
 
       fsExtra.rmSync(artifactsFullPath, { recursive: true, force: true });
     });
@@ -112,6 +150,7 @@ describe("CircomCompiler", () => {
       let args: string[] = circomCompiler.getCompilationArgs({
         circuitFullPath,
         artifactsFullPath,
+        linkLibraries: [],
         compileFlags: defaultCompileFlags,
         quiet: true,
       });
@@ -122,6 +161,7 @@ describe("CircomCompiler", () => {
       args = circomCompiler.getCompilationArgs({
         circuitFullPath,
         artifactsFullPath,
+        linkLibraries: [],
         compileFlags: { ...defaultCompileFlags, c: true, sym: true },
         quiet: true,
       });
