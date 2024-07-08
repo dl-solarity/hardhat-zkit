@@ -18,6 +18,7 @@ This hardhat plugin is a zero-config, one-stop Circom development environment th
 - Automatic downloads of phase-1 `ptau` files.
 - Convenient phase-2 contributions to `zkey` files.
 - Invisible `wasm`-based Circom compiler management.
+- Simplified `node_modules` libraries resolution.
 - Zero platform-specific dependencies: everything is in TypeScript.
 - Extensive development and testing API.
 - Rich plugin configuration.

@@ -48,6 +48,10 @@ export class CircomCompiler implements ICircomCompiler {
       value && args.push(`--${key}`);
     }
 
+    for (const linkLibrary of config.linkLibraries) {
+      args.push("-l", linkLibrary);
+    }
+
     return args;
   }
 }

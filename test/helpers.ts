@@ -1,4 +1,4 @@
-import { join } from "path";
+import { join, dirname } from "path";
 
 import { resetHardhatContext } from "hardhat/plugins-testing";
 
@@ -16,4 +16,8 @@ export function useEnvironment(fixtureProjectName: string, networkName = "hardha
   afterEach("Resetting hardhat", function () {
     resetHardhatContext();
   });
+}
+
+export function getProjectRootPath(): string {
+  return dirname(__dirname);
 }

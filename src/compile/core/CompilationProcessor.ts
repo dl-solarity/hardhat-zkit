@@ -14,12 +14,13 @@ import { ContributionTemplateType, ZKitConfig } from "../../types/zkit-config";
 import { PtauDownloader } from "../utils/PtauDownloader";
 import { getNormalizedFullPath, renameFilesRecursively, readDirRecursively } from "../../utils/path-utils";
 import { HardhatZKitError } from "../../errors";
-import { PTAU_FILE_REG_EXP } from "../../constants";
+import { NODE_MODULES, PTAU_FILE_REG_EXP } from "../../constants";
 import { Reporter } from "../../reporter";
 
 export class CompilationProcessor {
   private readonly _zkitConfig: ZKitConfig;
   private readonly _compiler: ICircomCompiler;
+  private readonly _nodeModulesPath: string;
   private readonly _verbose: boolean;
 
   constructor(
@@ -32,6 +33,7 @@ export class CompilationProcessor {
     this._zkitConfig = hre.config.zkit;
     this._compiler = CircomCompilerFactory.createCircomCompiler(_config.compilerVersion);
     this._verbose = hre.hardhatArguments.verbose;
+    this._nodeModulesPath = getNormalizedFullPath(hre.config.paths.root, NODE_MODULES);
 
     Reporter!.verboseLog("compilation-processor", "Created CompilationProcessor with params: %O", [
       {
@@ -79,6 +81,7 @@ export class CompilationProcessor {
       await this._compiler.compile({
         circuitFullPath: info.resolvedFile.absolutePath,
         artifactsFullPath: info.tempArtifactsPath,
+        linkLibraries: this._getLinkLibraries(),
         compileFlags: this._config.compileFlags,
         quiet: !this._verbose,
       });
@@ -282,5 +285,9 @@ export class CompilationProcessor {
     }
 
     throw new HardhatZKitError(`Header section in ${r1csFileName} file is not found.`);
+  }
+
+  private _getLinkLibraries(): string[] {
+    return [this._nodeModulesPath];
   }
 }

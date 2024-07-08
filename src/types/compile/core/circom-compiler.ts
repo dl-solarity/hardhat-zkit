@@ -9,6 +9,7 @@ export type CompileFlags = {
 export type CompileConfig = {
   circuitFullPath: string;
   artifactsFullPath: string;
+  linkLibraries: string[];
   compileFlags: CompileFlags;
   quiet: boolean;
 };
