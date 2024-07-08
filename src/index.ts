@@ -3,8 +3,8 @@ import fs from "fs";
 
 import { lazyObject } from "hardhat/plugins";
 import { extendConfig, extendEnvironment, task, subtask, types } from "hardhat/config";
-import { ActionType, HardhatRuntimeEnvironment } from "hardhat/types";
-import { TASK_COMPILE_SOLIDITY_READ_FILE as TASK_READ_FILE } from "hardhat/builtin-tasks/task-names";
+import { ActionType, HardhatRuntimeEnvironment, RunSuperFunction } from "hardhat/types";
+import { TASK_CLEAN, TASK_COMPILE_SOLIDITY_READ_FILE as TASK_READ_FILE } from "hardhat/builtin-tasks/task-names";
 
 import { CircuitZKit } from "@solarity/zkit";
 
@@ -152,6 +152,23 @@ const generateVerifiers: ActionType<GenerateVerifiersTaskConfig> = async (
   }
 };
 
+const clean: ActionType<any> = async (
+  _taskArgs: any,
+  env: HardhatRuntimeEnvironment,
+  runSuper: RunSuperFunction<any>,
+) => {
+  await runSuper();
+
+  const artifactsDirFullPath: string = getNormalizedFullPath(
+    env.config.paths.root,
+    env.config.zkit.compilationSettings.artifactsDir,
+  );
+  const circuitsCacheFullPath: string = getNormalizedFullPath(env.config.paths.cache, CIRCOM_CIRCUITS_CACHE_FILENAME);
+
+  fs.rmSync(artifactsDirFullPath, { recursive: true, force: true });
+  fs.rmSync(circuitsCacheFullPath, { force: true });
+};
+
 const getCircuitZKit: ActionType<GetCircuitZKitConfig> = async (
   taskArgs: GetCircuitZKitConfig,
   env: HardhatRuntimeEnvironment,
@@ -254,6 +271,8 @@ task(TASK_GENERATE_VERIFIERS, "Generate Solidity verifier contracts for Circom c
   .addFlag("force", "Force compilation ignoring cache.")
   .addFlag("quiet", "Suppresses logs during the verifier generation process.")
   .setAction(generateVerifiers);
+
+task(TASK_CLEAN).setAction(clean);
 
 subtask(TASK_ZKIT_GET_CIRCUIT_ZKIT)
   .addOptionalParam("artifactsDir", undefined, undefined, types.string)
