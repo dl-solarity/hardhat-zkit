@@ -32,9 +32,10 @@ describe("CircomCompiler", () => {
         this.hre.config.paths.root,
         "zkit/artifacts/test/mul2.circom",
       );
+      const typesDir: string = getNormalizedFullPath(this.hre.config.paths.root, "generated-types/zkit");
 
+      fsExtra.rmSync(artifactsFullPath, { recursive: true, force: true });
       fsExtra.mkdirSync(artifactsFullPath, { recursive: true });
-      expect(fsExtra.readdirSync(artifactsFullPath)).to.be.deep.eq([]);
 
       await circomCompiler.compile({
         circuitFullPath,
@@ -44,9 +45,14 @@ describe("CircomCompiler", () => {
         quiet: true,
       });
 
-      expect(fsExtra.readdirSync(artifactsFullPath)).to.be.deep.eq(["mul2.r1cs", "mul2.sym", "mul2_js"]);
+      expect(fsExtra.readdirSync(artifactsFullPath)).to.be.deep.eq([
+        "mul2.r1cs",
+        "mul2.sym",
+        "mul2_ast.json",
+        "mul2_js",
+      ]);
 
-      fsExtra.rmSync(artifactsFullPath, { recursive: true, force: true });
+      fsExtra.rmSync(typesDir, { recursive: true, force: true });
     });
 
     it("should correctly throw error with quiet=true", async function () {
@@ -116,10 +122,11 @@ describe("CircomCompiler", () => {
         this.hre.config.paths.root,
         "zkit/artifacts/test/hash2.circom",
       );
+      const typesDir: string = getNormalizedFullPath(this.hre.config.paths.root, "generated-types/zkit");
       const nodeModulesPath: string = getNormalizedFullPath(getProjectRootPath(), NODE_MODULES);
 
+      fsExtra.rmSync(artifactsFullPath, { recursive: true, force: true });
       fsExtra.mkdirSync(artifactsFullPath, { recursive: true });
-      expect(fsExtra.readdirSync(artifactsFullPath)).to.be.deep.eq([]);
 
       await circomCompiler.compile({
         circuitFullPath,
@@ -129,9 +136,14 @@ describe("CircomCompiler", () => {
         quiet: true,
       });
 
-      expect(fsExtra.readdirSync(artifactsFullPath)).to.be.deep.eq(["hash2.r1cs", "hash2.sym", "hash2_js"]);
+      expect(fsExtra.readdirSync(artifactsFullPath)).to.be.deep.eq([
+        "hash2.r1cs",
+        "hash2.sym",
+        "hash2_ast.json",
+        "hash2_js",
+      ]);
 
-      fsExtra.rmSync(artifactsFullPath, { recursive: true, force: true });
+      fsExtra.rmSync(typesDir, { recursive: true, force: true });
     });
   });
 
@@ -146,7 +158,15 @@ describe("CircomCompiler", () => {
       const circuitFullPath: string = "circuit-path";
       const artifactsFullPath: string = "artifacts-path";
 
-      let expectedArgs: string[] = [circuitFullPath, "-o", artifactsFullPath, "--r1cs", "--wasm"];
+      let expectedArgs: string[] = [
+        circuitFullPath,
+        "--save_ast",
+        artifactsFullPath,
+        "-o",
+        artifactsFullPath,
+        "--r1cs",
+        "--wasm",
+      ];
       let args: string[] = circomCompiler.getCompilationArgs({
         circuitFullPath,
         artifactsFullPath,
@@ -157,7 +177,17 @@ describe("CircomCompiler", () => {
 
       expect(args).to.be.deep.eq(expectedArgs);
 
-      expectedArgs = [circuitFullPath, "-o", artifactsFullPath, "--r1cs", "--wasm", "--c", "--sym"];
+      expectedArgs = [
+        circuitFullPath,
+        "--save_ast",
+        artifactsFullPath,
+        "-o",
+        artifactsFullPath,
+        "--r1cs",
+        "--wasm",
+        "--c",
+        "--sym",
+      ];
       args = circomCompiler.getCompilationArgs({
         circuitFullPath,
         artifactsFullPath,

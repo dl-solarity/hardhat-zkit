@@ -7,6 +7,7 @@ import { ActionType, HardhatRuntimeEnvironment, RunSuperFunction } from "hardhat
 import { TASK_CLEAN, TASK_COMPILE_SOLIDITY_READ_FILE as TASK_READ_FILE } from "hardhat/builtin-tasks/task-names";
 
 import { CircuitZKit } from "@solarity/zkit";
+import { CircuitTypesGenerator } from "@solarity/zktype";
 
 import "./type-extensions";
 
@@ -225,7 +226,17 @@ const getCircuitZKit: ActionType<GetCircuitZKitConfig> = async (
     taskArgs.verifiersDir ?? env.config.zkit.verifiersDir,
   );
 
-  return new CircuitZKit({
+  const typesGenerator: CircuitTypesGenerator = new CircuitTypesGenerator({
+    basePath: env.config.zkit.circuitsDir,
+    projectRoot: env.config.paths.root,
+    outputArtifactsDir: env.config.zkit.typesConfig.circuitTypesArtifactsDir,
+    outputTypesDir: env.config.zkit.typesConfig.circuitTypesDir,
+    circuitsASTPaths: [],
+  });
+
+  const module = await typesGenerator.getCircuitObject(taskArgs.circuitName);
+
+  return new module({
     circuitName,
     circuitArtifactsPath: foundPaths[0],
     verifierDirPath: verifiersDirFullPath,

@@ -1,6 +1,8 @@
 import { join, dirname } from "path";
+import fsExtra from "fs-extra";
 
 import { resetHardhatContext } from "hardhat/plugins-testing";
+import { getNormalizedFullPath } from "../src/utils/path-utils";
 
 export function useEnvironment(fixtureProjectName: string, networkName = "hardhat") {
   beforeEach("Loading hardhat environment", async function () {
@@ -15,6 +17,9 @@ export function useEnvironment(fixtureProjectName: string, networkName = "hardha
 
   afterEach("Resetting hardhat", function () {
     resetHardhatContext();
+
+    const typesDir: string = getNormalizedFullPath(this.hre.config.paths.root, "generated-types/zkit");
+    fsExtra.rmSync(typesDir, { recursive: true, force: true });
   });
 }
 

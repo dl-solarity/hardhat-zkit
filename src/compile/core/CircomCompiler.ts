@@ -42,7 +42,7 @@ export class CircomCompiler implements ICircomCompiler {
   }
 
   public getCompilationArgs(config: CompileConfig): string[] {
-    const args = [config.circuitFullPath, "-o", config.artifactsFullPath];
+    const args = [config.circuitFullPath, "--save_ast", config.artifactsFullPath, "-o", config.artifactsFullPath];
 
     for (const [key, value] of Object.entries(config.compileFlags)) {
       value && args.push(`--${key}`);
