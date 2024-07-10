@@ -212,8 +212,8 @@ export class CompilationProcessor {
     const typesGenerator: CircuitTypesGenerator = new CircuitTypesGenerator({
       basePath: this._zkitConfig.circuitsDir,
       projectRoot: this._root,
-      outputArtifactsDir: this._zkitConfig.typesConfig.circuitTypesArtifactsDir,
-      outputTypesDir: this._zkitConfig.typesConfig.circuitTypesDir,
+      outputArtifactsDir: this._zkitConfig.typesSettings.typesArtifactsDir,
+      outputTypesDir: this._zkitConfig.typesSettings.typesDir,
       circuitsASTPaths,
     });
 
@@ -221,8 +221,8 @@ export class CompilationProcessor {
       {
         basePath: this._zkitConfig.circuitsDir,
         projectRoot: this._root,
-        outputArtifactsDir: this._zkitConfig.typesConfig.circuitTypesArtifactsDir,
-        outputTypesDir: this._zkitConfig.typesConfig.circuitTypesDir,
+        outputArtifactsDir: this._zkitConfig.typesSettings.typesArtifactsDir,
+        outputTypesDir: this._zkitConfig.typesSettings.typesDir,
         circuitsASTPaths,
       },
     ]);

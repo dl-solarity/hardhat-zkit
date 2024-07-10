@@ -1,6 +1,6 @@
 export type ZKitConfig = {
   compilationSettings: CompilationSettings;
-  typesConfig: CircuitTypesConfig;
+  typesSettings: CircuitTypesSettings;
   circuitsDir: string;
   verifiersDir: string;
   ptauDir: string | undefined;
@@ -8,9 +8,9 @@ export type ZKitConfig = {
   quiet: boolean;
 };
 
-export type CircuitTypesConfig = {
-  circuitTypesArtifactsDir: string;
-  circuitTypesDir: string;
+export type CircuitTypesSettings = {
+  typesArtifactsDir: string;
+  typesDir: string;
 };
 
 export type CompilationSettings = FileFilterSettings & {

@@ -167,11 +167,11 @@ const clean: ActionType<any> = async (
   );
   const typesArtifactsFullPath: string = getNormalizedFullPath(
     env.config.paths.root,
-    env.config.zkit.typesConfig.circuitTypesArtifactsDir,
+    env.config.zkit.typesSettings.typesArtifactsDir,
   );
   const circuitTypesFullPath: string = getNormalizedFullPath(
     env.config.paths.root,
-    env.config.zkit.typesConfig.circuitTypesDir,
+    env.config.zkit.typesSettings.typesDir,
   );
 
   fs.rmSync(circuitsCacheFullPath, { force: true });
@@ -239,8 +239,8 @@ const getCircuitZKit: ActionType<GetCircuitZKitConfig> = async (
   const typesGenerator: CircuitTypesGenerator = new CircuitTypesGenerator({
     basePath: env.config.zkit.circuitsDir,
     projectRoot: env.config.paths.root,
-    outputArtifactsDir: env.config.zkit.typesConfig.circuitTypesArtifactsDir,
-    outputTypesDir: env.config.zkit.typesConfig.circuitTypesDir,
+    outputArtifactsDir: env.config.zkit.typesSettings.typesArtifactsDir,
+    outputTypesDir: env.config.zkit.typesSettings.typesDir,
     circuitsASTPaths: [],
   });
 
