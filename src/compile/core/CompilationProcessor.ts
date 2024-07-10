@@ -203,6 +203,8 @@ export class CompilationProcessor {
   }
 
   private async _generateTypes(compilationInfoArr: CompilationInfo[]) {
+    const spinnerId: string | null = Reporter!.reportTypesGenerationHeaderWithSpinner();
+
     const circuitsASTPaths: string[] = compilationInfoArr.map((info: CompilationInfo) => {
       return `${getNormalizedFullPath(info.artifactsPath, `${info.circuitName}_ast.json`)}`;
     });
@@ -215,7 +217,19 @@ export class CompilationProcessor {
       circuitsASTPaths,
     });
 
+    Reporter!.verboseLog("compilation-processor", "Created CircuitTypesGenerator with params: %O", [
+      {
+        basePath: this._zkitConfig.circuitsDir,
+        projectRoot: this._root,
+        outputArtifactsDir: this._zkitConfig.typesConfig.circuitTypesArtifactsDir,
+        outputTypesDir: this._zkitConfig.typesConfig.circuitTypesDir,
+        circuitsASTPaths,
+      },
+    ]);
+
     await typesGenerator.generateTypes();
+
+    Reporter!.reportTypesGenerationResult(spinnerId);
   }
 
   private async _getCompilationInfoArr(
