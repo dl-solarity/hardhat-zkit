@@ -11,7 +11,7 @@
 
 ## What
 
-This hardhat plugin is a zero-config, one-stop Circom development environment that abstracts away circuits management hassle and let's you focus on the important - code.
+This hardhat plugin is a zero-config, one-stop Circom development environment that abstracts away circuits management hassle and lets you focus on the important - code.
 
 - Developer-oriented abstractions that simplify `r1cs`, `zkey`, `vkey`, and `witness` generation processes.
 - Recompilation of only the modified circuits.
@@ -47,7 +47,7 @@ import "@solarity/hardhat-zkit";
 
 ## Usage
 
-The `hardhat-zkit` is a zero-config plugin, however you may add the following to your `hardhat.config` file:
+The `hardhat-zkit` is a zero-config plugin, however, you may add the following to your `hardhat.config` file:
 
 ```ts
 module.exports = {
@@ -99,7 +99,7 @@ Where:
 
 The plugin provides full TypeScript typization of Circom circuits leveraging [`zktype`](https://github.com/dl-solarity/zktype) library.
 
-The following config may be added to `tsconfig.json` file to allow for better user experience:
+The following config may be added to `tsconfig.json` file to allow for a better user experience:
 
 ```json
 {
@@ -115,7 +115,7 @@ The following config may be added to `tsconfig.json` file to allow for better us
 
 There are several hardhat tasks that the plugin provides:
 
-- `zkit:compile` task that compiles or recompiles the modified circuits that have the main component.
+- `zkit:compile` task that compiles or recompiles the modified circuits with the main component.
 - `zkit:verifiers` task that generates Solidity verifiers for all the previously compiled circuits.
 
 To view the available options, run the help command:
@@ -185,7 +185,7 @@ main()
 
 - **`getCircuit(<fullCircuitName|circuitName>) -> zkit`**
 
-The method accepts the name of the `main` component of the circuit and returns the instanciated zkit object pointing to that circuit. 
+The method accepts the name of the `main` component of the circuit and returns the instantiated zkit object pointing to that circuit. 
 
 > [!NOTE]
 > Please note that the [`zktype`](https://github.com/dl-solarity/zktype) typed wrapper object gets actually returned which enables full TypeScript typization.
@@ -202,5 +202,5 @@ Where:
 
 ## Known limitations
 
-- Currently the Circom `2.1.8` is used for the compilation of circuits.
+- Currently the Circom `2.1.8` is used to compile circuits.
 - Temporarily, the only supported proving system is `groth16`.
