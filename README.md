@@ -15,11 +15,11 @@ This hardhat plugin is a zero-config, one-stop Circom development environment th
 
 - Developer-oriented abstractions that simplify `r1cs`, `zkey`, `vkey`, and `witness` generation processes.
 - Recompilation of only the modified circuits.
+- Full TypeScript typization of signals and ZK proofs.
 - Automatic downloads of phase-1 `ptau` files.
 - Convenient phase-2 contributions to `zkey` files.
 - Invisible `wasm`-based Circom compiler management.
 - Simplified `node_modules` libraries resolution.
-- Zero platform-specific dependencies: everything is in TypeScript.
 - Extensive development and testing API.
 - Rich plugin configuration.
 - And much more!
@@ -63,6 +63,10 @@ module.exports = {
       contributionTemplate: "groth16",
       contributions: 1,
     },
+    typesSettings: {
+      typesArtifactsDir: "zkit/abi",
+      typesDir: "generated-types/zkit",
+    }
     quiet: false,
     verifiersDir: "contracts/verifiers",
     ptauDir: undefined,
@@ -83,10 +87,29 @@ Where:
   - `sym` - The flag to output the constraint system in an annotated mode.
   - `contributionTemplate` - The option to indicate which proving system to use.
   - `contributions` - The number of phase-2 `zkey` contributions to make if `groth16` is chosen.
+- `typesSettings`
+  - `typesArtifactsDir` - The directory where to save the generated circuits ABI.
+  - `typesDir` - The directory where to save the generated circuits wrappers.
 - `quiet` - The flag indicating whether to suppress the output.
 - `verifiersDir` - The directory where to generate the Solidity verifiers.
 - `ptauDir` - The directory where to look for the `ptau` files. `$HOME/.zkit/ptau/` by default.
 - `ptauDownload` - The flag to allow automatic download of required `ptau` files.
+
+### Typization
+
+The plugin provides full TypeScript typization of Circom circuits leveraging [`zktype`](https://github.com/dl-solarity/zktype) library.
+
+The following config may be added to `tsconfig.json` file to allow for better user experience:
+
+```json
+{
+  "compilerOptions": {
+    "paths": {
+      "@zkit": ["./generated-types/zkit"]
+    }
+  }
+}
+```
 
 ### Tasks
 
@@ -104,7 +127,7 @@ npx hardhat help zkit:verifiers
 
 ### Environment extensions
 
-The plugin extends the hardhat environment with the `zkit` object that allows circuits to be used in scripts and tests:
+The plugin extends the hardhat environment with the `zkit` object that allows typed circuits to be used in scripts and tests:
 
 <table style="width:100%">
 <tr>
@@ -136,15 +159,15 @@ component main = Multiplier();
 
 ```ts
 import { zkit } from "hardhat";
+import { Multiplier } from "@zkit"; // typed circuit-object
 
 async function main() {
-  const circuit = await zkit.getCircuit("Multiplier");
-  // OR const circuit = await zkit.getCircuit("circuits/multiplier.circom:Multiplier");
+  const circuit: Multiplier = await zkit.getCircuit("Multiplier");
+  // OR await zkit.getCircuit("circuits/multiplier.circom:Multiplier");
 
   const proof = await circuit.generateProof({ in1: "4", in2: "2" });
 
   await circuit.verifyProof(proof); // success
-  await circuit.createVerifier();
 }
 
 main()
@@ -162,7 +185,10 @@ main()
 
 - **`getCircuit(<fullCircuitName|circuitName>) -> zkit`**
 
-The method accepts the name of the `main` component of the circuit, the object of which should be created. Returns the instanciated zkit object.
+The method accepts the name of the `main` component of the circuit and returns the instanciated zkit object pointing to that circuit. 
+
+> [!NOTE]
+> Please note that the [`zktype`](https://github.com/dl-solarity/zktype) typed wrapper object gets actually returned which enables full TypeScript typization.
 
 In case there are conflicts between circuit file names and `main` component names, you should use the `fullCircuitName`, which has the following form: `circuitSourceName:circuitName`.
 
@@ -176,6 +202,6 @@ Where:
 
 ## Known limitations
 
+
 - Currently the Circom `2.1.8` is used for the compilation of circuits.
 - Temporarily, the only supported proving system is `groth16`.
-- Full TypeScript typization of circuits is in progress.
