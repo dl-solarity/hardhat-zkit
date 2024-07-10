@@ -31,6 +31,10 @@ describe("config", () => {
           contributionTemplate: "groth16",
           contributions: 1,
         },
+        typesSettings: {
+          typesArtifactsDir: "zkit/abi",
+          typesDir: "generated-types/zkit",
+        },
         quiet: true,
         verifiersDir: "contracts/verifiers",
         ptauDir: "zkit/ptau",
@@ -63,6 +67,10 @@ describe("config", () => {
           sym: false,
           contributionTemplate: "groth16",
           contributions: 1,
+        },
+        typesSettings: {
+          typesArtifactsDir: "zkit/abi",
+          typesDir: "generated-types/zkit",
         },
         quiet: false,
         verifiersDir: "contracts/verifiers",

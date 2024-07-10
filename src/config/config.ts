@@ -16,6 +16,10 @@ const defaultConfig: ZKitConfig = {
     contributionTemplate: "groth16",
     contributions: 1,
   },
+  typesSettings: {
+    typesArtifactsDir: "zkit/abi",
+    typesDir: "generated-types/zkit",
+  },
   quiet: false,
   verifiersDir: "contracts/verifiers",
   ptauDir: undefined,

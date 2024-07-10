@@ -7,6 +7,8 @@ import * as snarkjs from "snarkjs";
 
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
+import { CircuitAST, CircuitTypesGenerator } from "@solarity/zktype";
+
 import { CircomCompilerFactory } from "./CircomCompilerFactory";
 import { ICircomCompiler, CompilationProccessorConfig, CompilationInfo, ResolvedFileInfo } from "../../types/compile";
 import { ContributionTemplateType, ZKitConfig } from "../../types/zkit-config";
@@ -22,6 +24,7 @@ export class CompilationProcessor {
   private readonly _compiler: ICircomCompiler;
   private readonly _nodeModulesPath: string;
   private readonly _verbose: boolean;
+  private readonly _root: string;
 
   constructor(
     private readonly _circuitsDirFullPath: string,
@@ -34,6 +37,7 @@ export class CompilationProcessor {
     this._compiler = CircomCompilerFactory.createCircomCompiler(_config.compilerVersion);
     this._verbose = hre.hardhatArguments.verbose;
     this._nodeModulesPath = getNormalizedFullPath(hre.config.paths.root, NODE_MODULES);
+    this._root = hre.config.paths.root;
 
     Reporter!.verboseLog("compilation-processor", "Created CompilationProcessor with params: %O", [
       {
@@ -56,6 +60,7 @@ export class CompilationProcessor {
       const compilationInfoArr: CompilationInfo[] = await this._getCompilationInfoArr(tempDir, filesInfoToCompile);
 
       await this._compileCircuits(compilationInfoArr);
+      await this._createCircuitASTFiles(compilationInfoArr);
 
       const ptauFilePath: string = await this._getPtauFile(compilationInfoArr);
 
@@ -63,6 +68,8 @@ export class CompilationProcessor {
       await this._generateVKeyFile(compilationInfoArr);
 
       await this._moveFromTempDirToArtifacts(compilationInfoArr);
+
+      await this._generateTypes(compilationInfoArr);
 
       Reporter!.reportCompilationResult(compilationInfoArr);
 
@@ -92,6 +99,19 @@ export class CompilationProcessor {
 
       Reporter!.reportCircuitCompilationResult(spinnerId, info.circuitName);
     }
+  }
+
+  private async _createCircuitASTFiles(compilationInfoArr: CompilationInfo[]) {
+    compilationInfoArr.forEach((info: CompilationInfo) => {
+      const compilerASTFilePath: string = getNormalizedFullPath(info.tempArtifactsPath, `${info.circuitName}_ast.json`);
+
+      const circuitAST: CircuitAST = {
+        sourcePath: info.resolvedFile.sourceName,
+        circomCompilerOutput: JSON.parse(fs.readFileSync(compilerASTFilePath, "utf-8")),
+      };
+
+      fs.writeFileSync(compilerASTFilePath, JSON.stringify(circuitAST));
+    });
   }
 
   private async _generateZKeyFiles(ptauFilePath: string, compilationInfoArr: CompilationInfo[]) {
@@ -180,6 +200,36 @@ export class CompilationProcessor {
         fs.copyFileSync(file, correspondingOutFile);
       });
     });
+  }
+
+  private async _generateTypes(compilationInfoArr: CompilationInfo[]) {
+    const spinnerId: string | null = Reporter!.reportTypesGenerationHeaderWithSpinner();
+
+    const circuitsASTPaths: string[] = compilationInfoArr.map((info: CompilationInfo) => {
+      return `${getNormalizedFullPath(info.artifactsPath, `${info.circuitName}_ast.json`)}`;
+    });
+
+    const typesGenerator: CircuitTypesGenerator = new CircuitTypesGenerator({
+      basePath: this._zkitConfig.circuitsDir,
+      projectRoot: this._root,
+      outputArtifactsDir: this._zkitConfig.typesSettings.typesArtifactsDir,
+      outputTypesDir: this._zkitConfig.typesSettings.typesDir,
+      circuitsASTPaths,
+    });
+
+    Reporter!.verboseLog("compilation-processor", "Created CircuitTypesGenerator with params: %O", [
+      {
+        basePath: this._zkitConfig.circuitsDir,
+        projectRoot: this._root,
+        outputArtifactsDir: this._zkitConfig.typesSettings.typesArtifactsDir,
+        outputTypesDir: this._zkitConfig.typesSettings.typesDir,
+        circuitsASTPaths,
+      },
+    ]);
+
+    await typesGenerator.generateTypes();
+
+    Reporter!.reportTypesGenerationResult(spinnerId);
   }
 
   private async _getCompilationInfoArr(

@@ -181,7 +181,7 @@ class BaseReporter {
 
     let output: string = "";
 
-    output += `\n${chalk.italic.cyan("Fourth phase - Generating VKey files for circuits")}\n`;
+    output += `\n${chalk.italic.cyan("Fourth step - Generating VKey files for circuits")}\n`;
 
     output += `\nStarting generation of VKey files:\n`;
 
@@ -203,6 +203,28 @@ class BaseReporter {
       spinnerId,
       `Generated VKey file for ${chalk.italic(circuitName)} circuit ${generationTimeMessage}`,
     );
+  }
+
+  public reportTypesGenerationHeaderWithSpinner(): string | null {
+    if (this.isQuiet()) return null;
+
+    let output: string = "";
+
+    output += `\n${chalk.italic.cyan("Fifth step - Generating types for circuits")}\n`;
+
+    console.log(output);
+
+    return this._startSpinner("AllCircuits", "generate-types", `Generating types for circuits`);
+  }
+
+  public reportTypesGenerationResult(spinnerId: string | null) {
+    if (this.isQuiet() || !spinnerId) return;
+
+    const generationTimeMessage: string = this._getSpinnerWorkingTimeMessage(
+      this._spinnerProcessor.getWorkingTime(spinnerId),
+    );
+
+    this._spinnerProcessor.succeedSpinner(spinnerId, `Generated types for circuits ${generationTimeMessage}`);
   }
 
   public reportCompilationResult(compilationInfoArr: CompilationInfo[]) {

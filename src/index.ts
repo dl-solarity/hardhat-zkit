@@ -7,6 +7,7 @@ import { ActionType, HardhatRuntimeEnvironment, RunSuperFunction } from "hardhat
 import { TASK_CLEAN, TASK_COMPILE_SOLIDITY_READ_FILE as TASK_READ_FILE } from "hardhat/builtin-tasks/task-names";
 
 import { CircuitZKit } from "@solarity/zkit";
+import { CircuitTypesGenerator } from "@solarity/zktype";
 
 import "./type-extensions";
 
@@ -159,14 +160,24 @@ const clean: ActionType<any> = async (
 ) => {
   await runSuper();
 
+  const circuitsCacheFullPath: string = getNormalizedFullPath(env.config.paths.cache, CIRCOM_CIRCUITS_CACHE_FILENAME);
   const artifactsDirFullPath: string = getNormalizedFullPath(
     env.config.paths.root,
     env.config.zkit.compilationSettings.artifactsDir,
   );
-  const circuitsCacheFullPath: string = getNormalizedFullPath(env.config.paths.cache, CIRCOM_CIRCUITS_CACHE_FILENAME);
+  const typesArtifactsFullPath: string = getNormalizedFullPath(
+    env.config.paths.root,
+    env.config.zkit.typesSettings.typesArtifactsDir,
+  );
+  const circuitTypesFullPath: string = getNormalizedFullPath(
+    env.config.paths.root,
+    env.config.zkit.typesSettings.typesDir,
+  );
 
-  fs.rmSync(artifactsDirFullPath, { recursive: true, force: true });
   fs.rmSync(circuitsCacheFullPath, { force: true });
+  fs.rmSync(artifactsDirFullPath, { recursive: true, force: true });
+  fs.rmSync(typesArtifactsFullPath, { recursive: true, force: true });
+  fs.rmSync(circuitTypesFullPath, { recursive: true, force: true });
 };
 
 const getCircuitZKit: ActionType<GetCircuitZKitConfig> = async (
@@ -225,7 +236,17 @@ const getCircuitZKit: ActionType<GetCircuitZKitConfig> = async (
     taskArgs.verifiersDir ?? env.config.zkit.verifiersDir,
   );
 
-  return new CircuitZKit({
+  const typesGenerator: CircuitTypesGenerator = new CircuitTypesGenerator({
+    basePath: env.config.zkit.circuitsDir,
+    projectRoot: env.config.paths.root,
+    outputArtifactsDir: env.config.zkit.typesSettings.typesArtifactsDir,
+    outputTypesDir: env.config.zkit.typesSettings.typesDir,
+    circuitsASTPaths: [],
+  });
+
+  const module = await typesGenerator.getCircuitObject(taskArgs.circuitName);
+
+  return new module({
     circuitName,
     circuitArtifactsPath: foundPaths[0],
     verifierDirPath: verifiersDirFullPath,

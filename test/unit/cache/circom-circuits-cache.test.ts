@@ -80,6 +80,7 @@ describe("CircomCircuitsCache", () => {
         this.hre.config.paths.root,
         "circuits/main/mul2.circom",
       );
+      const typesDir: string = getNormalizedFullPath(this.hre.config.paths.root, "generated-types/zkit");
 
       const fileContent: string = fsExtra.readFileSync(circuitAbsolutePath, "utf-8");
 
@@ -91,6 +92,7 @@ describe("CircomCircuitsCache", () => {
       expect(CircomCircuitsCache!.getEntry(circuitAbsolutePath)).to.be.undefined;
 
       fsExtra.writeFileSync(circuitAbsolutePath, fileContent);
+      fsExtra.rmSync(typesDir, { recursive: true, force: true });
     });
 
     it("should return empty CircomCircuitsCache instance if pass invalid cache file", async function () {
@@ -133,6 +135,10 @@ describe("CircomCircuitsCache", () => {
         .true;
 
       expect(CircomCircuitsCache!.hasFileChanged(circuitPath, contentHash, defaultCompileFlags)).to.be.false;
+
+      const typesDir: string = getNormalizedFullPath(this.hre.config.paths.root, "generated-types/zkit");
+
+      fsExtra.rmSync(typesDir, { recursive: true, force: true });
     });
   });
 });
