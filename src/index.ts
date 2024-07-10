@@ -160,14 +160,24 @@ const clean: ActionType<any> = async (
 ) => {
   await runSuper();
 
+  const circuitsCacheFullPath: string = getNormalizedFullPath(env.config.paths.cache, CIRCOM_CIRCUITS_CACHE_FILENAME);
   const artifactsDirFullPath: string = getNormalizedFullPath(
     env.config.paths.root,
     env.config.zkit.compilationSettings.artifactsDir,
   );
-  const circuitsCacheFullPath: string = getNormalizedFullPath(env.config.paths.cache, CIRCOM_CIRCUITS_CACHE_FILENAME);
+  const typesArtifactsFullPath: string = getNormalizedFullPath(
+    env.config.paths.root,
+    env.config.zkit.typesConfig.circuitTypesArtifactsDir,
+  );
+  const circuitTypesFullPath: string = getNormalizedFullPath(
+    env.config.paths.root,
+    env.config.zkit.typesConfig.circuitTypesDir,
+  );
 
-  fs.rmSync(artifactsDirFullPath, { recursive: true, force: true });
   fs.rmSync(circuitsCacheFullPath, { force: true });
+  fs.rmSync(artifactsDirFullPath, { recursive: true, force: true });
+  fs.rmSync(typesArtifactsFullPath, { recursive: true, force: true });
+  fs.rmSync(circuitTypesFullPath, { recursive: true, force: true });
 };
 
 const getCircuitZKit: ActionType<GetCircuitZKitConfig> = async (
