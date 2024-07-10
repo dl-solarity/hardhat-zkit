@@ -202,6 +202,5 @@ Where:
 
 ## Known limitations
 
-
 - Currently the Circom `2.1.8` is used for the compilation of circuits.
 - Temporarily, the only supported proving system is `groth16`.
