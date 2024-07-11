@@ -164,16 +164,11 @@ export class CompilationFilesManager {
 
   protected async _getDependencyGraph(sourceNames: string[]): Promise<DependencyGraph> {
     const parser = new Parser();
-    const remappings = this._getRemappings();
-    const resolver = new Resolver(this._projectPaths.root, parser, remappings, this._readFile);
+    const resolver = new Resolver(this._projectPaths.root, parser, this._readFile);
 
     const resolvedFiles = await Promise.all(sourceNames.map((sn) => resolver.resolveSourceName(sn)));
 
     return DependencyGraph.createFromResolvedFiles(resolver, resolvedFiles);
-  }
-
-  protected _getRemappings(): Record<string, string> {
-    return {};
   }
 
   protected _invalidateCacheMissingArtifacts(resolvedFilesInfo: ResolvedFileInfo[]) {

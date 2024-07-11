@@ -5,8 +5,9 @@ import { lazyObject } from "hardhat/plugins";
 import { extendConfig, extendEnvironment, task, subtask, types } from "hardhat/config";
 import { ActionType, HardhatRuntimeEnvironment, RunSuperFunction } from "hardhat/types";
 import { TASK_CLEAN, TASK_COMPILE_SOLIDITY_READ_FILE as TASK_READ_FILE } from "hardhat/builtin-tasks/task-names";
+import { willRunWithTypescript } from "hardhat/internal/core/typescript-support";
 
-import { CircuitZKit } from "@solarity/zkit";
+import { CircuitZKit, CircuitZKitConfig } from "@solarity/zkit";
 import { CircuitTypesGenerator } from "@solarity/zktype";
 
 import "./type-extensions";
@@ -244,14 +245,20 @@ const getCircuitZKit: ActionType<GetCircuitZKitConfig> = async (
     circuitsASTPaths: [],
   });
 
-  const module = await typesGenerator.getCircuitObject(taskArgs.circuitName);
-
-  return new module({
+  const circuitZKitConfig: CircuitZKitConfig = {
     circuitName,
     circuitArtifactsPath: foundPaths[0],
     verifierDirPath: verifiersDirFullPath,
     templateType: taskArgs.verifierTemplateType ?? "groth16",
-  });
+  };
+
+  if (willRunWithTypescript(env.hardhatArguments.config)) {
+    const module = await typesGenerator.getCircuitObject(taskArgs.circuitName);
+
+    return new module(circuitZKitConfig);
+  } else {
+    return new CircuitZKit(circuitZKitConfig);
+  }
 };
 
 task(TASK_CIRCUITS_COMPILE, "Compile Circom circuits and generate all necessary artifacts")
