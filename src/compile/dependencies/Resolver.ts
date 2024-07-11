@@ -12,7 +12,6 @@ import {
   validateSourceNameExistenceAndCasing,
   validateSourceNameFormat,
 } from "hardhat/utils/source-names";
-import { applyRemappings } from "hardhat/utils/remappings";
 
 import { HardhatError, assertHardhatInvariant } from "hardhat/internal/core/errors";
 import { ERRORS } from "hardhat/internal/core/errors-list";
@@ -59,7 +58,6 @@ export class Resolver {
   constructor(
     private readonly _projectRoot: string,
     private readonly _parser: Parser,
-    private readonly _remappings: Record<string, string>,
     private readonly _readFile: (absolutePath: string) => Promise<string>,
   ) {}
 
@@ -74,16 +72,14 @@ export class Resolver {
       return cached;
     }
 
-    const remappedSourceName = applyRemappings(this._remappings, sourceName);
-
-    validateSourceNameFormat(remappedSourceName);
+    validateSourceNameFormat(sourceName);
 
     let resolvedFile: ResolvedFile;
 
-    if (await isLocalSourceName(this._projectRoot, remappedSourceName)) {
-      resolvedFile = await this._resolveLocalSourceName(sourceName, remappedSourceName);
+    if (await isLocalSourceName(this._projectRoot, sourceName)) {
+      resolvedFile = await this._resolveLocalSourceName(sourceName, sourceName);
     } else {
-      resolvedFile = await this._resolveLibrarySourceName(sourceName, remappedSourceName);
+      resolvedFile = await this._resolveLibrarySourceName(sourceName, sourceName);
     }
 
     this._cache.set(sourceName, resolvedFile);
@@ -96,47 +92,45 @@ export class Resolver {
    * @param importName The path in the import statement.
    */
   public async resolveImport(from: ResolvedFile, importName: string): Promise<ResolvedFile> {
-    const imported = applyRemappings(this._remappings, importName);
-
-    const scheme = this._getUriScheme(imported);
+    const scheme = this._getUriScheme(importName);
     if (scheme !== undefined) {
       throw new HardhatError(ERRORS.RESOLVER.INVALID_IMPORT_PROTOCOL, {
         from: from.sourceName,
-        imported,
+        importName,
         protocol: scheme,
       });
     }
 
-    if (replaceBackslashes(imported) !== imported) {
+    if (replaceBackslashes(importName) !== importName) {
       throw new HardhatError(ERRORS.RESOLVER.INVALID_IMPORT_BACKSLASH, {
         from: from.sourceName,
-        imported,
+        importName,
       });
     }
 
-    if (isAbsolutePathSourceName(imported)) {
+    if (isAbsolutePathSourceName(importName)) {
       throw new HardhatError(ERRORS.RESOLVER.INVALID_IMPORT_ABSOLUTE_PATH, {
         from: from.sourceName,
-        imported,
+        importName,
       });
     }
 
     // Edge-case where an import can contain the current package's name in monorepos.
     // The path can be resolved because there's a symlink in the node modules.
-    if (await includesOwnPackageName(imported)) {
+    if (await includesOwnPackageName(importName)) {
       throw new HardhatError(ERRORS.RESOLVER.INCLUDES_OWN_PACKAGE_NAME, {
         from: from.sourceName,
-        imported,
+        importName,
       });
     }
 
     try {
       let sourceName: string;
 
-      const isRelativeImport = this._isRelativeImport(from, imported);
+      const isRelativeImport = this._isRelativeImport(from, importName);
 
       if (isRelativeImport) {
-        sourceName = await this._relativeImportToSourceName(from, imported);
+        sourceName = await this._relativeImportToSourceName(from, importName);
       } else {
         sourceName = normalizeSourceName(importName); // The sourceName of the imported file is not transformed
       }
@@ -151,8 +145,8 @@ export class Resolver {
       // We have this special case here, because otherwise local relative
       // imports can be treated as library imports. For example if
       // `circuits/c.circom` imports `../non-existent/a.circom`
-      if (from.library === undefined && isRelativeImport && !this._isRelativeImportToLibrary(from, imported)) {
-        resolvedFile = await this._resolveLocalSourceName(sourceName, applyRemappings(this._remappings, sourceName));
+      if (from.library === undefined && isRelativeImport && !this._isRelativeImportToLibrary(from, importName)) {
+        resolvedFile = await this._resolveLocalSourceName(sourceName, sourceName);
       } else {
         resolvedFile = await this.resolveSourceName(sourceName);
       }
@@ -164,33 +158,21 @@ export class Resolver {
         HardhatError.isHardhatErrorType(error, ERRORS.RESOLVER.FILE_NOT_FOUND) ||
         HardhatError.isHardhatErrorType(error, ERRORS.RESOLVER.LIBRARY_FILE_NOT_FOUND)
       ) {
-        if (imported !== importName) {
-          throw new HardhatError(
-            ERRORS.RESOLVER.IMPORTED_MAPPED_FILE_NOT_FOUND,
-            {
-              imported,
-              importName,
-              from: from.sourceName,
-            },
-            error,
-          );
-        } else {
-          throw new HardhatError(
-            ERRORS.RESOLVER.IMPORTED_FILE_NOT_FOUND,
-            {
-              imported,
-              from: from.sourceName,
-            },
-            error,
-          );
-        }
+        throw new HardhatError(
+          ERRORS.RESOLVER.IMPORTED_FILE_NOT_FOUND,
+          {
+            importName,
+            from: from.sourceName,
+          },
+          error,
+        );
       }
 
       if (HardhatError.isHardhatErrorType(error, ERRORS.RESOLVER.WRONG_SOURCE_NAME_CASING)) {
         throw new HardhatError(
           ERRORS.RESOLVER.INVALID_IMPORT_WRONG_CASING,
           {
-            imported,
+            importName,
             from: from.sourceName,
           },
           error,
@@ -212,7 +194,7 @@ export class Resolver {
         throw new HardhatError(
           ERRORS.RESOLVER.INVALID_IMPORT_OF_DIRECTORY,
           {
-            imported,
+            importName,
             from: from.sourceName,
           },
           error,
