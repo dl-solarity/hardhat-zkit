@@ -66,7 +66,7 @@ module.exports = {
     typesSettings: {
       typesArtifactsDir: "zkit/abi",
       typesDir: "generated-types/zkit",
-    }
+    },
     quiet: false,
     verifiersDir: "contracts/verifiers",
     ptauDir: undefined,
