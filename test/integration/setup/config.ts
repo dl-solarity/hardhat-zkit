@@ -35,10 +35,11 @@ describe("config", () => {
           typesArtifactsDir: "zkit/abi",
           typesDir: "generated-types/zkit",
         },
-        quiet: true,
         verifiersDir: "contracts/verifiers",
         ptauDir: "zkit/ptau",
         ptauDownload: true,
+        nativeCompiler: false,
+        quiet: true,
       };
 
       expect(loadedOptions).to.deep.equal(userDefinedConfig);
@@ -72,10 +73,11 @@ describe("config", () => {
           typesArtifactsDir: "zkit/abi",
           typesDir: "generated-types/zkit",
         },
-        quiet: false,
         verifiersDir: "contracts/verifiers",
         ptauDir: undefined,
         ptauDownload: true,
+        nativeCompiler: false,
+        quiet: false,
       };
 
       expect(loadedOptions).to.deep.equal(defaultConfig);

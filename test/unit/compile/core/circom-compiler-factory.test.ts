@@ -20,7 +20,7 @@ describe("CircomCompilerFactory", () => {
     useEnvironment("with-circuits");
 
     it("should correctly create circom compiler instance", async function () {
-      const compiler: ICircomCompiler = CircomCompilerFactory.createCircomCompiler("0.2.18");
+      const compiler: ICircomCompiler = CircomCompilerFactory.createWASMCircomCompiler("0.2.18");
 
       const circuitFullPath: string = getNormalizedFullPath(this.hre.config.paths.root, "circuits/main/mul2.circom");
       const artifactsFullPath: string = getNormalizedFullPath(
@@ -40,12 +40,7 @@ describe("CircomCompilerFactory", () => {
         quiet: true,
       });
 
-      expect(fsExtra.readdirSync(artifactsFullPath)).to.be.deep.eq([
-        "mul2.r1cs",
-        "mul2.sym",
-        "mul2_ast.json",
-        "mul2_js",
-      ]);
+      expect(fsExtra.readdirSync(artifactsFullPath)).to.be.deep.eq(["mul2.r1cs", "mul2.sym", "mul2_js"]);
 
       fsExtra.rmSync(typesDir, { recursive: true, force: true });
     });
@@ -56,7 +51,7 @@ describe("CircomCompilerFactory", () => {
       const reason = `Unsupported Circom compiler version - ${invalidVersion}. Please provide another version.`;
 
       expect(function () {
-        CircomCompilerFactory.createCircomCompiler(invalidVersion as any);
+        CircomCompilerFactory.createWASMCircomCompiler(invalidVersion as any);
       }).to.throw(reason);
     });
   });

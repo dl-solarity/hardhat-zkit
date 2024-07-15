@@ -17,7 +17,7 @@ import { TASK_ZKIT_GET_CIRCUIT_ZKIT, TASK_CIRCUITS_COMPILE, TASK_GENERATE_VERIFI
 import { zkitConfigExtender } from "./config/config";
 
 import { CircomCircuitsCache, createCircuitsCache } from "./cache/CircomCircuitsCache";
-import { CompilationFilesManager, CompilationProcessor } from "./compile/core";
+import { CircomCompilerFactory, CompilationFilesManager, CompilationProcessor } from "./compile/core";
 import { Reporter, createReporter } from "./reporter";
 
 import { CompileTaskConfig, GenerateVerifiersTaskConfig, GetCircuitZKitConfig } from "./types/tasks";
@@ -44,6 +44,10 @@ const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfi
 
   await createCircuitsCache(circuitsCacheFullPath);
   createReporter(taskArgs.quiet || env.config.zkit.quiet);
+
+  if (env.config.zkit.nativeCompiler) {
+    await CircomCompilerFactory.checkNativeCompilerExistence();
+  }
 
   const compilationFilesManager: CompilationFilesManager = new CompilationFilesManager(
     {

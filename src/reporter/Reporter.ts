@@ -10,7 +10,6 @@ import { pluralize } from "hardhat/internal/util/strings";
 import { SpinnerProcessor } from "./SpinnerProcessor";
 import { ProgressBarProcessor } from "./ProgressBarProcessor";
 import { CompilationInfo, CompilerVersion } from "../types/compile";
-import { Options } from "ora";
 
 class BaseReporter {
   private _spinnerProcessor: SpinnerProcessor;
@@ -334,12 +333,12 @@ class BaseReporter {
     return workingTime ? chalk.grey(`(${workingTime} s)`) : "";
   }
 
-  private _startSpinner(circuitName: string, spinnerIdSuffix: string, spinnerOptions: string | Options): string | null {
+  private _startSpinner(circuitName: string, spinnerIdSuffix: string, spinnerText: string): string | null {
     if (this.isQuiet()) return null;
 
     const spinnerId: string = `${circuitName}-${spinnerIdSuffix}`;
 
-    this._spinnerProcessor.createSpinner(spinnerId, spinnerOptions);
+    this._spinnerProcessor.createSpinner(spinnerId, { text: spinnerText });
 
     return spinnerId;
   }

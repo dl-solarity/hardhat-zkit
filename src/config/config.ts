@@ -20,10 +20,11 @@ const defaultConfig: ZKitConfig = {
     typesArtifactsDir: "zkit/abi",
     typesDir: "generated-types/zkit",
   },
-  quiet: false,
   verifiersDir: "contracts/verifiers",
   ptauDir: undefined,
   ptauDownload: true,
+  nativeCompiler: false,
+  quiet: false,
 };
 
 export const zkitConfigExtender: ConfigExtender = (resolvedConfig, config) => {
