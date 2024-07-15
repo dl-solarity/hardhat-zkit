@@ -5,6 +5,7 @@ export type ZKitConfig = {
   verifiersDir: string;
   ptauDir: string | undefined;
   ptauDownload: boolean;
+  nativeCompiler: boolean;
   quiet: boolean;
 };
 

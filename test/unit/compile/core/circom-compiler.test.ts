@@ -5,10 +5,10 @@ import { expect } from "chai";
 import { getProjectRootPath, useEnvironment } from "../../../helpers";
 import { getNormalizedFullPath } from "../../../../src/utils/path-utils";
 import { CompileFlags } from "../../../../src/types/compile";
-import { CircomCompiler } from "../../../../src/compile/core";
+import { WASMCircomCompiler } from "../../../../src/compile/core";
 import { NODE_MODULES } from "../../../../src/constants";
 
-describe("CircomCompiler", () => {
+describe("WASMCircomCompiler", () => {
   const defaultCompileFlags: CompileFlags = {
     r1cs: true,
     wasm: true,
@@ -18,12 +18,14 @@ describe("CircomCompiler", () => {
   };
 
   describe("compile:without-libraries", () => {
-    let circomCompiler: CircomCompiler;
+    let circomCompiler: WASMCircomCompiler;
 
     useEnvironment("with-circuits");
 
     beforeEach("setup", async function () {
-      circomCompiler = new CircomCompiler(fsExtra.readFileSync(require.resolve("@distributedlab/circom2/circom.wasm")));
+      circomCompiler = new WASMCircomCompiler(
+        fsExtra.readFileSync(require.resolve("@distributedlab/circom2/circom.wasm")),
+      );
     });
 
     it("should correctly compile circuit", async function () {
@@ -45,12 +47,7 @@ describe("CircomCompiler", () => {
         quiet: true,
       });
 
-      expect(fsExtra.readdirSync(artifactsFullPath)).to.be.deep.eq([
-        "mul2.r1cs",
-        "mul2.sym",
-        "mul2_ast.json",
-        "mul2_js",
-      ]);
+      expect(fsExtra.readdirSync(artifactsFullPath)).to.be.deep.eq(["mul2.r1cs", "mul2.sym", "mul2_js"]);
 
       fsExtra.rmSync(typesDir, { recursive: true, force: true });
     });
@@ -108,12 +105,14 @@ describe("CircomCompiler", () => {
   });
 
   describe("compile:with-libraries", () => {
-    let circomCompiler: CircomCompiler;
+    let circomCompiler: WASMCircomCompiler;
 
     useEnvironment("circuits-with-libraries");
 
     beforeEach("setup", async function () {
-      circomCompiler = new CircomCompiler(fsExtra.readFileSync(require.resolve("@distributedlab/circom2/circom.wasm")));
+      circomCompiler = new WASMCircomCompiler(
+        fsExtra.readFileSync(require.resolve("@distributedlab/circom2/circom.wasm")),
+      );
     });
 
     it("should correctly compile circuit with library inclue", async function () {
@@ -136,37 +135,26 @@ describe("CircomCompiler", () => {
         quiet: true,
       });
 
-      expect(fsExtra.readdirSync(artifactsFullPath)).to.be.deep.eq([
-        "hash2.r1cs",
-        "hash2.sym",
-        "hash2_ast.json",
-        "hash2_js",
-      ]);
+      expect(fsExtra.readdirSync(artifactsFullPath)).to.be.deep.eq(["hash2.r1cs", "hash2.sym", "hash2_js"]);
 
       fsExtra.rmSync(typesDir, { recursive: true, force: true });
     });
   });
 
   describe("getCompilationArgs", () => {
-    let circomCompiler: CircomCompiler;
+    let circomCompiler: WASMCircomCompiler;
 
     beforeEach("setup", async function () {
-      circomCompiler = new CircomCompiler(fsExtra.readFileSync(require.resolve("@distributedlab/circom2/circom.wasm")));
+      circomCompiler = new WASMCircomCompiler(
+        fsExtra.readFileSync(require.resolve("@distributedlab/circom2/circom.wasm")),
+      );
     });
 
     it("should return correct compilation args", async function () {
       const circuitFullPath: string = "circuit-path";
       const artifactsFullPath: string = "artifacts-path";
 
-      let expectedArgs: string[] = [
-        circuitFullPath,
-        "--save_ast",
-        artifactsFullPath,
-        "-o",
-        artifactsFullPath,
-        "--r1cs",
-        "--wasm",
-      ];
+      let expectedArgs: string[] = [circuitFullPath, "-o", artifactsFullPath, "--r1cs", "--wasm"];
       let args: string[] = circomCompiler.getCompilationArgs({
         circuitFullPath,
         artifactsFullPath,
@@ -177,17 +165,7 @@ describe("CircomCompiler", () => {
 
       expect(args).to.be.deep.eq(expectedArgs);
 
-      expectedArgs = [
-        circuitFullPath,
-        "--save_ast",
-        artifactsFullPath,
-        "-o",
-        artifactsFullPath,
-        "--r1cs",
-        "--wasm",
-        "--c",
-        "--sym",
-      ];
+      expectedArgs = [circuitFullPath, "-o", artifactsFullPath, "--r1cs", "--wasm", "--c", "--sym"];
       args = circomCompiler.getCompilationArgs({
         circuitFullPath,
         artifactsFullPath,

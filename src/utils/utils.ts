@@ -1,7 +1,9 @@
 import fs from "fs";
 import https from "https";
+import { exec } from "child_process";
 
 import { Reporter } from "../reporter";
+import { ExecCallResult } from "../types/utils";
 
 /**
  * Downloads a file from the specified URL.
@@ -48,5 +50,17 @@ export async function downloadFile(file: string, url: string): Promise<boolean> 
     });
 
     request.end();
+  });
+}
+
+export async function execCall(execFile: string, callArgs: string[]): Promise<ExecCallResult> {
+  return new Promise<ExecCallResult>((resolve, reject) => {
+    exec(`${execFile} ${callArgs.join(" ")}`, (error, stdout, stderr) => {
+      if (error === null) {
+        resolve({ stdout, stderr });
+      } else {
+        reject(error);
+      }
+    });
   });
 }

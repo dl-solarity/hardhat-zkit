@@ -6,16 +6,25 @@ export type CompileFlags = {
   c: boolean;
 };
 
-export type CompileConfig = {
+export type BaseCompileConfig = {
   circuitFullPath: string;
   artifactsFullPath: string;
   linkLibraries: string[];
-  compileFlags: CompileFlags;
   quiet: boolean;
+};
+
+export type CompileConfig = BaseCompileConfig & {
+  compileFlags: CompileFlags;
 };
 
 export interface ICircomCompiler {
   compile: (config: CompileConfig) => Promise<void>;
 
   getCompilationArgs: (config: CompileConfig) => string[];
+}
+
+export interface IWASMCircomCompiler extends ICircomCompiler {
+  generateAST: (config: BaseCompileConfig) => Promise<void>;
+
+  getASTGenerationArgs: (config: BaseCompileConfig) => string[];
 }

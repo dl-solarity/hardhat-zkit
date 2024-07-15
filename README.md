@@ -67,10 +67,11 @@ module.exports = {
       typesArtifactsDir: "zkit/abi",
       typesDir: "generated-types/zkit",
     },
-    quiet: false,
     verifiersDir: "contracts/verifiers",
     ptauDir: undefined,
     ptauDownload: true,
+    nativeCompiler: false,
+    quiet: false,
   },
 };
 ```
@@ -90,10 +91,14 @@ Where:
 - `typesSettings`
   - `typesArtifactsDir` - The directory where to save the generated circuits ABI.
   - `typesDir` - The directory where to save the generated circuits wrappers.
-- `quiet` - The flag indicating whether to suppress the output.
 - `verifiersDir` - The directory where to generate the Solidity verifiers.
 - `ptauDir` - The directory where to look for the `ptau` files. `$HOME/.zkit/ptau/` by default.
 - `ptauDownload` - The flag to allow automatic download of required `ptau` files.
+- `nativeCompiler` - The flag indicating whether to use the natively installed compiler.
+- `quiet` - The flag indicating whether to suppress the output.
+
+> [!IMPORTANT] 
+> The `nativeCompiler` flag requires the Circom compiler to be preinstalled and be globally available in the system.
 
 ### Typization
 
