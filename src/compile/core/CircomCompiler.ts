@@ -83,16 +83,13 @@ export class WASMCircomCompiler extends BaseCircomCompiler implements IWASMCirco
     try {
       await circomRunner.execute(this._compiler);
     } catch (err) {
-      const parentErr = new Error(undefined, { cause: err });
-
       if (config.quiet) {
         throw new HardhatZKitError(
           "AST generation failed with an unknown error. Use '--verbose' hardhat flag to see the generation error.",
-          parentErr,
         );
       }
 
-      throw new HardhatZKitError("AST generation failed.", parentErr);
+      throw new HardhatZKitError(`AST generation failed.\n${err}`);
     }
   }
 

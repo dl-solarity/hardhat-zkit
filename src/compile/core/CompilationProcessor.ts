@@ -28,7 +28,6 @@ import { Reporter } from "../../reporter";
 
 export class CompilationProcessor {
   private readonly _zkitConfig: ZKitConfig;
-  private readonly _wasmCompiler: IWASMCircomCompiler;
   private readonly _nodeModulesPath: string;
   private readonly _verbose: boolean;
   private readonly _root: string;
@@ -41,7 +40,6 @@ export class CompilationProcessor {
     hre: HardhatRuntimeEnvironment,
   ) {
     this._zkitConfig = hre.config.zkit;
-    this._wasmCompiler = CircomCompilerFactory.createWASMCircomCompiler(_config.compilerVersion);
     this._verbose = hre.hardhatArguments.verbose;
     this._nodeModulesPath = getNormalizedFullPath(hre.config.paths.root, NODE_MODULES);
     this._root = hre.config.paths.root;
@@ -64,14 +62,16 @@ export class CompilationProcessor {
       Reporter!.verboseLog("compilation-processor", "Compilation temp directory: %s", [tempDir]);
       Reporter!.reportCompilationProcessHeader();
 
+      const nativeCompiler: ICircomCompiler | undefined = this._zkitConfig.nativeCompiler
+        ? await CircomCompilerFactory.createNativeCircomCompiler(this._config.compilerVersion)
+        : undefined;
+      const wasmCompiler: IWASMCircomCompiler = CircomCompilerFactory.createWASMCircomCompiler(
+        this._config.compilerVersion,
+      );
+
       const compilationInfoArr: CompilationInfo[] = await this._getCompilationInfoArr(tempDir, filesInfoToCompile);
 
-      await this._compileCircuits(
-        this._zkitConfig.nativeCompiler
-          ? await CircomCompilerFactory.createNativeCircomCompiler("0.2.18")
-          : this._wasmCompiler,
-        compilationInfoArr,
-      );
+      await this._compileCircuits(nativeCompiler ?? wasmCompiler, wasmCompiler, compilationInfoArr);
 
       await this._createCircuitASTFiles(compilationInfoArr);
 
@@ -92,7 +92,11 @@ export class CompilationProcessor {
     }
   }
 
-  private async _compileCircuits(compiler: ICircomCompiler, compilationInfoArr: CompilationInfo[]) {
+  private async _compileCircuits(
+    compiler: ICircomCompiler,
+    wasmCompiler: IWASMCircomCompiler,
+    compilationInfoArr: CompilationInfo[],
+  ) {
     for (const info of compilationInfoArr) {
       const spinnerId: string | null = Reporter!.reportCircuitCompilationStartWithSpinner(info.circuitName);
 
@@ -107,7 +111,7 @@ export class CompilationProcessor {
       };
 
       await compiler.compile(compileConfig);
-      await this._wasmCompiler.generateAST(compileConfig);
+      await wasmCompiler.generateAST(compileConfig);
 
       if (info.circuitFileName !== info.circuitName) {
         renameFilesRecursively(info.tempArtifactsPath, info.circuitFileName, info.circuitName);
