@@ -10,7 +10,11 @@ export interface ICircuitArtifacts {
 
   getCircuitArtifactPaths(): Promise<string[]>;
 
-  saveCircuitArtifact(circuitArtifact: CircuitArtifact): Promise<void>;
+  formCircuitArtifactPathFromFullyQualifiedName(fullyQualifiedName: string): string;
+
+  getCircuitFullyQualifiedName(sourceName: string, circuitName: string): string;
+
+  saveCircuitArtifact(circuitArtifact: CircuitArtifact, updatedFileTypes: ArtifactsFileType[]): Promise<void>;
 
   clearCache(): void;
 
@@ -22,12 +26,8 @@ export type CircuitArtifact = {
   circuitFileName: string;
   circuitTemplateName: string;
   sourcePath: string;
-  compilerOutputFiles: CompilerOutputFiles;
+  compilerOutputFiles: Partial<Record<ArtifactsFileType, CompilerOutputFileInfo>>;
   circomCompilerOutput: CircomCompilerOutput[];
-};
-
-export type CompilerOutputFiles = {
-  [fileType in ArtifactsFileType]: CompilerOutputFileInfo;
 };
 
 export type CompilerOutputFileInfo = {

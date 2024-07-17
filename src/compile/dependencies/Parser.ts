@@ -1,7 +1,7 @@
 import { ParsedData } from "../../types/compile";
 
-import { CircomCircuitsCache } from "../../cache/CircomCircuitsCache";
 import { INCLUDE_REG_EXP, PRAGMA_VERSION_REG_EXP } from "../../constants";
+import { CircuitsCompileCache } from "../../cache/CircuitsCompileCache";
 
 export class Parser {
   private _cache = new Map<string, ParsedData>();
@@ -30,7 +30,7 @@ export class Parser {
       return internalCacheEntry;
     }
 
-    const circuitsFilesCacheEntry = CircomCircuitsCache!.getEntry(absolutePath);
+    const circuitsFilesCacheEntry = CircuitsCompileCache!.getEntry(absolutePath);
 
     if (circuitsFilesCacheEntry === undefined) {
       return null;

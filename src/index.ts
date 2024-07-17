@@ -12,27 +12,39 @@ import { CircuitTypesGenerator } from "@solarity/zktype";
 
 import "./type-extensions";
 
-import { TASK_ZKIT_GET_CIRCUIT_ZKIT, TASK_CIRCUITS_COMPILE, TASK_GENERATE_VERIFIERS } from "./task-names";
+import {
+  TASK_ZKIT_GET_CIRCUIT_ZKIT,
+  TASK_CIRCUITS_COMPILE,
+  TASK_GENERATE_VERIFIERS,
+  TASK_CIRCUITS_COMPILE_SHALLOW,
+} from "./task-names";
 
 import { zkitConfigExtender } from "./config/config";
 
-import { CircomCircuitsCache, createCircuitsCache } from "./cache/CircomCircuitsCache";
-import { CircomCompilerFactory, CompilationFilesManager, CompilationProcessor } from "./compile/core";
+import { CircuitsCompileCache, createCircuitsCompileCache } from "./cache/CircuitsCompileCache";
+
+import { CircomCompilerFactory } from "./compile/core";
+import { CompilationProcessorNew } from "./compile/core/CompilationProcessorNew";
 import { Reporter, createReporter } from "./reporter";
 
-import { CompileTaskConfig, GenerateVerifiersTaskConfig, GetCircuitZKitConfig } from "./types/tasks";
-import { CompileFlags, ResolvedFileInfo } from "./types/compile";
+import { CompileShallowTaskConfig, GenerateVerifiersTaskConfig, GetCircuitZKitConfig } from "./types/tasks";
+import { CompileFlags } from "./types/compile";
 
 import { getAllDirsMatchingSync, getNormalizedFullPath } from "./utils/path-utils";
-import { CIRCOM_CIRCUITS_CACHE_FILENAME, COMPILER_VERSION } from "./constants";
+import { CIRCOM_CIRCUITS_CACHE_FILENAME, CIRCUITS_COMPILE_CACHE_FILENAME, COMPILER_VERSION } from "./constants";
 import { HardhatZKitError } from "./errors";
 import { CircuitArtifacts } from "./CircuitArtifacts";
+import { CompilationFileResolver } from "./compile/core/CompilationFileResolver";
+import { TypeGenerationProcessor } from "./compile/core/TypeGenerationProcessor";
+import { ResolvedFileInfo } from "./types/compile/core/compilation-file-resolver";
 
 extendConfig(zkitConfigExtender);
 
 extendEnvironment((hre) => {
   hre.zkit = lazyObject(() => {
-    const circuitArtifacts: CircuitArtifacts = new CircuitArtifacts(hre.config.zkit.compilationSettings.artifactsDir);
+    const circuitArtifacts: CircuitArtifacts = new CircuitArtifacts(
+      getNormalizedFullPath(hre.config.paths.root, hre.config.zkit.compilationSettings.artifactsDir),
+    );
 
     return {
       circuitArtifacts,
@@ -44,24 +56,25 @@ extendEnvironment((hre) => {
   });
 });
 
-const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfig, env: HardhatRuntimeEnvironment) => {
-  const circuitsCacheFullPath: string = getNormalizedFullPath(env.config.paths.cache, CIRCOM_CIRCUITS_CACHE_FILENAME);
+const compileShallow: ActionType<CompileShallowTaskConfig> = async (
+  taskArgs: CompileShallowTaskConfig,
+  env: HardhatRuntimeEnvironment,
+) => {
+  const circuitsCompileCacheFullPath: string = getNormalizedFullPath(
+    env.config.paths.cache,
+    CIRCUITS_COMPILE_CACHE_FILENAME,
+  );
 
-  await createCircuitsCache(circuitsCacheFullPath);
+  await createCircuitsCompileCache(circuitsCompileCacheFullPath);
   createReporter(taskArgs.quiet || env.config.zkit.quiet);
 
   if (env.config.zkit.nativeCompiler) {
     await CircomCompilerFactory.checkNativeCompilerExistence();
   }
 
-  const compilationFilesManager: CompilationFilesManager = new CompilationFilesManager(
-    {
-      artifactsDir: taskArgs.artifactsDir,
-      ptauDir: taskArgs.ptauDir,
-      force: taskArgs.force,
-      ptauDownload: taskArgs.ptauDownload ?? true,
-    },
+  const compilationFileResolver: CompilationFileResolver = new CompilationFileResolver(
     (absolutePath: string) => env.run(TASK_READ_FILE, { absolutePath }),
+    env.zkit.circuitArtifacts,
     env.config,
   );
 
@@ -76,27 +89,32 @@ const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfi
   Reporter!.reportCompilerVersion(COMPILER_VERSION);
   Reporter!.verboseLog("index", "Compile flags: %O", [compileFlags]);
 
-  const resolvedFilesInfo: ResolvedFileInfo[] = await compilationFilesManager.getResolvedFilesToCompile(
+  const resolvedFilesInfo: ResolvedFileInfo[] = await compilationFileResolver.getResolvedFilesToCompile(
     compileFlags,
     taskArgs.force,
   );
 
-  const compilationProcessor: CompilationProcessor = new CompilationProcessor(
-    compilationFilesManager.getCircuitsDirFullPath(),
-    compilationFilesManager.getArtifactsDirFullPath(),
-    compilationFilesManager.getPtauDirFullPath(),
+  const compilationProcessor: CompilationProcessorNew = new CompilationProcessorNew(
+    compilationFileResolver.getArtifactsDirFullPath(),
     {
       compilerVersion: COMPILER_VERSION,
       compileFlags,
     },
+    env.zkit.circuitArtifacts,
     env,
   );
 
   await compilationProcessor.compile(resolvedFilesInfo);
 
+  const typeGenerationProcessor: TypeGenerationProcessor = new TypeGenerationProcessor(env);
+
+  await typeGenerationProcessor.generateTypes(
+    resolvedFilesInfo.map((fileInfo: ResolvedFileInfo) => fileInfo.circuitFullyQualifiedName),
+  );
+
   for (const fileInfo of resolvedFilesInfo) {
     for (const file of [fileInfo.resolvedFile, ...fileInfo.dependencies]) {
-      CircomCircuitsCache!.addFile(file.absolutePath, {
+      CircuitsCompileCache!.addFile(file.absolutePath, {
         lastModificationDate: file.lastModificationDate.valueOf(),
         contentHash: file.contentHash,
         sourceName: file.sourceName,
@@ -107,8 +125,74 @@ const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfi
     }
   }
 
-  await CircomCircuitsCache!.writeToFile(circuitsCacheFullPath);
+  await CircuitsCompileCache!.writeToFile(circuitsCompileCacheFullPath);
 };
+
+// const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfig, env: HardhatRuntimeEnvironment) => {
+//   const circuitsCacheFullPath: string = getNormalizedFullPath(env.config.paths.cache, CIRCOM_CIRCUITS_CACHE_FILENAME);
+
+//   await createCircuitsCache(circuitsCacheFullPath);
+//   createReporter(taskArgs.quiet || env.config.zkit.quiet);
+
+//   if (env.config.zkit.nativeCompiler) {
+//     await CircomCompilerFactory.checkNativeCompilerExistence();
+//   }
+
+//   const compilationFilesManager: CompilationFilesManager = new CompilationFilesManager(
+//     {
+//       artifactsDir: taskArgs.artifactsDir,
+//       ptauDir: taskArgs.ptauDir,
+//       force: taskArgs.force,
+//       ptauDownload: taskArgs.ptauDownload ?? true,
+//     },
+//     (absolutePath: string) => env.run(TASK_READ_FILE, { absolutePath }),
+//     env.config,
+//   );
+
+//   const compileFlags: CompileFlags = {
+//     r1cs: true,
+//     wasm: true,
+//     sym: taskArgs.sym || env.config.zkit.compilationSettings.sym,
+//     json: taskArgs.json || env.config.zkit.compilationSettings.json,
+//     c: taskArgs.c || env.config.zkit.compilationSettings.c,
+//   };
+
+//   Reporter!.reportCompilerVersion(COMPILER_VERSION);
+//   Reporter!.verboseLog("index", "Compile flags: %O", [compileFlags]);
+
+//   const resolvedFilesInfo: ResolvedFileInfo[] = await compilationFilesManager.getResolvedFilesToCompile(
+//     compileFlags,
+//     taskArgs.force,
+//   );
+
+//   const compilationProcessor: CompilationProcessor = new CompilationProcessor(
+//     compilationFilesManager.getCircuitsDirFullPath(),
+//     compilationFilesManager.getArtifactsDirFullPath(),
+//     compilationFilesManager.getPtauDirFullPath(),
+//     {
+//       compilerVersion: COMPILER_VERSION,
+//       compileFlags,
+//     },
+//     env,
+//   );
+
+//   await compilationProcessor.compile(resolvedFilesInfo);
+
+//   for (const fileInfo of resolvedFilesInfo) {
+//     for (const file of [fileInfo.resolvedFile, ...fileInfo.dependencies]) {
+//       CircomCircuitsCache!.addFile(file.absolutePath, {
+//         lastModificationDate: file.lastModificationDate.valueOf(),
+//         contentHash: file.contentHash,
+//         sourceName: file.sourceName,
+//         compileFlags,
+//         imports: file.content.imports,
+//         versionPragmas: file.content.versionPragmas,
+//       });
+//     }
+//   }
+
+//   await CircomCircuitsCache!.writeToFile(circuitsCacheFullPath);
+// };
 
 const generateVerifiers: ActionType<GenerateVerifiersTaskConfig> = async (
   taskArgs: GenerateVerifiersTaskConfig,
@@ -270,26 +354,34 @@ const getCircuitZKit: ActionType<GetCircuitZKitConfig> = async (
   }
 };
 
-task(TASK_CIRCUITS_COMPILE, "Compile Circom circuits and generate all necessary artifacts")
-  .addOptionalParam(
-    "artifactsDir",
-    "Relative path to the directory where compilation artifacts will be saved.",
-    undefined,
-    types.string,
-  )
-  .addOptionalParam(
-    "ptauDir",
-    "Absolute or relative path to the directory where Ptau files will be searched for.",
-    undefined,
-    types.string,
-  )
-  .addOptionalParam("ptauDownload", "Flag that indicates if Ptau files dowloading is allowed.", true, types.boolean)
+// task(TASK_CIRCUITS_COMPILE, "Compile Circom circuits and generate all necessary artifacts")
+//   .addOptionalParam(
+//     "artifactsDir",
+//     "Relative path to the directory where compilation artifacts will be saved.",
+//     undefined,
+//     types.string,
+//   )
+//   .addOptionalParam(
+//     "ptauDir",
+//     "Absolute or relative path to the directory where Ptau files will be searched for.",
+//     undefined,
+//     types.string,
+//   )
+//   .addOptionalParam("ptauDownload", "Flag that indicates if Ptau files dowloading is allowed.", true, types.boolean)
+//   .addFlag("sym", "Outputs witness in sym file in the compilation artifacts directory.")
+//   .addFlag("json", "Outputs constraints in json file in the compilation artifacts directory.")
+//   .addFlag("c", "Enables the generation of cpp files in the compilation artifacts directory.")
+//   .addFlag("force", "Force compilation ignoring cache.")
+//   .addFlag("quiet", "Suppresses logs during the compilation process.")
+//   .setAction(compile);
+
+task(TASK_CIRCUITS_COMPILE_SHALLOW, "Compile Circom circuits")
   .addFlag("sym", "Outputs witness in sym file in the compilation artifacts directory.")
   .addFlag("json", "Outputs constraints in json file in the compilation artifacts directory.")
   .addFlag("c", "Enables the generation of cpp files in the compilation artifacts directory.")
   .addFlag("force", "Force compilation ignoring cache.")
   .addFlag("quiet", "Suppresses logs during the compilation process.")
-  .setAction(compile);
+  .setAction(compileShallow);
 
 task(TASK_GENERATE_VERIFIERS, "Generate Solidity verifier contracts for Circom circuits")
   .addOptionalParam(

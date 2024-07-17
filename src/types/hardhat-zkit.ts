@@ -1,5 +1,5 @@
 import { CircuitZKit } from "@solarity/zkit";
-import { ICircuitArtifacts } from "./artifacts";
+import { ICircuitArtifacts } from "./circuit-artifacts";
 
 export declare function getCircuit(circuitName: string): Promise<CircuitZKit>;
 

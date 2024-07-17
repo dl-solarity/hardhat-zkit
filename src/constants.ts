@@ -1,8 +1,10 @@
 export const PLUGIN_NAME = "@solarity/hardhat-zkit";
 
 export const CIRCOM_CIRCUITS_CACHE_FILENAME = "circom-circuits-cache.json";
+export const CIRCUITS_COMPILE_CACHE_FILENAME = "circuits-compile-cache.json";
 
 export const FORMAT_VERSION = "hh-zkit-cache-1";
+export const CIRCUIT_ARTIFACT_VERSION = "hh-zkit-artifacts-1";
 
 export const NODE_MODULES = "node_modules";
 export const COMPILER_VERSION = "0.2.18";

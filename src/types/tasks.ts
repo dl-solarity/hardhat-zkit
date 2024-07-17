@@ -1,5 +1,13 @@
 import { VerifierTemplateType } from "@solarity/zkit";
 
+export type CompileShallowTaskConfig = {
+  force: boolean;
+  sym: boolean;
+  json: boolean;
+  c: boolean;
+  quiet: boolean;
+};
+
 export type CompileTaskConfig = {
   artifactsDir?: string;
   ptauDir?: string;

@@ -2,14 +2,17 @@ import path from "path";
 import fsExtra from "fs-extra";
 
 import { FileNotFoundError, getAllFilesMatching, getFileTrueCase } from "hardhat/internal/util/fs-utils";
-import { isFullyQualifiedName, getFullyQualifiedName } from "hardhat/utils/contract-names";
+import { isFullyQualifiedName } from "hardhat/utils/contract-names";
 import { replaceBackslashes } from "hardhat/utils/source-names";
 import { ERRORS } from "hardhat/internal/core/errors-list";
-import { HardhatError } from "hardhat/internal/core/errors";
+import { HardhatError, NomicLabsHardhatPluginError } from "hardhat/internal/core/errors";
+import { createNonCryptographicHashBasedIdentifier } from "hardhat/internal/util/hash";
 
 import { HardhatZKitError } from "./errors";
 import { CIRCUIT_ARTIFACTS_SUFFIX } from "./constants";
-import { ArtifactsCache, CircuitArtifact, ICircuitArtifacts } from "./types/artifacts";
+import { ArtifactsCache, CircuitArtifact, CompilerOutputFileInfo, ICircuitArtifacts } from "./types/circuit-artifacts";
+import { ArtifactsFileType } from "@solarity/zkit";
+import { getNormalizedFullPath } from "./utils/path-utils";
 
 export class CircuitArtifacts implements ICircuitArtifacts {
   // Undefined means that the cache is disabled.
@@ -29,7 +32,7 @@ export class CircuitArtifacts implements ICircuitArtifacts {
     try {
       artifactPath = await this._getArtifactPath(circuitNameOrFullyQualifiedName);
     } catch (e) {
-      if (HardhatError.isHardhatError(e)) {
+      if (NomicLabsHardhatPluginError.isNomicLabsHardhatPluginError(e)) {
         return false;
       }
 
@@ -65,10 +68,21 @@ export class CircuitArtifacts implements ICircuitArtifacts {
     return path.join(this._artifactsPath, sourceName, `${circuitName}${CIRCUIT_ARTIFACTS_SUFFIX}`);
   }
 
-  public async saveCircuitArtifact(circuitArtifact: CircuitArtifact) {
-    const fullyQualifiedName = getFullyQualifiedName(circuitArtifact.sourcePath, circuitArtifact.circuitFileName);
+  public getCircuitFullyQualifiedName(sourceName: string, circuitName: string): string {
+    return `${sourceName}:${circuitName}`;
+  }
+
+  public async saveCircuitArtifact(circuitArtifact: CircuitArtifact, updatedFileTypes: ArtifactsFileType[]) {
+    const fullyQualifiedName = this.getCircuitFullyQualifiedName(
+      circuitArtifact.sourcePath,
+      circuitArtifact.circuitTemplateName,
+    );
 
     const artifactPath = this.formCircuitArtifactPathFromFullyQualifiedName(fullyQualifiedName);
+
+    for (const fileType of updatedFileTypes) {
+      circuitArtifact.compilerOutputFiles[fileType] = this._getCompilerOutputFileInfo(circuitArtifact, fileType);
+    }
 
     await fsExtra.ensureDir(path.dirname(artifactPath));
     await fsExtra.writeJSON(artifactPath, circuitArtifact, { spaces: 2 });
@@ -166,9 +180,53 @@ export class CircuitArtifacts implements ICircuitArtifacts {
   private _getFullyQualifiedNameFromPath(absolutePath: string): string {
     const sourceName = replaceBackslashes(path.relative(this._artifactsPath, path.dirname(absolutePath)));
 
-    const contractName = path.basename(absolutePath).replace(CIRCUIT_ARTIFACTS_SUFFIX, "");
+    const circuitName = path.basename(absolutePath).replace(CIRCUIT_ARTIFACTS_SUFFIX, "");
 
-    return getFullyQualifiedName(sourceName, contractName);
+    return this.getCircuitFullyQualifiedName(sourceName, circuitName);
+  }
+
+  private _getCompilerOutputFileInfo(
+    circuitArtifact: CircuitArtifact,
+    fileType: ArtifactsFileType,
+  ): CompilerOutputFileInfo {
+    let outputFileSourcePath: string;
+
+    switch (fileType) {
+      case "wasm":
+        outputFileSourcePath = path.join(
+          `${circuitArtifact.circuitTemplateName}_js`,
+          `${circuitArtifact.circuitTemplateName}.wasm`,
+        );
+        break;
+      case "r1cs":
+        outputFileSourcePath = `${circuitArtifact.circuitTemplateName}.r1cs`;
+        break;
+      case "sym":
+        outputFileSourcePath = `${circuitArtifact.circuitTemplateName}.sym`;
+        break;
+      case "json":
+        outputFileSourcePath = `${circuitArtifact.circuitTemplateName}_constraints.json`;
+        break;
+      case "vkey":
+        outputFileSourcePath = `${circuitArtifact.circuitTemplateName}.vkey.json`;
+        break;
+      case "zkey":
+        outputFileSourcePath = `${circuitArtifact.circuitTemplateName}.zkey`;
+        break;
+
+      default:
+        throw new HardhatZKitError(`Invalid artifacts file type ${fileType}`);
+    }
+
+    const fileSourceName: string = getNormalizedFullPath(circuitArtifact.sourcePath, outputFileSourcePath);
+    const fileFullPath: string = getNormalizedFullPath(this._artifactsPath, fileSourceName);
+
+    return {
+      fileSourceName,
+      fileHash: createNonCryptographicHashBasedIdentifier(Buffer.from(fsExtra.readFileSync(fileFullPath))).toString(
+        "hex",
+      ),
+    };
   }
 
   private _handleArtifactsNotFound(circuitNameOrFullyQualifiedName: string) {
