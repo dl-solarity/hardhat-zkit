@@ -26,12 +26,17 @@ import { CompileFlags, ResolvedFileInfo } from "./types/compile";
 import { getAllDirsMatchingSync, getNormalizedFullPath } from "./utils/path-utils";
 import { CIRCOM_CIRCUITS_CACHE_FILENAME, COMPILER_VERSION } from "./constants";
 import { HardhatZKitError } from "./errors";
+import { CircuitArtifacts } from "./CircuitArtifacts";
 
 extendConfig(zkitConfigExtender);
 
 extendEnvironment((hre) => {
   hre.zkit = lazyObject(() => {
+    const circuitArtifacts: CircuitArtifacts = new CircuitArtifacts(hre.config.zkit.compilationSettings.artifactsDir);
+
     return {
+      circuitArtifacts,
+
       getCircuit: async (circuitName: string): Promise<CircuitZKit> => {
         return hre.run(TASK_ZKIT_GET_CIRCUIT_ZKIT, { circuitName });
       },

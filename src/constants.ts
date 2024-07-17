@@ -21,3 +21,5 @@ export const URI_SCHEME_REG_EXP = /([a-zA-Z]+):\/\//;
 
 export const MAIN_COMPONENT_REG_EXP =
   /component\s+main\s*(?:{\s*public\s+\[\s*(?:\w+,?\s*)+\]\s*}|)\s*=\s*([\w-]+)\s*\((?:\d+,?\s*|\s*)*\)\s*;\s*$/gm;
+
+export const CIRCUIT_ARTIFACTS_SUFFIX = "_artifacts.json";
