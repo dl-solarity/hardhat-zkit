@@ -10,7 +10,7 @@ import { ResolvedFile } from "hardhat/types/builtin-tasks";
 import { FileFilterSettings, ZKitConfig } from "../../types/zkit-config";
 import { CompileFlags, CompilationFilesManagerConfig, ResolvedFileInfo } from "../../types/compile";
 import { DependencyGraph, Parser, Resolver } from "../dependencies";
-import { CircomCircuitsCache } from "../../cache/CircomCircuitsCache";
+import { CircuitsCompileCache } from "../../cache/CircuitsCompileCache";
 
 import { getNormalizedFullPath } from "../../utils/path-utils";
 import { MAIN_COMPONENT_REG_EXP } from "../../constants";
@@ -176,21 +176,21 @@ export class CompilationFilesManager {
     const artifactsDirFullPath = this.getArtifactsDirFullPath();
 
     for (const fileInfo of resolvedFilesInfo) {
-      const cacheEntry = CircomCircuitsCache!.getEntry(fileInfo.resolvedFile.absolutePath);
+      const cacheEntry = CircuitsCompileCache!.getEntry(fileInfo.resolvedFile.absolutePath);
 
       if (cacheEntry === undefined) {
         continue;
       }
 
       if (!fsExtra.existsSync(fileInfo.resolvedFile.absolutePath.replace(circuitsDirFullPath, artifactsDirFullPath))) {
-        CircomCircuitsCache!.removeEntry(fileInfo.resolvedFile.absolutePath);
+        CircuitsCompileCache!.removeEntry(fileInfo.resolvedFile.absolutePath);
       }
     }
   }
 
   protected _needsCompilation(resolvedFileInfo: ResolvedFileInfo, compileFlags: CompileFlags): boolean {
     for (const file of [resolvedFileInfo.resolvedFile, ...resolvedFileInfo.dependencies]) {
-      const hasChanged = CircomCircuitsCache!.hasFileChanged(file.absolutePath, file.contentHash, compileFlags);
+      const hasChanged = CircuitsCompileCache!.hasFileChanged(file.absolutePath, file.contentHash, compileFlags);
 
       if (hasChanged) {
         return true;

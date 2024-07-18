@@ -2,7 +2,7 @@ import fsExtra from "fs-extra";
 import * as t from "io-ts";
 import { isEqual } from "lodash";
 
-import { FORMAT_VERSION } from "../constants";
+import { CIRCUIT_COMPILE_CACHE_VERSION } from "../constants";
 import { CompileCache, CompileCacheEntry } from "../types/cache";
 import { CompileFlags } from "../types/compile";
 
@@ -31,14 +31,14 @@ const CompileCacheCodec = t.type({
 class BaseCircuitsCompileCache {
   public static createEmpty(): BaseCircuitsCompileCache {
     return new BaseCircuitsCompileCache({
-      _format: FORMAT_VERSION,
+      _format: CIRCUIT_COMPILE_CACHE_VERSION,
       files: {},
     });
   }
 
   public static async readFromFile(circuitsCompileCachePath: string): Promise<BaseCircuitsCompileCache> {
     let cacheRaw: CompileCache = {
-      _format: FORMAT_VERSION,
+      _format: CIRCUIT_COMPILE_CACHE_VERSION,
       files: {},
     };
 
@@ -56,7 +56,7 @@ class BaseCircuitsCompileCache {
     }
 
     return new BaseCircuitsCompileCache({
-      _format: FORMAT_VERSION,
+      _format: CIRCUIT_COMPILE_CACHE_VERSION,
       files: {},
     });
   }
@@ -116,13 +116,13 @@ class BaseCircuitsCompileCache {
 
 export let CircuitsCompileCache: BaseCircuitsCompileCache | null = null;
 
-export async function createCircuitsCompileCache(circuitsFilesCachePath?: string) {
+export async function createCircuitsCompileCache(circuitsCompileCachePath?: string) {
   if (CircuitsCompileCache) {
     return;
   }
 
-  if (circuitsFilesCachePath) {
-    CircuitsCompileCache = await BaseCircuitsCompileCache.readFromFile(circuitsFilesCachePath);
+  if (circuitsCompileCachePath) {
+    CircuitsCompileCache = await BaseCircuitsCompileCache.readFromFile(circuitsCompileCachePath);
   } else {
     CircuitsCompileCache = BaseCircuitsCompileCache.createEmpty();
   }

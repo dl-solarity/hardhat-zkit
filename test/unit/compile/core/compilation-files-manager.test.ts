@@ -9,7 +9,7 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { getAllFilesMatching } from "hardhat/internal/util/fs-utils";
 
 import { CompilationFilesManager } from "../../../../src/compile/core";
-import { CircomCircuitsCache } from "../../../../src/cache/CircomCircuitsCache";
+import { CircuitsCompileCache } from "../../../../src/cache/CircuitsCompileCache";
 import { DependencyGraph, ResolvedFile } from "../../../../src/compile/dependencies";
 import { CompilationFilesManagerConfig, ResolvedFileInfo } from "../../../../src/types/compile";
 import { getNormalizedFullPath } from "../../../../src/utils/path-utils";
@@ -321,7 +321,7 @@ describe("CompilationFilesManager", () => {
         circuitToRemove,
       );
 
-      const entry = CircomCircuitsCache!.getEntry(circuitFullPath);
+      const entry = CircuitsCompileCache!.getEntry(circuitFullPath);
 
       expect(entry).not.to.be.undefined;
 
@@ -336,7 +336,7 @@ describe("CompilationFilesManager", () => {
 
       compilationFilesManager.invalidateCacheMissingArtifacts(resolvedFilesInfo);
 
-      expect(CircomCircuitsCache!.getEntry(circuitFullPath)).to.be.undefined;
+      expect(CircuitsCompileCache!.getEntry(circuitFullPath)).to.be.undefined;
     });
   });
 });

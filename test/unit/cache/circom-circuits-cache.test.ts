@@ -5,13 +5,17 @@ import { expect } from "chai";
 import { createNonCryptographicHashBasedIdentifier } from "hardhat/internal/util/hash";
 
 import { useEnvironment } from "../../helpers";
-import { CircomCircuitsCache, resetCircuitsCache, createCircuitsCache } from "../../../src/cache/CircomCircuitsCache";
+import {
+  CircuitsCompileCache,
+  createCircuitsCompileCache,
+  resetCircuitsCompileCache,
+} from "../../../src/cache/CircuitsCompileCache";
 import { getNormalizedFullPath } from "../../../src/utils/path-utils";
-import { CIRCOM_CIRCUITS_CACHE_FILENAME, FORMAT_VERSION } from "../../../src/constants";
+import { CIRCOM_CIRCUITS_CACHE_FILENAME, CIRCUIT_COMPILE_CACHE_VERSION } from "../../../src/constants";
 import { TASK_CIRCUITS_COMPILE } from "../../../src/task-names";
 import { CacheEntry, CompileFlags } from "../../../src/types/compile";
 
-describe("CircomCircuitsCache", () => {
+describe("CircuitsCompileCache", () => {
   const defaultCompileFlags: CompileFlags = {
     r1cs: true,
     wasm: true,
@@ -49,26 +53,26 @@ describe("CircomCircuitsCache", () => {
   }
 
   describe("createEmpty", () => {
-    it("should correctly create empty CircomCircuitsCache instance", async () => {
-      resetCircuitsCache();
+    it("should correctly create empty CircuitsCompileCache instance", async () => {
+      resetCircuitsCompileCache();
 
-      await createCircuitsCache(undefined);
+      await createCircuitsCompileCache(undefined);
 
-      expect(CircomCircuitsCache!.constructor.name).to.be.eq("BaseCircomCircuitsCache");
-      expect(Object.values(CircomCircuitsCache!)[0]._format).to.be.eq(FORMAT_VERSION);
+      expect(CircuitsCompileCache!.constructor.name).to.be.eq("BaseCircomCircuitsCache");
+      expect(Object.values(CircuitsCompileCache!)[0]._format).to.be.eq(CIRCUIT_COMPILE_CACHE_VERSION);
     });
   });
 
   describe("readFromFile", () => {
     useEnvironment("with-circuits");
 
-    it("should correctly create CircomCircuitsCache instance from file", async function () {
-      CircomCircuitsCache!.getEntries().forEach(async (entry: CacheEntry) => {
+    it("should correctly create CircuitsCompileCache instance from file", async function () {
+      CircuitsCompileCache!.getEntries().forEach(async (entry: CacheEntry) => {
         expect(entry).to.be.deep.eq(await getCacheEntry(this.hre.config.paths.root, entry.sourceName, entry.imports));
       });
     });
 
-    it("should correctly create CircomCircuitsCache instance and remove non existing files", async function () {
+    it("should correctly create CircuitsCompileCache instance and remove non existing files", async function () {
       await this.hre.run(TASK_CIRCUITS_COMPILE);
 
       const circuitsCacheFullPath: string = getNormalizedFullPath(
@@ -86,35 +90,35 @@ describe("CircomCircuitsCache", () => {
 
       fsExtra.rmSync(circuitAbsolutePath);
 
-      resetCircuitsCache();
-      await createCircuitsCache(circuitsCacheFullPath);
+      resetCircuitsCompileCache();
+      await createCircuitsCompileCache(circuitsCacheFullPath);
 
-      expect(CircomCircuitsCache!.getEntry(circuitAbsolutePath)).to.be.undefined;
+      expect(CircuitsCompileCache!.getEntry(circuitAbsolutePath)).to.be.undefined;
 
       fsExtra.writeFileSync(circuitAbsolutePath, fileContent);
       fsExtra.rmSync(typesDir, { recursive: true, force: true });
     });
 
-    it("should return empty CircomCircuitsCache instance if pass invalid cache file", async function () {
+    it("should return empty CircuitsCompileCache instance if pass invalid cache file", async function () {
       const invalidCacheFullPath = getNormalizedFullPath(this.hre.config.paths.cache, "invalid-cache.json");
 
       fsExtra.writeFileSync(invalidCacheFullPath, JSON.stringify({ a: 1, b: 2 }));
 
-      resetCircuitsCache();
-      await createCircuitsCache(invalidCacheFullPath);
+      resetCircuitsCompileCache();
+      await createCircuitsCompileCache(invalidCacheFullPath);
 
-      expect(CircomCircuitsCache!.getEntries()).to.be.deep.eq([]);
+      expect(CircuitsCompileCache!.getEntries()).to.be.deep.eq([]);
 
       fsExtra.rmSync(invalidCacheFullPath);
     });
 
-    it("should return empty CircomCircuitsCache instance if pass invalid cache file path", async function () {
+    it("should return empty CircuitsCompileCache instance if pass invalid cache file path", async function () {
       const invalidCacheFullPath = getNormalizedFullPath(this.hre.config.paths.cache, "invalid-cache.json");
 
-      resetCircuitsCache();
-      await createCircuitsCache(invalidCacheFullPath);
+      resetCircuitsCompileCache();
+      await createCircuitsCompileCache(invalidCacheFullPath);
 
-      expect(CircomCircuitsCache!.getEntries()).to.be.deep.eq([]);
+      expect(CircuitsCompileCache!.getEntries()).to.be.deep.eq([]);
     });
   });
 
@@ -124,17 +128,17 @@ describe("CircomCircuitsCache", () => {
     it("should return correct results", async function () {
       await this.hre.run(TASK_CIRCUITS_COMPILE);
 
-      expect(CircomCircuitsCache!.hasFileChanged("invalid-path", "", defaultCompileFlags)).to.be.true;
+      expect(CircuitsCompileCache!.hasFileChanged("invalid-path", "", defaultCompileFlags)).to.be.true;
 
       const circuitPath = getNormalizedFullPath(this.hre.config.paths.root, "circuits/main/mul2.circom");
       const fileContent = fsExtra.readFileSync(circuitPath, "utf-8");
       const contentHash = createNonCryptographicHashBasedIdentifier(Buffer.from(fileContent)).toString("hex");
 
-      expect(CircomCircuitsCache!.hasFileChanged(circuitPath, contentHash + "1", defaultCompileFlags)).to.be.true;
-      expect(CircomCircuitsCache!.hasFileChanged(circuitPath, contentHash, { ...defaultCompileFlags, c: true })).to.be
+      expect(CircuitsCompileCache!.hasFileChanged(circuitPath, contentHash + "1", defaultCompileFlags)).to.be.true;
+      expect(CircuitsCompileCache!.hasFileChanged(circuitPath, contentHash, { ...defaultCompileFlags, c: true })).to.be
         .true;
 
-      expect(CircomCircuitsCache!.hasFileChanged(circuitPath, contentHash, defaultCompileFlags)).to.be.false;
+      expect(CircuitsCompileCache!.hasFileChanged(circuitPath, contentHash, defaultCompileFlags)).to.be.false;
 
       const typesDir: string = getNormalizedFullPath(this.hre.config.paths.root, "generated-types/zkit");
 

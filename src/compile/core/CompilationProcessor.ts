@@ -135,8 +135,8 @@ export class CompilationProcessor {
   }
 
   private async _generateZKeyFiles(ptauFilePath: string, compilationInfoArr: CompilationInfo[]) {
-    const contributions: number = this._zkitConfig.compilationSettings.contributions;
-    const contributionTemplate: ContributionTemplateType = this._zkitConfig.compilationSettings.contributionTemplate;
+    const contributions: number = this._zkitConfig.setupSettings.contributions;
+    const contributionTemplate: ContributionTemplateType = this._zkitConfig.setupSettings.contributionTemplate;
 
     Reporter!.reportZKeyFilesGenerationHeader(contributions);
 

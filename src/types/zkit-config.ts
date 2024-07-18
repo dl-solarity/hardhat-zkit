@@ -1,5 +1,6 @@
 export type ZKitConfig = {
   compilationSettings: CompilationSettings;
+  setupSettings: SetupSettings;
   typesSettings: CircuitTypesSettings;
   circuitsDir: string;
   verifiersDir: string;
@@ -19,6 +20,9 @@ export type CompilationSettings = FileFilterSettings & {
   c: boolean;
   sym: boolean;
   json: boolean;
+};
+
+export type SetupSettings = FileFilterSettings & {
   contributionTemplate: ContributionTemplateType;
   contributions: number;
 };

@@ -28,8 +28,12 @@ describe("config", () => {
           c: false,
           json: false,
           sym: false,
+        },
+        setupSettings: {
           contributionTemplate: "groth16",
           contributions: 1,
+          onlyFiles: [],
+          skipFiles: [],
         },
         typesSettings: {
           typesArtifactsDir: "zkit/abi",
@@ -66,8 +70,12 @@ describe("config", () => {
           c: false,
           json: false,
           sym: false,
+        },
+        setupSettings: {
           contributionTemplate: "groth16",
           contributions: 1,
+          onlyFiles: [],
+          skipFiles: [],
         },
         typesSettings: {
           typesArtifactsDir: "zkit/abi",
