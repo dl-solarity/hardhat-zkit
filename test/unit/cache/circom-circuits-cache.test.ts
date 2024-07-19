@@ -9,7 +9,7 @@ import {
   resetCircuitsCompileCache,
 } from "../../../src/cache/CircuitsCompileCache";
 import { getNormalizedFullPath } from "../../../src/utils/path-utils";
-import { CIRCOM_CIRCUITS_CACHE_FILENAME, CIRCUIT_COMPILE_CACHE_VERSION } from "../../../src/constants";
+import { CIRCUITS_COMPILE_CACHE_FILENAME, CIRCUIT_COMPILE_CACHE_VERSION } from "../../../src/constants";
 import { TASK_CIRCUITS_COMPILE_SHALLOW } from "../../../src/task-names";
 import { CompileFlags } from "../../../src/types/compile";
 import { CompileCacheEntry } from "../../../src/types/cache";
@@ -76,7 +76,7 @@ describe("CircuitsCompileCache", () => {
 
       const circuitsCacheFullPath: string = getNormalizedFullPath(
         this.hre.config.paths.cache,
-        CIRCOM_CIRCUITS_CACHE_FILENAME,
+        CIRCUITS_COMPILE_CACHE_FILENAME,
       );
 
       const circuitAbsolutePath: string = getNormalizedFullPath(

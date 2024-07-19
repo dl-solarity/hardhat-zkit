@@ -42,7 +42,7 @@ export class SetupFilesResolver {
   }
 
   private async _getCircuitSetupInfoArr(fullyQualifiedNames: string[]): Promise<CircuitSetupInfo[]> {
-    return Promise.all(
+    return await Promise.all(
       fullyQualifiedNames.map(async (name: string): Promise<CircuitSetupInfo> => {
         const circuitArtifact: CircuitArtifact = await this._circuitArtifacts.readCircuitArtifact(name);
         const r1csInfo: CompilerOutputFileInfo | undefined = circuitArtifact.compilerOutputFiles.r1cs;
@@ -86,8 +86,8 @@ export class SetupFilesResolver {
       }
 
       if (
-        !fsExtra.existsSync(this._circuitArtifacts.getCircuitArtifactFileFullPath(setupInfo.circuitArtifact, "r1cs")) ||
-        !fsExtra.existsSync(this._circuitArtifacts.getCircuitArtifactFileFullPath(setupInfo.circuitArtifact, "wasm"))
+        !fsExtra.existsSync(this._circuitArtifacts.getCircuitArtifactFileFullPath(setupInfo.circuitArtifact, "zkey")) ||
+        !fsExtra.existsSync(this._circuitArtifacts.getCircuitArtifactFileFullPath(setupInfo.circuitArtifact, "vkey"))
       ) {
         CircuitsSetupCache!.removeEntry(setupInfo.circuitArtifactFullPath);
       }

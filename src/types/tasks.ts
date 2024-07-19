@@ -14,9 +14,6 @@ export type SetupTaskConfig = {
 };
 
 export type CompileTaskConfig = {
-  artifactsDir?: string;
-  ptauDir?: string;
-  ptauDownload?: boolean;
   force: boolean;
   sym: boolean;
   json: boolean;
@@ -25,7 +22,6 @@ export type CompileTaskConfig = {
 };
 
 export type GenerateVerifiersTaskConfig = {
-  artifactsDir?: string;
   verifiersDir?: string;
   noCompile: boolean;
   quiet: boolean;
@@ -33,7 +29,6 @@ export type GenerateVerifiersTaskConfig = {
 };
 
 export type GetCircuitZKitConfig = {
-  artifactsDir?: string;
   verifiersDir?: string;
   verifierTemplateType?: VerifierTemplateType;
   circuitName: string;

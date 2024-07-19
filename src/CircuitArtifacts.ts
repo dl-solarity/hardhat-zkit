@@ -22,7 +22,9 @@ export class CircuitArtifacts implements ICircuitArtifacts {
 
   public async readCircuitArtifact(circuitNameOrFullyQualifiedName: string): Promise<CircuitArtifact> {
     const artifactPath = await this._getArtifactPath(circuitNameOrFullyQualifiedName);
-    return await fsExtra.readJson(artifactPath);
+    const fileContent = fsExtra.readFileSync(artifactPath, "utf-8");
+
+    return JSON.parse(fileContent) as CircuitArtifact;
   }
 
   public async circuitArtifactExists(circuitNameOrFullyQualifiedName: string): Promise<boolean> {

@@ -20,27 +20,23 @@ export class SetupProcessor {
   ) {}
 
   public async setup(circuitArtifacts: CircuitArtifact[], contributionSettings: ContributionSettings) {
-    if (circuitArtifacts.length > 0) {
-      const tempDir: string = path.join(os.tmpdir(), ".zkit", uuid());
+    const tempDir: string = path.join(os.tmpdir(), ".zkit", uuid());
 
-      try {
-        fs.mkdirSync(tempDir, { recursive: true });
+    try {
+      fs.mkdirSync(tempDir, { recursive: true });
 
-        const ptauFilePath: string = await this._getPtauFile(circuitArtifacts);
+      const ptauFilePath: string = await this._getPtauFile(circuitArtifacts);
 
-        await this._generateZKeyFiles(circuitArtifacts, contributionSettings, ptauFilePath);
-        await this._generateVKeyFiles(circuitArtifacts);
+      await this._generateZKeyFiles(circuitArtifacts, contributionSettings, ptauFilePath);
+      await this._generateVKeyFiles(circuitArtifacts);
 
-        Promise.all(
-          circuitArtifacts.map(async (circuitArtifact: CircuitArtifact) => {
-            await this._circuitArtifacts.saveCircuitArtifact(circuitArtifact, ["zkey", "vkey"]);
-          }),
-        );
-      } finally {
-        fs.rmSync(tempDir, { recursive: true, force: true });
-      }
-    } else {
-      Reporter!.reportNothingToSetup();
+      Promise.all(
+        circuitArtifacts.map(async (circuitArtifact: CircuitArtifact) => {
+          await this._circuitArtifacts.saveCircuitArtifact(circuitArtifact, ["zkey", "vkey"]);
+        }),
+      );
+    } finally {
+      fs.rmSync(tempDir, { recursive: true, force: true });
     }
   }
 

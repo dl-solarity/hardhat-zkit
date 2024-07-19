@@ -47,8 +47,9 @@ export class CompilationProcessorNew {
   }
 
   public async compile(filesInfoToCompile: ResolvedFileInfo[]) {
-    if (filesInfoToCompile.length > 0) {
-      const tempDir: string = path.join(os.tmpdir(), ".zkit", uuid());
+    const tempDir: string = path.join(os.tmpdir(), ".zkit", uuid());
+
+    try {
       fsExtra.mkdirSync(tempDir, { recursive: true });
 
       Reporter!.verboseLog("compilation-processor", "Compilation temp directory: %s", [tempDir]);
@@ -76,10 +77,8 @@ export class CompilationProcessorNew {
       await this._emitArtifacts(compilationInfoArr);
 
       Reporter!.reportCompilationResult(compilationInfoArr);
-
+    } finally {
       fsExtra.rmSync(tempDir, { recursive: true, force: true });
-    } else {
-      Reporter!.reportNothingToCompile();
     }
   }
 
