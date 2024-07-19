@@ -10,10 +10,12 @@ const defaultConfig: HardhatUserConfig = {
       artifactsDir: "zkit/artifacts",
       skipFiles: ["vendor"],
     },
+    setupSettings: {
+      ptauDir: "zkit/ptau",
+      ptauDownload: true,
+    },
     quiet: true,
     verifiersDir: "contracts/verifiers",
-    ptauDir: "zkit/ptau",
-    ptauDownload: true,
   },
 };
 

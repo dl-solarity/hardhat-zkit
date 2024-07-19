@@ -1,11 +1,11 @@
+import { ContributionSettings } from "./setup/setup-processor";
+
 export type ZKitConfig = {
   compilationSettings: CompilationSettings;
   setupSettings: SetupSettings;
   typesSettings: CircuitTypesSettings;
   circuitsDir: string;
   verifiersDir: string;
-  ptauDir: string | undefined;
-  ptauDownload: boolean;
   nativeCompiler: boolean;
   quiet: boolean;
 };
@@ -23,13 +23,12 @@ export type CompilationSettings = FileFilterSettings & {
 };
 
 export type SetupSettings = FileFilterSettings & {
-  contributionTemplate: ContributionTemplateType;
-  contributions: number;
+  ptauDir: string | undefined;
+  ptauDownload: boolean;
+  contributionSettings: ContributionSettings;
 };
 
 export type FileFilterSettings = {
   onlyFiles: string[];
   skipFiles: string[];
 };
-
-export type ContributionTemplateType = "groth16";

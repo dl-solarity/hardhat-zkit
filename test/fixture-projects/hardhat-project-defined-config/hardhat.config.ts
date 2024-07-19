@@ -9,10 +9,12 @@ const defaultConfig: HardhatUserConfig = {
     compilationSettings: {
       skipFiles: ["vendor"],
     },
+    setupSettings: {
+      ptauDir: "zkit/ptau",
+      ptauDownload: true,
+    },
     quiet: true,
     verifiersDir: "contracts/verifiers",
-    ptauDir: "zkit/ptau",
-    ptauDownload: true,
   },
 };
 

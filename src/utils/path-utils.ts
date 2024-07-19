@@ -3,6 +3,7 @@ import path from "path";
 
 import { normalizeSourceName, localSourceNameToPath } from "hardhat/utils/source-names";
 import { FileSystemAccessError, InvalidDirectoryError } from "hardhat/internal/util/fs-utils";
+import { FileFilterSettings } from "../types/zkit-config";
 
 export function getNormalizedFullPath(projectRoot: string, dirPath: string): string {
   return localSourceNameToPath(projectRoot, normalizeSourceName(dirPath));
@@ -92,3 +93,45 @@ function readdirSync(absolutePathToDir: string) {
     throw new FileSystemAccessError(e.message, e);
   }
 }
+
+export function filterCircuitFiles<T>(
+  circuitsInfo: T[],
+  circuitsRoot: string,
+  filterSettings: FileFilterSettings,
+  getCircuitPath: (circuitInfo: T) => string,
+): T[] {
+  const contains = (circuitsRoot: string, pathList: string[], source: any) => {
+    const isSubPath = (parent: string, child: string) => {
+      const parentTokens = parent.split(path.posix.sep).filter((i) => i.length);
+      const childTokens = child.split(path.posix.sep).filter((i) => i.length);
+
+      return parentTokens.every((t, i) => childTokens[i] === t);
+    };
+
+    return pathList.some((p: any) => {
+      return isSubPath(getNormalizedFullPath(circuitsRoot, p), source);
+    });
+  };
+
+  return circuitsInfo.filter((circuitInfo: T) => {
+    const circuitFullPath: string = getCircuitPath(circuitInfo);
+
+    return (
+      (filterSettings.onlyFiles.length == 0 || contains(circuitsRoot, filterSettings.onlyFiles, circuitFullPath)) &&
+      !contains(circuitsRoot, filterSettings.skipFiles, circuitFullPath)
+    );
+  });
+}
+
+// export function cointainsInPathList(circuitsRoot: string, pathList: string[], source: any) {
+//   const isSubPath = (parent: string, child: string) => {
+//     const parentTokens = parent.split(path.posix.sep).filter((i) => i.length);
+//     const childTokens = child.split(path.posix.sep).filter((i) => i.length);
+
+//     return parentTokens.every((t, i) => childTokens[i] === t);
+//   };
+
+//   return pathList.some((p: any) => {
+//     return isSubPath(getNormalizedFullPath(circuitsRoot, p), source);
+//   });
+// };

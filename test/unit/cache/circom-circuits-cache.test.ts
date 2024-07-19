@@ -2,8 +2,6 @@ import fsExtra from "fs-extra";
 
 import { expect } from "chai";
 
-import { createNonCryptographicHashBasedIdentifier } from "hardhat/internal/util/hash";
-
 import { useEnvironment } from "../../helpers";
 import {
   CircuitsCompileCache,
@@ -12,8 +10,10 @@ import {
 } from "../../../src/cache/CircuitsCompileCache";
 import { getNormalizedFullPath } from "../../../src/utils/path-utils";
 import { CIRCOM_CIRCUITS_CACHE_FILENAME, CIRCUIT_COMPILE_CACHE_VERSION } from "../../../src/constants";
-import { TASK_CIRCUITS_COMPILE } from "../../../src/task-names";
-import { CacheEntry, CompileFlags } from "../../../src/types/compile";
+import { TASK_CIRCUITS_COMPILE_SHALLOW } from "../../../src/task-names";
+import { CompileFlags } from "../../../src/types/compile";
+import { CompileCacheEntry } from "../../../src/types/cache";
+import { getFileHash } from "../../../src/utils/utils";
 
 describe("CircuitsCompileCache", () => {
   const defaultCompileFlags: CompileFlags = {
@@ -31,12 +31,11 @@ describe("CircuitsCompileCache", () => {
     compileFlags: CompileFlags = defaultCompileFlags,
     versionPragmas: string[] = ["2.0.0"],
     contentHash?: string,
-  ): Promise<CacheEntry> {
+  ): Promise<CompileCacheEntry> {
     const circuitPath = getNormalizedFullPath(projectRoot, sourceName);
-    const fileContent = fsExtra.readFileSync(circuitPath, "utf-8");
 
     if (!contentHash) {
-      contentHash = createNonCryptographicHashBasedIdentifier(Buffer.from(fileContent)).toString("hex");
+      contentHash = getFileHash(circuitPath);
     }
 
     const stats = await fsExtra.stat(circuitPath);
@@ -58,7 +57,7 @@ describe("CircuitsCompileCache", () => {
 
       await createCircuitsCompileCache(undefined);
 
-      expect(CircuitsCompileCache!.constructor.name).to.be.eq("BaseCircomCircuitsCache");
+      expect(CircuitsCompileCache!.constructor.name).to.be.eq("BaseCircuitsCompileCache");
       expect(Object.values(CircuitsCompileCache!)[0]._format).to.be.eq(CIRCUIT_COMPILE_CACHE_VERSION);
     });
   });
@@ -67,13 +66,13 @@ describe("CircuitsCompileCache", () => {
     useEnvironment("with-circuits");
 
     it("should correctly create CircuitsCompileCache instance from file", async function () {
-      CircuitsCompileCache!.getEntries().forEach(async (entry: CacheEntry) => {
+      CircuitsCompileCache!.getEntries().forEach(async (entry: CompileCacheEntry) => {
         expect(entry).to.be.deep.eq(await getCacheEntry(this.hre.config.paths.root, entry.sourceName, entry.imports));
       });
     });
 
     it("should correctly create CircuitsCompileCache instance and remove non existing files", async function () {
-      await this.hre.run(TASK_CIRCUITS_COMPILE);
+      await this.hre.run(TASK_CIRCUITS_COMPILE_SHALLOW);
 
       const circuitsCacheFullPath: string = getNormalizedFullPath(
         this.hre.config.paths.cache,
@@ -126,13 +125,12 @@ describe("CircuitsCompileCache", () => {
     useEnvironment("with-circuits");
 
     it("should return correct results", async function () {
-      await this.hre.run(TASK_CIRCUITS_COMPILE);
+      await this.hre.run(TASK_CIRCUITS_COMPILE_SHALLOW);
 
       expect(CircuitsCompileCache!.hasFileChanged("invalid-path", "", defaultCompileFlags)).to.be.true;
 
       const circuitPath = getNormalizedFullPath(this.hre.config.paths.root, "circuits/main/mul2.circom");
-      const fileContent = fsExtra.readFileSync(circuitPath, "utf-8");
-      const contentHash = createNonCryptographicHashBasedIdentifier(Buffer.from(fileContent)).toString("hex");
+      const contentHash = getFileHash(circuitPath);
 
       expect(CircuitsCompileCache!.hasFileChanged(circuitPath, contentHash + "1", defaultCompileFlags)).to.be.true;
       expect(CircuitsCompileCache!.hasFileChanged(circuitPath, contentHash, { ...defaultCompileFlags, c: true })).to.be

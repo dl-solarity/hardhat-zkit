@@ -1,3 +1,4 @@
+import os from "os";
 import path from "path";
 import fs from "fs";
 
@@ -17,6 +18,7 @@ import {
   TASK_CIRCUITS_COMPILE,
   TASK_GENERATE_VERIFIERS,
   TASK_CIRCUITS_COMPILE_SHALLOW,
+  TASK_CIRCUITS_SETUP,
 } from "./task-names";
 
 import { zkitConfigExtender } from "./config/config";
@@ -24,19 +26,33 @@ import { zkitConfigExtender } from "./config/config";
 import { CircuitsCompileCache, createCircuitsCompileCache } from "./cache/CircuitsCompileCache";
 
 import { CircomCompilerFactory } from "./compile/core";
-import { CompilationProcessorNew } from "./compile/core/CompilationProcessorNew";
+import { CompilationProcessorNew } from "./compile/core/CompilationProcessor";
 import { Reporter, createReporter } from "./reporter";
 
-import { CompileShallowTaskConfig, GenerateVerifiersTaskConfig, GetCircuitZKitConfig } from "./types/tasks";
+import {
+  CompileShallowTaskConfig,
+  GenerateVerifiersTaskConfig,
+  GetCircuitZKitConfig,
+  SetupTaskConfig,
+} from "./types/tasks";
 import { CompileFlags } from "./types/compile";
 
 import { getAllDirsMatchingSync, getNormalizedFullPath } from "./utils/path-utils";
-import { CIRCOM_CIRCUITS_CACHE_FILENAME, CIRCUITS_COMPILE_CACHE_FILENAME, COMPILER_VERSION } from "./constants";
+import {
+  CIRCOM_CIRCUITS_CACHE_FILENAME,
+  CIRCUITS_COMPILE_CACHE_FILENAME,
+  CIRCUITS_SETUP_CACHE_FILENAME,
+  COMPILER_VERSION,
+} from "./constants";
 import { HardhatZKitError } from "./errors";
 import { CircuitArtifacts } from "./CircuitArtifacts";
-import { CompilationFileResolver } from "./compile/core/CompilationFileResolver";
+import { CompilationFilesResolver } from "./compile/core/CompilationFilesResolver";
 import { TypeGenerationProcessor } from "./compile/core/TypeGenerationProcessor";
-import { ResolvedFileInfo } from "./types/compile/core/compilation-file-resolver";
+import { ResolvedFileInfo } from "./types/compile/core/compilation-files-resolver";
+import { SetupProcessor } from "./setup/SetupProcessor";
+import { CircuitsSetupCache, createCircuitsSetupCache } from "./cache/CircuitsSetupCache";
+import { SetupFilesResolver } from "./setup/SetupFilesResolver";
+import { CircuitSetupInfo } from "./types/setup/setup-files-resolver";
 
 extendConfig(zkitConfigExtender);
 
@@ -72,7 +88,7 @@ const compileShallow: ActionType<CompileShallowTaskConfig> = async (
     await CircomCompilerFactory.checkNativeCompilerExistence();
   }
 
-  const compilationFileResolver: CompilationFileResolver = new CompilationFileResolver(
+  const compilationFileResolver: CompilationFilesResolver = new CompilationFilesResolver(
     (absolutePath: string) => env.run(TASK_READ_FILE, { absolutePath }),
     env.zkit.circuitArtifacts,
     env.config,
@@ -95,7 +111,6 @@ const compileShallow: ActionType<CompileShallowTaskConfig> = async (
   );
 
   const compilationProcessor: CompilationProcessorNew = new CompilationProcessorNew(
-    compilationFileResolver.getArtifactsDirFullPath(),
     {
       compilerVersion: COMPILER_VERSION,
       compileFlags,
@@ -126,6 +141,49 @@ const compileShallow: ActionType<CompileShallowTaskConfig> = async (
   }
 
   await CircuitsCompileCache!.writeToFile(circuitsCompileCacheFullPath);
+};
+
+const setup: ActionType<SetupTaskConfig> = async (taskArgs: SetupTaskConfig, env: HardhatRuntimeEnvironment) => {
+  const circuitsSetupCacheFullPath: string = getNormalizedFullPath(
+    env.config.paths.cache,
+    CIRCUITS_SETUP_CACHE_FILENAME,
+  );
+
+  await createCircuitsSetupCache(circuitsSetupCacheFullPath);
+  createReporter(taskArgs.quiet || env.config.zkit.quiet);
+
+  const setupFileResolver: SetupFilesResolver = new SetupFilesResolver(env.zkit.circuitArtifacts, env.config);
+
+  const circuitSetupInfoArr: CircuitSetupInfo[] = await setupFileResolver.getCircuitsInfoToSetup(
+    env.config.zkit.setupSettings,
+    taskArgs.force,
+  );
+
+  let ptauDir = env.config.zkit.setupSettings.ptauDir;
+
+  if (ptauDir) {
+    ptauDir = path.isAbsolute(ptauDir) ? ptauDir : getNormalizedFullPath(env.config.paths.root, ptauDir);
+  } else {
+    ptauDir = path.join(os.homedir(), ".zkit", "ptau");
+  }
+
+  const setupProcessor: SetupProcessor = new SetupProcessor(ptauDir, env.zkit.circuitArtifacts);
+
+  await setupProcessor.setup(
+    circuitSetupInfoArr.map((setupInfo: CircuitSetupInfo) => setupInfo.circuitArtifact),
+    env.config.zkit.setupSettings.contributionSettings,
+  );
+
+  for (const setupInfo of circuitSetupInfoArr) {
+    CircuitsSetupCache!.addFile(setupInfo.circuitArtifactFullPath, {
+      circuitSourceName: setupInfo.circuitArtifact.circuitSourceName,
+      r1csSourcePath: setupInfo.r1csSourcePath,
+      r1csContentHash: setupInfo.r1csContentHash,
+      contributionSettings: env.config.zkit.setupSettings.contributionSettings,
+    });
+  }
+
+  await CircuitsSetupCache!.writeToFile(circuitsSetupCacheFullPath);
 };
 
 // const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfig, env: HardhatRuntimeEnvironment) => {
@@ -382,6 +440,11 @@ task(TASK_CIRCUITS_COMPILE_SHALLOW, "Compile Circom circuits")
   .addFlag("force", "Force compilation ignoring cache.")
   .addFlag("quiet", "Suppresses logs during the compilation process.")
   .setAction(compileShallow);
+
+task(TASK_CIRCUITS_SETUP, "Create ZKey and Vkey files for compiled circuits")
+  .addFlag("force", "Force compilation ignoring cache.")
+  .addFlag("quiet", "Suppresses logs during the compilation process.")
+  .setAction(setup);
 
 task(TASK_GENERATE_VERIFIERS, "Generate Solidity verifier contracts for Circom circuits")
   .addOptionalParam(

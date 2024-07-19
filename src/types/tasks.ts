@@ -8,6 +8,11 @@ export type CompileShallowTaskConfig = {
   quiet: boolean;
 };
 
+export type SetupTaskConfig = {
+  force: boolean;
+  quiet: boolean;
+};
+
 export type CompileTaskConfig = {
   artifactsDir?: string;
   ptauDir?: string;

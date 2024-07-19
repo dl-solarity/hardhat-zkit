@@ -1,24 +1,20 @@
 import { ResolvedFile } from "hardhat/types/builtin-tasks";
 
-import { CompilationFilesManager } from "../../../../src/compile/core";
+import { CompilationFilesResolver } from "../../../../src/compile/core";
 import { DependencyGraph } from "../../../../src/compile/dependencies";
-import { FileFilterSettings } from "../../../../src/types/zkit-config";
 import { CompileFlags, ResolvedFileInfo } from "../../../../src/types/compile";
 
-export class CompilationFilesManagerMock extends CompilationFilesManager {
-  public filterResolvedFilesToCompile(
-    resolvedFilesInfo: ResolvedFileInfo[],
-    filterSettings: FileFilterSettings,
-  ): ResolvedFileInfo[] {
-    return this._filterResolvedFilesToCompile(resolvedFilesInfo, filterSettings);
-  }
-
+export class CompilationFilesManagerMock extends CompilationFilesResolver {
   public filterResolvedFiles(
     resolvedFiles: ResolvedFile[],
     sourceNames: string[],
     dependencyGraph: DependencyGraph,
   ): ResolvedFileInfo[] {
     return this._filterResolvedFiles(resolvedFiles, sourceNames, dependencyGraph);
+  }
+
+  public getCircuitsDirFullPath(): string {
+    return this._getCircuitsDirFullPath();
   }
 
   public async getSourceNamesFromSourcePaths(sourcePaths: string[]): Promise<string[]> {

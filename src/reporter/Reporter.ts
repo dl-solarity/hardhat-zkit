@@ -272,6 +272,12 @@ class BaseReporter {
     console.log(`\n${chalk.bold("Nothing to compile.")}\n`);
   }
 
+  public reportNothingToSetup() {
+    if (this.isQuiet()) return;
+
+    console.log(`\n${chalk.bold("Nothing to setup.")}\n`);
+  }
+
   public reportVerifiersGenerationHeader() {
     if (this.isQuiet()) return;
 

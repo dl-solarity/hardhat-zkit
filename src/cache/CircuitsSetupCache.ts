@@ -3,11 +3,12 @@ import * as t from "io-ts";
 import { isEqual } from "lodash";
 
 import { CIRCUIT_SETUP_CACHE_VERSION } from "../constants";
-import { SetupCache, SetupCacheEntry, SetupSettings } from "../types/cache";
+import { SetupCache, SetupCacheEntry } from "../types/cache";
+import { ContributionSettings } from "../types/setup/setup-processor";
 
 const ContributionTemplateTypeCodec = t.literal("groth16");
 
-const SetupSettingsCodec = t.type({
+const ContributionSettingsCodec = t.type({
   contributionTemplate: ContributionTemplateTypeCodec,
   contributions: t.number,
 });
@@ -15,9 +16,8 @@ const SetupSettingsCodec = t.type({
 const SetupCacheEntryCodec = t.type({
   circuitSourceName: t.string,
   r1csContentHash: t.string,
-  r1csSourceName: t.string,
-  lastModificationDate: t.number,
-  setupSettings: SetupSettingsCodec,
+  r1csSourcePath: t.string,
+  contributionSettings: ContributionSettingsCodec,
 });
 
 const SetupCacheCodec = t.type({
@@ -92,18 +92,22 @@ class BaseCircuitsSetupCache {
     delete this._setupCache.files[file];
   }
 
-  public hasFileChanged(absolutePath: string, contentHash: string, setupSettings: SetupSettings): boolean {
-    const cacheEntry = this.getEntry(absolutePath);
+  public hasFileChanged(
+    artifactAbsolutePath: string,
+    r1csContentHash: string,
+    contributionSettings: ContributionSettings,
+  ): boolean {
+    const cacheEntry = this.getEntry(artifactAbsolutePath);
 
     if (cacheEntry === undefined) {
       return true;
     }
 
-    if (cacheEntry.r1csContentHash !== contentHash) {
+    if (cacheEntry.r1csContentHash !== r1csContentHash) {
       return true;
     }
 
-    if (!isEqual(cacheEntry.setupSettings, setupSettings)) {
+    if (!isEqual(cacheEntry.contributionSettings, contributionSettings)) {
       return true;
     }
 

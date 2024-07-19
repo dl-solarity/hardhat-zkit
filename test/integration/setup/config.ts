@@ -30,8 +30,12 @@ describe("config", () => {
           sym: false,
         },
         setupSettings: {
-          contributionTemplate: "groth16",
-          contributions: 1,
+          contributionSettings: {
+            contributionTemplate: "groth16",
+            contributions: 1,
+          },
+          ptauDir: "zkit/ptau",
+          ptauDownload: true,
           onlyFiles: [],
           skipFiles: [],
         },
@@ -40,8 +44,6 @@ describe("config", () => {
           typesDir: "generated-types/zkit",
         },
         verifiersDir: "contracts/verifiers",
-        ptauDir: "zkit/ptau",
-        ptauDownload: true,
         nativeCompiler: false,
         quiet: true,
       };
@@ -72,8 +74,12 @@ describe("config", () => {
           sym: false,
         },
         setupSettings: {
-          contributionTemplate: "groth16",
-          contributions: 1,
+          contributionSettings: {
+            contributionTemplate: "groth16",
+            contributions: 1,
+          },
+          ptauDir: undefined,
+          ptauDownload: true,
           onlyFiles: [],
           skipFiles: [],
         },
@@ -82,8 +88,6 @@ describe("config", () => {
           typesDir: "generated-types/zkit",
         },
         verifiersDir: "contracts/verifiers",
-        ptauDir: undefined,
-        ptauDownload: true,
         nativeCompiler: false,
         quiet: false,
       };

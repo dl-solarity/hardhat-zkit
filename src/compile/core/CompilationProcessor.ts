@@ -1,15 +1,18 @@
 import path from "path";
 import os from "os";
 import fs from "fs";
-import { randomBytes } from "crypto";
+import fsExtra from "fs-extra";
 import { v4 as uuid } from "uuid";
-import * as snarkjs from "snarkjs";
 
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
-import { CircuitAST, CircuitTypesGenerator } from "@solarity/zktype";
+import { CircuitAST } from "@solarity/zktype";
 
 import { CircomCompilerFactory } from "./CircomCompilerFactory";
+import { HardhatZKitError } from "../../errors";
+import { CIRCUIT_ARTIFACT_VERSION, NODE_MODULES } from "../../constants";
+import { Reporter } from "../../reporter";
+import { getNormalizedFullPath, renameFilesRecursively, readDirRecursively } from "../../utils/path-utils";
 import {
   ICircomCompiler,
   IWASMCircomCompiler,
@@ -18,38 +21,27 @@ import {
   ResolvedFileInfo,
   CompileConfig,
 } from "../../types/compile";
-import { ContributionTemplateType, ZKitConfig } from "../../types/zkit-config";
+import { ZKitConfig } from "../../types/zkit-config";
+import { ArtifactsFileType, CircuitArtifact, ICircuitArtifacts } from "../../types/circuit-artifacts";
 
-import { PtauDownloader } from "../utils/PtauDownloader";
-import { getNormalizedFullPath, renameFilesRecursively, readDirRecursively } from "../../utils/path-utils";
-import { HardhatZKitError } from "../../errors";
-import { NODE_MODULES, PTAU_FILE_REG_EXP } from "../../constants";
-import { Reporter } from "../../reporter";
-
-export class CompilationProcessor {
+export class CompilationProcessorNew {
   private readonly _zkitConfig: ZKitConfig;
   private readonly _nodeModulesPath: string;
   private readonly _verbose: boolean;
-  private readonly _root: string;
 
   constructor(
-    private readonly _circuitsDirFullPath: string,
-    private readonly _artifactsDirFullPath: string,
-    private readonly _ptauDirFullPath: string,
     private readonly _config: CompilationProccessorConfig,
+    private readonly _circuitArtifacts: ICircuitArtifacts,
     hre: HardhatRuntimeEnvironment,
   ) {
     this._zkitConfig = hre.config.zkit;
     this._verbose = hre.hardhatArguments.verbose;
     this._nodeModulesPath = getNormalizedFullPath(hre.config.paths.root, NODE_MODULES);
-    this._root = hre.config.paths.root;
 
     Reporter!.verboseLog("compilation-processor", "Created CompilationProcessor with params: %O", [
       {
-        circuitsDirFullPath: _circuitsDirFullPath,
-        artifactsDirFullPath: _artifactsDirFullPath,
-        ptauDirFullPath: _ptauDirFullPath,
         config: _config,
+        artifactsDirFullPath: this._circuitArtifacts.getCircuitArtifactsDirFullPath(),
       },
     ]);
   }
@@ -57,7 +49,7 @@ export class CompilationProcessor {
   public async compile(filesInfoToCompile: ResolvedFileInfo[]) {
     if (filesInfoToCompile.length > 0) {
       const tempDir: string = path.join(os.tmpdir(), ".zkit", uuid());
-      fs.mkdirSync(tempDir, { recursive: true });
+      fsExtra.mkdirSync(tempDir, { recursive: true });
 
       Reporter!.verboseLog("compilation-processor", "Compilation temp directory: %s", [tempDir]);
       Reporter!.reportCompilationProcessHeader();
@@ -75,18 +67,17 @@ export class CompilationProcessor {
 
       await this._createCircuitASTFiles(compilationInfoArr);
 
-      const ptauFilePath: string = await this._getPtauFile(compilationInfoArr);
-
-      await this._generateZKeyFiles(ptauFilePath, compilationInfoArr);
-      await this._generateVKeyFile(compilationInfoArr);
+      compilationInfoArr.forEach((info: CompilationInfo) => {
+        info.constraintsNumber = this._getConstraintsNumber(info);
+      });
 
       await this._moveFromTempDirToArtifacts(compilationInfoArr);
 
-      await this._generateTypes(compilationInfoArr);
+      await this._emitArtifacts(compilationInfoArr);
 
       Reporter!.reportCompilationResult(compilationInfoArr);
 
-      fs.rmSync(tempDir, { recursive: true, force: true });
+      fsExtra.rmSync(tempDir, { recursive: true, force: true });
     } else {
       Reporter!.reportNothingToCompile();
     }
@@ -100,7 +91,7 @@ export class CompilationProcessor {
     for (const info of compilationInfoArr) {
       const spinnerId: string | null = Reporter!.reportCircuitCompilationStartWithSpinner(info.circuitName);
 
-      fs.mkdirSync(info.tempArtifactsPath, { recursive: true });
+      fsExtra.mkdirSync(info.tempArtifactsPath, { recursive: true });
 
       const compileConfig: CompileConfig = {
         circuitFullPath: info.resolvedFile.absolutePath,
@@ -134,137 +125,71 @@ export class CompilationProcessor {
     });
   }
 
-  private async _generateZKeyFiles(ptauFilePath: string, compilationInfoArr: CompilationInfo[]) {
-    const contributions: number = this._zkitConfig.setupSettings.contributions;
-    const contributionTemplate: ContributionTemplateType = this._zkitConfig.setupSettings.contributionTemplate;
-
-    Reporter!.reportZKeyFilesGenerationHeader(contributions);
-
+  private async _emitArtifacts(compilationInfoArr: CompilationInfo[]) {
     for (const info of compilationInfoArr) {
-      const r1csFile = getNormalizedFullPath(info.tempArtifactsPath, `${info.circuitName}.r1cs`);
-      const zKeyFile = getNormalizedFullPath(info.tempArtifactsPath, `${info.circuitName}.zkey`);
-
-      Reporter!.verboseLog("compilation-processor:zkey", "Generating ZKey file for %s circuit with params %o", [
+      const fullyQualifiedName: string = this._circuitArtifacts.getCircuitFullyQualifiedName(
+        info.resolvedFile.sourceName,
         info.circuitName,
-        { r1csFile, zKeyFile },
-      ]);
+      );
 
-      const spinnerId: string | null = Reporter!.reportZKeyFileGenerationStartWithSpinner(info.circuitName);
+      let circuitArtifact: CircuitArtifact;
 
-      if (contributionTemplate === "groth16") {
-        await snarkjs.zKey.newZKey(r1csFile, ptauFilePath, zKeyFile);
-
-        const zKeyFileNext = `${zKeyFile}.next.zkey`;
-
-        for (let i = 0; i < contributions; ++i) {
-          await snarkjs.zKey.contribute(
-            zKeyFile,
-            zKeyFileNext,
-            `${zKeyFile}_contribution_${i}`,
-            randomBytes(32).toString("hex"),
-          );
-
-          fs.rmSync(zKeyFile);
-          fs.renameSync(zKeyFileNext, zKeyFile);
-        }
+      if (await this._circuitArtifacts.circuitArtifactExists(fullyQualifiedName)) {
+        circuitArtifact = await this._circuitArtifacts.readCircuitArtifact(fullyQualifiedName);
       } else {
-        throw new HardhatZKitError(`Unsupported contribution template - ${contributionTemplate}`);
+        circuitArtifact = {
+          _format: CIRCUIT_ARTIFACT_VERSION,
+          circuitTemplateName: info.circuitName,
+          circuitFileName: info.circuitFileName,
+          circuitSourceName: info.resolvedFile.sourceName,
+          baseCircuitInfo: { constraintsNumber: 0 },
+          compilerOutputFiles: {},
+        };
       }
 
-      Reporter!.reportZKeyFileGenerationResult(spinnerId, info.circuitName, contributions);
-    }
-  }
+      circuitArtifact.baseCircuitInfo = { constraintsNumber: info.constraintsNumber };
 
-  private async _generateVKeyFile(compilationInfoArr: CompilationInfo[]) {
-    Reporter!.reportVKeyFilesGenerationHeader();
-
-    for (const info of compilationInfoArr) {
-      const zkeyFile = getNormalizedFullPath(info.tempArtifactsPath, `${info.circuitName}.zkey`);
-      const vKeyFile = getNormalizedFullPath(info.tempArtifactsPath, `${info.circuitName}.vkey.json`);
-
-      Reporter!.verboseLog("compilation-processor:vkey", "Generating VKey file for %s circuit with params %o", [
-        info.circuitName,
-        { zkeyFile, vKeyFile },
-      ]);
-
-      const spinnerId: string | null = Reporter!.reportVKeyFileGenerationStartWithSpinner(info.circuitName);
-
-      const vKeyData = await snarkjs.zKey.exportVerificationKey(zkeyFile);
-
-      fs.writeFileSync(vKeyFile, JSON.stringify(vKeyData));
-
-      Reporter!.reportVKeyFileGenerationResult(spinnerId, info.circuitName);
+      this._circuitArtifacts.saveCircuitArtifact(circuitArtifact, this._getUpdatedArtifactFileTypes());
     }
   }
 
   private async _moveFromTempDirToArtifacts(compilationInfoArr: CompilationInfo[]) {
     compilationInfoArr.forEach((info: CompilationInfo) => {
-      fs.mkdirSync(info.artifactsPath, { recursive: true });
+      fsExtra.mkdirSync(info.artifactsPath, { recursive: true });
 
       readDirRecursively(info.tempArtifactsPath, (dir: string, file: string) => {
         const correspondingOutDir = path.join(info.artifactsPath, path.relative(info.tempArtifactsPath, dir));
         const correspondingOutFile = path.join(info.artifactsPath, path.relative(info.tempArtifactsPath, file));
 
-        if (!fs.existsSync(correspondingOutDir)) {
-          fs.mkdirSync(correspondingOutDir);
+        if (!fsExtra.existsSync(correspondingOutDir)) {
+          fsExtra.mkdirSync(correspondingOutDir);
         }
 
-        if (fs.existsSync(correspondingOutFile)) {
-          fs.rmSync(correspondingOutFile);
+        if (fsExtra.existsSync(correspondingOutFile)) {
+          fsExtra.rmSync(correspondingOutFile);
         }
 
         Reporter!.verboseLog("compilation-processor:copying", "Copying file from temp directory to artifacts: %o", [
           { file, correspondingOutFile },
         ]);
 
-        fs.copyFileSync(file, correspondingOutFile);
+        fsExtra.copyFileSync(file, correspondingOutFile);
       });
     });
-  }
-
-  private async _generateTypes(compilationInfoArr: CompilationInfo[]) {
-    const spinnerId: string | null = Reporter!.reportTypesGenerationHeaderWithSpinner();
-
-    const circuitsASTPaths: string[] = compilationInfoArr.map((info: CompilationInfo) => {
-      return `${getNormalizedFullPath(info.artifactsPath, `${info.circuitName}_ast.json`)}`;
-    });
-
-    const typesGenerator: CircuitTypesGenerator = new CircuitTypesGenerator({
-      basePath: this._zkitConfig.circuitsDir,
-      projectRoot: this._root,
-      outputArtifactsDir: this._zkitConfig.typesSettings.typesArtifactsDir,
-      outputTypesDir: this._zkitConfig.typesSettings.typesDir,
-      circuitsASTPaths,
-    });
-
-    Reporter!.verboseLog("compilation-processor", "Created CircuitTypesGenerator with params: %O", [
-      {
-        basePath: this._zkitConfig.circuitsDir,
-        projectRoot: this._root,
-        outputArtifactsDir: this._zkitConfig.typesSettings.typesArtifactsDir,
-        outputTypesDir: this._zkitConfig.typesSettings.typesDir,
-        circuitsASTPaths,
-      },
-    ]);
-
-    await typesGenerator.generateTypes();
-
-    Reporter!.reportTypesGenerationResult(spinnerId);
   }
 
   private async _getCompilationInfoArr(
     tempDir: string,
     filesInfoToCompile: ResolvedFileInfo[],
   ): Promise<CompilationInfo[]> {
+    const artifactsDirFullPath = this._circuitArtifacts.getCircuitArtifactsDirFullPath();
+
     return Promise.all(
       filesInfoToCompile.map(async (fileInfo: ResolvedFileInfo): Promise<CompilationInfo> => {
         return {
           circuitName: fileInfo.circuitName,
           circuitFileName: path.parse(fileInfo.resolvedFile.absolutePath).name,
-          artifactsPath: fileInfo.resolvedFile.absolutePath.replace(
-            this._circuitsDirFullPath,
-            this._artifactsDirFullPath,
-          ),
+          artifactsPath: getNormalizedFullPath(artifactsDirFullPath, fileInfo.resolvedFile.sourceName),
           tempArtifactsPath: getNormalizedFullPath(tempDir, fileInfo.resolvedFile.sourceName),
           resolvedFile: fileInfo.resolvedFile,
           constraintsNumber: 0,
@@ -273,54 +198,16 @@ export class CompilationProcessor {
     );
   }
 
-  private async _getPtauFile(compilationInfoArr: CompilationInfo[]): Promise<string> {
-    const circuitsConstraintsNumber: number[] = await Promise.all(
-      compilationInfoArr.map(async (info: CompilationInfo) => {
-        const constraintsNumber: number = this._getConstraintsNumber(info);
-        info.constraintsNumber = constraintsNumber;
+  private _getUpdatedArtifactFileTypes(): ArtifactsFileType[] {
+    const fileTypes: ArtifactsFileType[] = ["ast"];
 
-        return constraintsNumber;
-      }),
-    );
+    this._config.compileFlags.wasm && fileTypes.push("wasm");
+    this._config.compileFlags.c && fileTypes.push("c");
+    this._config.compileFlags.r1cs && fileTypes.push("r1cs");
+    this._config.compileFlags.sym && fileTypes.push("sym");
+    this._config.compileFlags.json && fileTypes.push("json");
 
-    const maxConstraintsNumber = Math.max(...circuitsConstraintsNumber);
-    const ptauId = Math.max(Math.ceil(Math.log2(maxConstraintsNumber)), 8);
-
-    let entries = [] as fs.Dirent[];
-
-    if (fs.existsSync(this._ptauDirFullPath)) {
-      entries = fs.readdirSync(this._ptauDirFullPath, { withFileTypes: true });
-    }
-
-    Reporter!.verboseLog("compilation-processor", "Found entries in ptau directory: %o", [
-      entries.map((entry) => entry.name),
-    ]);
-
-    const entry = entries.find((entry) => {
-      if (!entry.isFile()) {
-        return false;
-      }
-
-      const match = entry.name.match(PTAU_FILE_REG_EXP);
-
-      if (!match) {
-        return false;
-      }
-
-      return ptauId <= parseInt(match[1]);
-    });
-
-    const ptauFileFullPath: string | undefined = entry
-      ? getNormalizedFullPath(this._ptauDirFullPath, entry.name)
-      : undefined;
-
-    Reporter!.reportPtauFileInfo(maxConstraintsNumber, ptauId, ptauFileFullPath);
-
-    if (ptauFileFullPath) {
-      return ptauFileFullPath;
-    } else {
-      return PtauDownloader.downloadPtau(this._ptauDirFullPath, ptauId);
-    }
+    return fileTypes;
   }
 
   private _getConstraintsNumber(compilationInfo: CompilationInfo): number {

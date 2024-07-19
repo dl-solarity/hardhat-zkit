@@ -1,25 +1,23 @@
-import path from "path";
-
-import { HardhatConfig, ProjectPathsConfig } from "hardhat/types";
+import { HardhatConfig } from "hardhat/types";
+import { ResolvedFile } from "hardhat/types/builtin-tasks";
 import { getAllFilesMatching } from "hardhat/internal/util/fs-utils";
 import { localPathToSourceName } from "hardhat/utils/source-names";
-import { ResolvedFile } from "hardhat/types/builtin-tasks";
 
-import { FileFilterSettings, ZKitConfig } from "../../types/zkit-config";
-import { ResolvedFileInfo } from "../../types/compile/core/compilation-file-resolver";
+import { ZKitConfig } from "../../types/zkit-config";
+import { ICircuitArtifacts } from "../../types/circuit-artifacts";
+import { ResolvedFileInfo } from "../../types/compile/core/compilation-files-resolver";
 import { CompileFlags } from "../../types/compile";
-import { DependencyGraph, Parser, Resolver } from "../dependencies";
-import { CircuitsCompileCache } from "../../cache/CircuitsCompileCache";
 
-import { getNormalizedFullPath } from "../../utils/path-utils";
+import { filterCircuitFiles, getNormalizedFullPath } from "../../utils/path-utils";
 import { MAIN_COMPONENT_REG_EXP } from "../../constants";
 import { HardhatZKitError } from "../../errors";
+import { CircuitsCompileCache } from "../../cache";
+import { DependencyGraph, Parser, Resolver } from "../dependencies";
 import { Reporter } from "../../reporter/Reporter";
-import { ICircuitArtifacts } from "../../types/circuit-artifacts";
 
-export class CompilationFileResolver {
+export class CompilationFilesResolver {
   private readonly _zkitConfig: ZKitConfig;
-  private readonly _projectPaths: ProjectPathsConfig;
+  private readonly _projectRoot: string;
 
   constructor(
     private readonly _readFile: (absolutePath: string) => Promise<string>,
@@ -27,11 +25,11 @@ export class CompilationFileResolver {
     hardhatConfig: HardhatConfig,
   ) {
     this._zkitConfig = hardhatConfig.zkit;
-    this._projectPaths = hardhatConfig.paths;
+    this._projectRoot = hardhatConfig.paths.root;
   }
 
   public async getResolvedFilesToCompile(compileFlags: CompileFlags, force: boolean): Promise<ResolvedFileInfo[]> {
-    const circuitsSourcePaths: string[] = await getAllFilesMatching(this.getCircuitsDirFullPath(), (f) =>
+    const circuitsSourcePaths: string[] = await getAllFilesMatching(this._getCircuitsDirFullPath(), (f) =>
       f.endsWith(".circom"),
     );
 
@@ -61,9 +59,13 @@ export class CompilationFileResolver {
       );
     }
 
-    const filteredResolvedFilesInfo: ResolvedFileInfo[] = this._filterResolvedFilesToCompile(
+    const filteredResolvedFilesInfo: ResolvedFileInfo[] = filterCircuitFiles<ResolvedFileInfo>(
       resolvedFilesInfoToCompile,
+      this._getCircuitsDirFullPath(),
       this._zkitConfig.compilationSettings,
+      (resolvedFileInfo: ResolvedFileInfo): string => {
+        return resolvedFileInfo.resolvedFile.absolutePath;
+      },
     );
 
     const filteredResolvedFilesToCompile: ResolvedFile[] = filteredResolvedFilesInfo.map((file) => file.resolvedFile);
@@ -79,51 +81,8 @@ export class CompilationFileResolver {
     return filteredResolvedFilesInfo;
   }
 
-  public getCircuitsDirFullPath(): string {
-    return getNormalizedFullPath(this._projectPaths.root, this._zkitConfig.circuitsDir);
-  }
-
-  public getArtifactsDirFullPath(): string {
-    return getNormalizedFullPath(this._projectPaths.root, this._zkitConfig.compilationSettings.artifactsDir);
-  }
-
-  // public getPtauDirFullPath(): string {
-  //   const ptauDir = this._config.ptauDir ?? this._zkitConfig.ptauDir;
-
-  //   if (ptauDir) {
-  //     return path.isAbsolute(ptauDir) ? ptauDir : getNormalizedFullPath(this._projectPaths.root, ptauDir);
-  //   } else {
-  //     return path.join(os.homedir(), ".zkit", "ptau");
-  //   }
-  // }
-
-  protected _filterResolvedFilesToCompile(
-    resolvedFilesInfo: ResolvedFileInfo[],
-    filterSettings: FileFilterSettings,
-  ): ResolvedFileInfo[] {
-    const contains = (circuitsRoot: string, pathList: string[], source: any) => {
-      const isSubPath = (parent: string, child: string) => {
-        const parentTokens = parent.split(path.posix.sep).filter((i) => i.length);
-        const childTokens = child.split(path.posix.sep).filter((i) => i.length);
-
-        return parentTokens.every((t, i) => childTokens[i] === t);
-      };
-
-      return pathList.some((p: any) => {
-        return isSubPath(getNormalizedFullPath(circuitsRoot, p), source);
-      });
-    };
-
-    const circuitsRoot = this.getCircuitsDirFullPath();
-
-    return resolvedFilesInfo.filter((fileInfo: ResolvedFileInfo) => {
-      const circuitPath: string = fileInfo.resolvedFile.absolutePath;
-
-      return (
-        (filterSettings.onlyFiles.length == 0 || contains(circuitsRoot, filterSettings.onlyFiles, circuitPath)) &&
-        !contains(circuitsRoot, filterSettings.skipFiles, circuitPath)
-      );
-    });
+  protected _getCircuitsDirFullPath(): string {
+    return getNormalizedFullPath(this._projectRoot, this._zkitConfig.circuitsDir);
   }
 
   protected _filterResolvedFiles(
@@ -157,12 +116,12 @@ export class CompilationFileResolver {
   }
 
   protected async _getSourceNamesFromSourcePaths(sourcePaths: string[]): Promise<string[]> {
-    return Promise.all(sourcePaths.map((p) => localPathToSourceName(this._projectPaths.root, p)));
+    return await Promise.all(sourcePaths.map((p) => localPathToSourceName(this._projectRoot, p)));
   }
 
   protected async _getDependencyGraph(sourceNames: string[]): Promise<DependencyGraph> {
     const parser = new Parser();
-    const resolver = new Resolver(this._projectPaths.root, parser, this._readFile);
+    const resolver = new Resolver(this._projectRoot, parser, this._readFile);
 
     const resolvedFiles = await Promise.all(sourceNames.map((sn) => resolver.resolveSourceName(sn)));
 

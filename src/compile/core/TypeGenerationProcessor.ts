@@ -3,7 +3,8 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { CircuitTypesGenerator } from "@solarity/zktype";
 
 import { Reporter } from "../../reporter";
-import { ICircuitArtifacts } from "../../types/circuit-artifacts";
+import { HardhatZKitError } from "../../errors";
+import { CircuitArtifact, ICircuitArtifacts } from "../../types/circuit-artifacts";
 import { ZKitConfig } from "../../types/zkit-config";
 
 export class TypeGenerationProcessor {
@@ -24,9 +25,21 @@ export class TypeGenerationProcessor {
   }
 
   public async generateTypes(circuitFullyQualifiedNames: string[]) {
-    const circuitsASTPaths: string[] = circuitFullyQualifiedNames.map((name: string) => {
-      return this._circuitArtifacts.formCircuitArtifactPathFromFullyQualifiedName(name);
-    });
+    const circuitsASTPaths: string[] = await Promise.all(
+      circuitFullyQualifiedNames.map(async (name: string): Promise<string> => {
+        const circuitArtifact: CircuitArtifact = await this._circuitArtifacts.readCircuitArtifact(name);
+
+        const astFilePath: string | undefined = circuitArtifact.compilerOutputFiles.ast?.fileSourcePath;
+
+        if (!astFilePath) {
+          throw new HardhatZKitError(
+            `AST file for ${circuitArtifact.circuitTemplateName} circuit not found. Compile circuits and try again.`,
+          );
+        }
+
+        return astFilePath;
+      }),
+    );
 
     const typesGenerator: CircuitTypesGenerator = new CircuitTypesGenerator({
       basePath: this._zkitConfig.circuitsDir,

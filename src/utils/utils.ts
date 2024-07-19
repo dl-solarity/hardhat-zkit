@@ -4,6 +4,7 @@ import { exec } from "child_process";
 
 import { Reporter } from "../reporter";
 import { ExecCallResult } from "../types/utils";
+import { createNonCryptographicHashBasedIdentifier } from "hardhat/internal/util/hash";
 
 /**
  * Downloads a file from the specified URL.
@@ -63,4 +64,8 @@ export async function execCall(execFile: string, callArgs: string[]): Promise<Ex
       }
     });
   });
+}
+
+export function getFileHash(filePath: string): string {
+  return createNonCryptographicHashBasedIdentifier(Buffer.from(fs.readFileSync(filePath))).toString("hex");
 }

@@ -1,6 +1,3 @@
-import { ArtifactsFileType } from "@solarity/zkit";
-import { CircomCompilerOutput } from "@solarity/zktype";
-
 export interface ICircuitArtifacts {
   readCircuitArtifact(circuitNameOrFullyQualifiedName: string): Promise<CircuitArtifact>;
 
@@ -14,6 +11,10 @@ export interface ICircuitArtifacts {
 
   getCircuitFullyQualifiedName(sourceName: string, circuitName: string): string;
 
+  getCircuitArtifactsDirFullPath(): string;
+
+  getCircuitArtifactFileFullPath(circuitArtifact: CircuitArtifact, fileType: ArtifactsFileType): string;
+
   saveCircuitArtifact(circuitArtifact: CircuitArtifact, updatedFileTypes: ArtifactsFileType[]): Promise<void>;
 
   clearCache(): void;
@@ -25,13 +26,17 @@ export type CircuitArtifact = {
   _format: string;
   circuitFileName: string;
   circuitTemplateName: string;
-  sourcePath: string;
+  circuitSourceName: string;
+  baseCircuitInfo: BaseCircuitInfo;
   compilerOutputFiles: Partial<Record<ArtifactsFileType, CompilerOutputFileInfo>>;
-  circomCompilerOutput: CircomCompilerOutput[];
+};
+
+export type BaseCircuitInfo = {
+  constraintsNumber: number;
 };
 
 export type CompilerOutputFileInfo = {
-  fileSourceName: string;
+  fileSourcePath: string;
   fileHash: string;
 };
 
@@ -39,3 +44,6 @@ export type ArtifactsCache = {
   artifactPaths?: string[];
   artifactNameToArtifactPathCache: Map<string, string>;
 };
+
+export const ArtifactsFileTypes = ["r1cs", "zkey", "vkey", "sym", "json", "wasm", "c", "ast"] as const;
+export type ArtifactsFileType = (typeof ArtifactsFileTypes)[number];
