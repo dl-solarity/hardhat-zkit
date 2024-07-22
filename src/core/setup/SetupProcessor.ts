@@ -33,7 +33,7 @@ export class SetupProcessor {
       await this._generateZKeyFiles(circuitArtifacts, contributionSettings, ptauFilePath);
       await this._generateVKeyFiles(circuitArtifacts);
 
-      Promise.all(
+      await Promise.all(
         circuitArtifacts.map(async (circuitArtifact: CircuitArtifact) => {
           await this._circuitArtifacts.saveCircuitArtifact(circuitArtifact, ["zkey", "vkey"]);
         }),

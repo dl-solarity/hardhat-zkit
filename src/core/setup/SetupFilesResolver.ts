@@ -53,7 +53,7 @@ export class SetupFilesResolver {
   }
 
   private async _getCircuitSetupInfoArr(fullyQualifiedNames: string[]): Promise<CircuitSetupInfo[]> {
-    return await Promise.all(
+    return Promise.all(
       fullyQualifiedNames.map(async (name: string): Promise<CircuitSetupInfo> => {
         const circuitArtifact: CircuitArtifact = await this._circuitArtifacts.readCircuitArtifact(name);
         const r1csInfo: CompilerOutputFileInfo | undefined = circuitArtifact.compilerOutputFiles.r1cs;

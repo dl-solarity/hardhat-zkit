@@ -152,7 +152,7 @@ export class CompilationProcessor {
 
       circuitArtifact.baseCircuitInfo = { constraintsNumber: info.constraintsNumber };
 
-      this._circuitArtifacts.saveCircuitArtifact(circuitArtifact, this._getUpdatedArtifactFileTypes());
+      await this._circuitArtifacts.saveCircuitArtifact(circuitArtifact, this._getUpdatedArtifactFileTypes());
     }
   }
 

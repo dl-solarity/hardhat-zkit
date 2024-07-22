@@ -115,7 +115,7 @@ export class CompilationFilesResolver {
   }
 
   protected async _getSourceNamesFromSourcePaths(sourcePaths: string[]): Promise<string[]> {
-    return await Promise.all(sourcePaths.map((p) => localPathToSourceName(this._projectRoot, p)));
+    return Promise.all(sourcePaths.map((p) => localPathToSourceName(this._projectRoot, p)));
   }
 
   protected async _getDependencyGraph(sourceNames: string[]): Promise<DependencyGraph> {
