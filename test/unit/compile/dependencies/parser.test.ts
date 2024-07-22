@@ -7,7 +7,7 @@ import { useEnvironment } from "../../../helpers";
 import { Parser } from "../../../../src/compile/dependencies";
 import { getNormalizedFullPath } from "../../../../src/utils/path-utils";
 import { CIRCUITS_COMPILE_CACHE_FILENAME } from "../../../../src/constants";
-import { TASK_CIRCUITS_COMPILE_SHALLOW } from "../../../../src/task-names";
+import { TASK_CIRCUITS_COMPILE } from "../../../../src/task-names";
 import { ParsedData } from "../../../../src/types/compile";
 
 describe("Parser", () => {
@@ -31,7 +31,7 @@ describe("Parser", () => {
       fileContent = fs.readFileSync(circuitPath, "utf-8");
       contentHash = createNonCryptographicHashBasedIdentifier(Buffer.from(fileContent)).toString("hex");
 
-      await this.hre.run(TASK_CIRCUITS_COMPILE_SHALLOW);
+      await this.hre.run(TASK_CIRCUITS_COMPILE);
     });
 
     it("should correctly parse file with empty circuit files cahce", async function () {

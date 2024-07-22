@@ -10,7 +10,7 @@ import { CircuitsCompileCache } from "../../../../src/cache/CircuitsCompileCache
 import { DependencyGraph, ResolvedFile } from "../../../../src/compile/dependencies";
 import { ResolvedFileInfo } from "../../../../src/types/compile";
 import { getNormalizedFullPath } from "../../../../src/utils/path-utils";
-import { TASK_CIRCUITS_COMPILE_SHALLOW } from "../../../../src/task-names";
+import { TASK_CIRCUITS_COMPILE } from "../../../../src/task-names";
 import { useEnvironment } from "../../../helpers";
 import { CompilationFilesManagerMock } from "./CompilationFilesManagerMock";
 import { CIRCUITS_COMPILE_CACHE_FILENAME } from "../../../../src/constants";
@@ -33,7 +33,7 @@ describe("CompilationFilesResolver", () => {
     useEnvironment("with-circuits");
 
     beforeEach("setup", async function () {
-      await this.hre.run(TASK_CIRCUITS_COMPILE_SHALLOW);
+      await this.hre.run(TASK_CIRCUITS_COMPILE);
 
       compilationFilesManager = getCompilationFilesManagerMock(this.hre);
 
@@ -114,7 +114,7 @@ describe("CompilationFilesResolver", () => {
     useEnvironment("with-circuits");
 
     beforeEach("setup", async function () {
-      await this.hre.run(TASK_CIRCUITS_COMPILE_SHALLOW);
+      await this.hre.run(TASK_CIRCUITS_COMPILE);
 
       compilationFilesManager = getCompilationFilesManagerMock(this.hre);
 

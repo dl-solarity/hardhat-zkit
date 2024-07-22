@@ -14,11 +14,11 @@ import { CircuitTypesGenerator } from "@solarity/zktype";
 import "./type-extensions";
 
 import {
-  TASK_ZKIT_GET_CIRCUIT_ZKIT,
   TASK_CIRCUITS_COMPILE,
-  TASK_GENERATE_VERIFIERS,
-  TASK_CIRCUITS_COMPILE_SHALLOW,
+  TASK_CIRCUITS_MAKE,
   TASK_CIRCUITS_SETUP,
+  TASK_GENERATE_VERIFIERS,
+  TASK_ZKIT_GET_CIRCUIT_ZKIT,
 } from "./task-names";
 
 import { zkitConfigExtender } from "./config/config";
@@ -189,8 +189,8 @@ const setup: ActionType<SetupTaskConfig> = async (taskArgs: SetupTaskConfig, env
   await CircuitsSetupCache!.writeToFile(circuitsSetupCacheFullPath);
 };
 
-const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfig, env: HardhatRuntimeEnvironment) => {
-  await env.run(TASK_CIRCUITS_COMPILE_SHALLOW, taskArgs);
+const make: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfig, env: HardhatRuntimeEnvironment) => {
+  await env.run(TASK_CIRCUITS_COMPILE, taskArgs);
   await env.run(TASK_CIRCUITS_SETUP, { force: taskArgs.force, quiet: taskArgs.quiet });
 };
 
@@ -311,7 +311,7 @@ const getCircuitZKit: ActionType<GetCircuitZKitConfig> = async (
   }
 };
 
-task(TASK_CIRCUITS_COMPILE_SHALLOW, "Compile Circom circuits")
+task(TASK_CIRCUITS_COMPILE, "Compile Circom circuits")
   .addFlag("sym", "Outputs witness in sym file in the compilation artifacts directory.")
   .addFlag("json", "Outputs constraints in json file in the compilation artifacts directory.")
   .addFlag("c", "Enables the generation of cpp files in the compilation artifacts directory.")
@@ -324,13 +324,13 @@ task(TASK_CIRCUITS_SETUP, "Create ZKey and Vkey files for compiled circuits")
   .addFlag("quiet", "Suppresses logs during the compilation process.")
   .setAction(setup);
 
-task(TASK_CIRCUITS_COMPILE, "Compile Circom circuits and generate all necessary artifacts")
+task(TASK_CIRCUITS_MAKE, "Compile Circom circuits and generate all necessary artifacts")
   .addFlag("sym", "Outputs witness in sym file in the compilation artifacts directory.")
   .addFlag("json", "Outputs constraints in json file in the compilation artifacts directory.")
   .addFlag("c", "Enables the generation of cpp files in the compilation artifacts directory.")
   .addFlag("force", "Force compilation ignoring cache.")
   .addFlag("quiet", "Suppresses logs during the compilation process.")
-  .setAction(compile);
+  .setAction(make);
 
 task(TASK_GENERATE_VERIFIERS, "Generate Solidity verifier contracts for Circom circuits")
   .addOptionalParam(

@@ -10,7 +10,7 @@ import {
 } from "../../../src/cache/CircuitsCompileCache";
 import { getNormalizedFullPath } from "../../../src/utils/path-utils";
 import { CIRCUITS_COMPILE_CACHE_FILENAME, CIRCUIT_COMPILE_CACHE_VERSION } from "../../../src/constants";
-import { TASK_CIRCUITS_COMPILE_SHALLOW } from "../../../src/task-names";
+import { TASK_CIRCUITS_COMPILE } from "../../../src/task-names";
 import { CompileFlags } from "../../../src/types/compile";
 import { CompileCacheEntry } from "../../../src/types/cache";
 import { getFileHash } from "../../../src/utils/utils";
@@ -72,7 +72,7 @@ describe("CircuitsCompileCache", () => {
     });
 
     it("should correctly create CircuitsCompileCache instance and remove non existing files", async function () {
-      await this.hre.run(TASK_CIRCUITS_COMPILE_SHALLOW);
+      await this.hre.run(TASK_CIRCUITS_COMPILE);
 
       const circuitsCacheFullPath: string = getNormalizedFullPath(
         this.hre.config.paths.cache,
@@ -125,7 +125,7 @@ describe("CircuitsCompileCache", () => {
     useEnvironment("with-circuits");
 
     it("should return correct results", async function () {
-      await this.hre.run(TASK_CIRCUITS_COMPILE_SHALLOW);
+      await this.hre.run(TASK_CIRCUITS_COMPILE);
 
       expect(CircuitsCompileCache!.hasFileChanged("invalid-path", "", defaultCompileFlags)).to.be.true;
 
