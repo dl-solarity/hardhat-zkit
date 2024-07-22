@@ -1,10 +1,10 @@
 import fs from "fs";
 import path from "path";
 
-import { MAX_PTAU_ID } from "../../constants";
 import { HardhatZKitError } from "../../errors";
-import { downloadFile } from "../../utils/utils";
+import { MAX_PTAU_ID } from "../../constants";
 import { Reporter } from "../../reporter/Reporter";
+import { downloadFile } from "../../utils/utils";
 
 export class PtauDownloader {
   public static async downloadPtau(ptauDirFullPath: string, ptauId: number): Promise<string> {

@@ -3,8 +3,9 @@ import * as t from "io-ts";
 import { isEqual } from "lodash";
 
 import { CIRCUIT_COMPILE_CACHE_VERSION } from "../constants";
+
 import { CompileCache, CompileCacheEntry } from "../types/cache";
-import { CompileFlags } from "../types/compile";
+import { CompileFlags } from "../types/core";
 
 const CompileFlagsCodec = t.type({
   r1cs: t.boolean,

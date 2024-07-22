@@ -1,8 +1,9 @@
 import { ConfigExtender } from "hardhat/types";
 
+import { deepMerge } from "./config-utils";
+
 import { ZKitConfig } from "../types/zkit-config";
 import { RecursivePartial } from "../types/utils";
-import { deepMerge } from "./config-utils";
 
 const defaultConfig: ZKitConfig = {
   circuitsDir: "circuits",

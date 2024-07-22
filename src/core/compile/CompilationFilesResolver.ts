@@ -3,17 +3,16 @@ import { ResolvedFile } from "hardhat/types/builtin-tasks";
 import { getAllFilesMatching } from "hardhat/internal/util/fs-utils";
 import { localPathToSourceName } from "hardhat/utils/source-names";
 
-import { ZKitConfig } from "../../types/zkit-config";
-import { ICircuitArtifacts } from "../../types/circuit-artifacts";
-import { ResolvedFileInfo } from "../../types/compile/core/compilation-files-resolver";
-import { CompileFlags } from "../../types/compile";
-
-import { filterCircuitFiles, getNormalizedFullPath } from "../../utils/path-utils";
+import { DependencyGraph, Parser, Resolver } from "../dependencies";
 import { MAIN_COMPONENT_REG_EXP } from "../../constants";
 import { HardhatZKitError } from "../../errors";
 import { CircuitsCompileCache } from "../../cache";
-import { DependencyGraph, Parser, Resolver } from "../dependencies";
 import { Reporter } from "../../reporter/Reporter";
+import { filterCircuitFiles, getNormalizedFullPath } from "../../utils/path-utils";
+
+import { ZKitConfig } from "../../types/zkit-config";
+import { ICircuitArtifacts } from "../../types/circuit-artifacts";
+import { CompileFlags, ResolvedFileInfo } from "../../types/core";
 
 export class CompilationFilesResolver {
   private readonly _zkitConfig: ZKitConfig;

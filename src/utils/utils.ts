@@ -2,9 +2,11 @@ import fs from "fs";
 import https from "https";
 import { exec } from "child_process";
 
-import { Reporter } from "../reporter";
-import { ExecCallResult } from "../types/utils";
 import { createNonCryptographicHashBasedIdentifier } from "hardhat/internal/util/hash";
+
+import { Reporter } from "../reporter";
+
+import { ExecCallResult } from "../types/utils";
 
 /**
  * Downloads a file from the specified URL.

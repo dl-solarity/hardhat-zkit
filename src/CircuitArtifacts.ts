@@ -9,9 +9,10 @@ import { HardhatError, NomicLabsHardhatPluginError } from "hardhat/internal/core
 
 import { HardhatZKitError } from "./errors";
 import { CIRCUIT_ARTIFACTS_SUFFIX } from "./constants";
-import { ArtifactsFileType, ArtifactsCache, CircuitArtifact, ICircuitArtifacts } from "./types/circuit-artifacts";
-import { getFileHash } from "./utils/utils";
 import { Reporter } from "./reporter";
+import { getFileHash } from "./utils/utils";
+
+import { ArtifactsFileType, ArtifactsCache, CircuitArtifact, ICircuitArtifacts } from "./types/circuit-artifacts";
 
 export class CircuitArtifacts implements ICircuitArtifacts {
   // Undefined means that the cache is disabled.

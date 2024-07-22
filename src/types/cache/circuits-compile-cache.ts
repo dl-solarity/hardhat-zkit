@@ -1,4 +1,4 @@
-import { CompileFlags } from "../compile/core/circom-compiler";
+import { CompileFlags } from "../core/compiler/circom-compiler";
 
 export type CompileCacheEntry = {
   lastModificationDate: number;

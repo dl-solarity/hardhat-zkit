@@ -5,13 +5,14 @@ import { randomBytes } from "crypto";
 import { v4 as uuid } from "uuid";
 import * as snarkjs from "snarkjs";
 
-import { Reporter } from "../reporter";
-import { HardhatZKitError } from "../errors";
-import { PTAU_FILE_REG_EXP } from "../constants";
-import { getNormalizedFullPath } from "../utils/path-utils";
-import { PtauDownloader } from "../compile/utils/PtauDownloader";
-import { ContributionSettings, ContributionTemplateType } from "../types/setup/setup-processor";
-import { CircuitArtifact, ICircuitArtifacts } from "../types/circuit-artifacts";
+import { PtauDownloader } from "../utils/PtauDownloader";
+import { HardhatZKitError } from "../../errors";
+import { PTAU_FILE_REG_EXP } from "../../constants";
+import { Reporter } from "../../reporter";
+import { getNormalizedFullPath } from "../../utils/path-utils";
+
+import { CircuitArtifact, ICircuitArtifacts } from "../../types/circuit-artifacts";
+import { ContributionSettings, ContributionTemplateType } from "../../types/core";
 
 export class SetupProcessor {
   constructor(

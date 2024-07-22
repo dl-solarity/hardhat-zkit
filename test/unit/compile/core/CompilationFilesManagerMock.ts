@@ -1,8 +1,7 @@
 import { ResolvedFile } from "hardhat/types/builtin-tasks";
 
-import { CompilationFilesResolver } from "../../../../src/compile/core";
-import { DependencyGraph } from "../../../../src/compile/dependencies";
-import { CompileFlags, ResolvedFileInfo } from "../../../../src/types/compile";
+import { CompilationFilesResolver, DependencyGraph } from "../../../../src/core";
+import { CompileFlags, ResolvedFileInfo } from "../../../../src/types/core";
 
 export class CompilationFilesManagerMock extends CompilationFilesResolver {
   public filterResolvedFiles(

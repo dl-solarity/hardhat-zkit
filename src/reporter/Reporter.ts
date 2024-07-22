@@ -10,11 +10,11 @@ import { pluralize } from "hardhat/internal/util/strings";
 
 import { SpinnerProcessor } from "./SpinnerProcessor";
 import { ProgressBarProcessor } from "./ProgressBarProcessor";
-import { CircuitSetupInfo } from "../types/setup";
-import { BYTES_IN_MB } from "../constants";
 import { HardhatZKitError } from "../errors";
-import { CompilationInfo, CompilerVersion } from "../types/compile";
+import { BYTES_IN_MB } from "../constants";
+
 import { CircuitArtifact } from "../types/circuit-artifacts";
+import { CompilationInfo, CompilerVersion, CircuitSetupInfo } from "../types/core";
 
 class BaseReporter {
   private _spinnerProcessor: SpinnerProcessor;

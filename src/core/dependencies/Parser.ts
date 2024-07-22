@@ -1,7 +1,7 @@
-import { ParsedData } from "../../types/compile";
-
 import { INCLUDE_REG_EXP, PRAGMA_VERSION_REG_EXP } from "../../constants";
-import { CircuitsCompileCache } from "../../cache/CircuitsCompileCache";
+import { CircuitsCompileCache } from "../../cache";
+
+import { ParsedData } from "../../types/core";
 
 export class Parser {
   private _cache = new Map<string, ParsedData>();

@@ -3,9 +3,10 @@ import fsExtra from "fs-extra";
 import { expect } from "chai";
 
 import { useEnvironment } from "../../../helpers";
+import { CircomCompilerFactory } from "../../../../src/core";
 import { getNormalizedFullPath } from "../../../../src/utils/path-utils";
-import { CompileFlags, ICircomCompiler } from "../../../../src/types/compile";
-import { CircomCompilerFactory } from "../../../../src/compile/core";
+
+import { CompileFlags, ICircomCompiler } from "../../../../src/types/core";
 
 describe("CircomCompilerFactory", () => {
   const defaultCompileFlags: CompileFlags = {

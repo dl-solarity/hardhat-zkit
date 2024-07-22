@@ -1,13 +1,9 @@
 import fs from "fs";
 
 import { HardhatZKitError } from "../../errors";
-import {
-  ICircomCompiler,
-  IWASMCircomCompiler,
-  CompileConfig,
-  BaseCompileConfig,
-} from "../../types/compile/core/circom-compiler";
 import { execCall } from "../../utils/utils";
+
+import { ICircomCompiler, IWASMCircomCompiler, CompileConfig, BaseCompileConfig } from "../../types/core";
 
 // eslint-disable-next-line
 const { Context, CircomRunner, bindings } = require("@distributedlab/circom2");

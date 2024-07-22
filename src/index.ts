@@ -23,11 +23,24 @@ import {
 
 import { zkitConfigExtender } from "./config/config";
 
-import { CircuitsCompileCache, createCircuitsCompileCache } from "./cache/CircuitsCompileCache";
-
-import { CircomCompilerFactory } from "./compile/core";
-import { CompilationProcessor } from "./compile/core/CompilationProcessor";
+import {
+  CircuitsCompileCache,
+  CircuitsSetupCache,
+  createCircuitsCompileCache,
+  createCircuitsSetupCache,
+} from "./cache";
+import {
+  CircomCompilerFactory,
+  CompilationProcessor,
+  CompilationFilesResolver,
+  TypeGenerationProcessor,
+  SetupProcessor,
+  SetupFilesResolver,
+} from "./core";
 import { Reporter, createReporter } from "./reporter";
+import { CircuitArtifacts } from "./CircuitArtifacts";
+import { CIRCUITS_COMPILE_CACHE_FILENAME, CIRCUITS_SETUP_CACHE_FILENAME, COMPILER_VERSION } from "./constants";
+import { getNormalizedFullPath } from "./utils/path-utils";
 
 import {
   CompileShallowTaskConfig,
@@ -36,19 +49,8 @@ import {
   GetCircuitZKitConfig,
   SetupTaskConfig,
 } from "./types/tasks";
-import { CompileFlags } from "./types/compile";
-
-import { getNormalizedFullPath } from "./utils/path-utils";
-import { CIRCUITS_COMPILE_CACHE_FILENAME, CIRCUITS_SETUP_CACHE_FILENAME, COMPILER_VERSION } from "./constants";
-import { CircuitArtifacts } from "./CircuitArtifacts";
-import { CompilationFilesResolver } from "./compile/core/CompilationFilesResolver";
-import { TypeGenerationProcessor } from "./compile/core/TypeGenerationProcessor";
-import { ResolvedFileInfo } from "./types/compile/core/compilation-files-resolver";
-import { SetupProcessor } from "./setup/SetupProcessor";
-import { CircuitsSetupCache, createCircuitsSetupCache } from "./cache/CircuitsSetupCache";
-import { SetupFilesResolver } from "./setup/SetupFilesResolver";
-import { CircuitSetupInfo } from "./types/setup/setup-files-resolver";
 import { CircuitArtifact } from "./types/circuit-artifacts";
+import { CompileFlags, ResolvedFileInfo, CircuitSetupInfo } from "./types/core";
 
 extendConfig(zkitConfigExtender);
 
@@ -199,7 +201,7 @@ const generateVerifiers: ActionType<GenerateVerifiersTaskConfig> = async (
   env: HardhatRuntimeEnvironment,
 ) => {
   if (!taskArgs.noCompile) {
-    await env.run(TASK_CIRCUITS_COMPILE, {
+    await env.run(TASK_CIRCUITS_MAKE, {
       quiet: taskArgs.quiet,
       force: taskArgs.force,
     });

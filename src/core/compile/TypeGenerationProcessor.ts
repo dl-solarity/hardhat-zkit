@@ -4,8 +4,9 @@ import { CircuitTypesGenerator } from "@solarity/zktype";
 
 import { Reporter } from "../../reporter";
 import { HardhatZKitError } from "../../errors";
-import { CircuitArtifact, ICircuitArtifacts } from "../../types/circuit-artifacts";
+
 import { ZKitConfig } from "../../types/zkit-config";
+import { CircuitArtifact, ICircuitArtifacts } from "../../types/circuit-artifacts";
 
 export class TypeGenerationProcessor {
   private readonly _zkitConfig: ZKitConfig;

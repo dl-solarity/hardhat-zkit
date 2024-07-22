@@ -2,13 +2,14 @@ import fsExtra from "fs-extra";
 
 import { HardhatConfig } from "hardhat/types";
 
-import { Reporter } from "../reporter";
-import { HardhatZKitError } from "../errors";
-import { CircuitsSetupCache } from "../cache/CircuitsSetupCache";
-import { filterCircuitFiles, getNormalizedFullPath } from "../utils/path-utils";
-import { FileFilterSettings, SetupSettings, ZKitConfig } from "../types/zkit-config";
-import { CircuitArtifact, CompilerOutputFileInfo, ICircuitArtifacts } from "../types/circuit-artifacts";
-import { CircuitSetupInfo } from "../types/setup/setup-files-resolver";
+import { Reporter } from "../../reporter";
+import { HardhatZKitError } from "../../errors";
+import { CircuitsSetupCache } from "../../cache";
+import { filterCircuitFiles, getNormalizedFullPath } from "../../utils/path-utils";
+
+import { FileFilterSettings, SetupSettings, ZKitConfig } from "../../types/zkit-config";
+import { CircuitArtifact, CompilerOutputFileInfo, ICircuitArtifacts } from "../../types/circuit-artifacts";
+import { CircuitSetupInfo } from "../../types/core";
 
 export class SetupFilesResolver {
   private readonly _zkitConfig: ZKitConfig;

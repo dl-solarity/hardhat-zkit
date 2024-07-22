@@ -3,8 +3,9 @@ import * as t from "io-ts";
 import { isEqual } from "lodash";
 
 import { CIRCUIT_SETUP_CACHE_VERSION } from "../constants";
+
 import { SetupCache, SetupCacheEntry } from "../types/cache";
-import { ContributionSettings } from "../types/setup/setup-processor";
+import { ContributionSettings } from "../types/core";
 
 const ContributionTemplateTypeCodec = t.literal("groth16");
 

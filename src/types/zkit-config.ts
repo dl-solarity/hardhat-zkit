@@ -1,4 +1,4 @@
-import { ContributionSettings } from "./setup/setup-processor";
+import { ContributionSettings } from "./core";
 
 export type ZKitConfig = {
   compilationSettings: CompilationSettings;

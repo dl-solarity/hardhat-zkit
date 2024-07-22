@@ -3,17 +3,14 @@ import fsExtra from "fs-extra";
 import { expect } from "chai";
 
 import { useEnvironment } from "../../helpers";
-import {
-  CircuitsCompileCache,
-  createCircuitsCompileCache,
-  resetCircuitsCompileCache,
-} from "../../../src/cache/CircuitsCompileCache";
+import { CircuitsCompileCache, createCircuitsCompileCache, resetCircuitsCompileCache } from "../../../src/cache";
 import { getNormalizedFullPath } from "../../../src/utils/path-utils";
 import { CIRCUITS_COMPILE_CACHE_FILENAME, CIRCUIT_COMPILE_CACHE_VERSION } from "../../../src/constants";
 import { TASK_CIRCUITS_COMPILE } from "../../../src/task-names";
-import { CompileFlags } from "../../../src/types/compile";
-import { CompileCacheEntry } from "../../../src/types/cache";
 import { getFileHash } from "../../../src/utils/utils";
+
+import { CompileFlags } from "../../../src/types/core";
+import { CompileCacheEntry } from "../../../src/types/cache";
 
 describe("CircuitsCompileCache", () => {
   const defaultCompileFlags: CompileFlags = {

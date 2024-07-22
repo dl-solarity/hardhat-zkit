@@ -1,9 +1,10 @@
 import fs from "fs";
 
 import { WASMCircomCompiler, NativeCircomCompiler } from "./CircomCompiler";
-import { ICircomCompiler, IWASMCircomCompiler, CompilerVersion } from "../../types/compile";
 import { HardhatZKitError } from "../../errors";
 import { execCall } from "../../utils/utils";
+
+import { ICircomCompiler, IWASMCircomCompiler, CompilerVersion } from "../../types/core";
 
 // eslint-disable-next-line
 const { Context } = require("@distributedlab/circom2");

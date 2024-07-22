@@ -8,11 +8,14 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 import { CircuitAST } from "@solarity/zktype";
 
-import { CircomCompilerFactory } from "./CircomCompilerFactory";
+import { CircomCompilerFactory } from "../compiler/CircomCompilerFactory";
 import { HardhatZKitError } from "../../errors";
 import { CIRCUIT_ARTIFACT_VERSION, NODE_MODULES } from "../../constants";
 import { Reporter } from "../../reporter";
 import { getNormalizedFullPath, renameFilesRecursively, readDirRecursively } from "../../utils/path-utils";
+
+import { ZKitConfig } from "../../types/zkit-config";
+import { ArtifactsFileType, CircuitArtifact, ICircuitArtifacts } from "../../types/circuit-artifacts";
 import {
   ICircomCompiler,
   IWASMCircomCompiler,
@@ -20,9 +23,7 @@ import {
   CompilationInfo,
   ResolvedFileInfo,
   CompileConfig,
-} from "../../types/compile";
-import { ZKitConfig } from "../../types/zkit-config";
-import { ArtifactsFileType, CircuitArtifact, ICircuitArtifacts } from "../../types/circuit-artifacts";
+} from "../../types/core";
 
 export class CompilationProcessor {
   private readonly _zkitConfig: ZKitConfig;
