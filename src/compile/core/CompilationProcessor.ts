@@ -24,7 +24,7 @@ import {
 import { ZKitConfig } from "../../types/zkit-config";
 import { ArtifactsFileType, CircuitArtifact, ICircuitArtifacts } from "../../types/circuit-artifacts";
 
-export class CompilationProcessorNew {
+export class CompilationProcessor {
   private readonly _zkitConfig: ZKitConfig;
   private readonly _nodeModulesPath: string;
   private readonly _verbose: boolean;
@@ -88,7 +88,10 @@ export class CompilationProcessorNew {
     compilationInfoArr: CompilationInfo[],
   ) {
     for (const info of compilationInfoArr) {
-      const spinnerId: string | null = Reporter!.reportCircuitCompilationStartWithSpinner(info.circuitName);
+      const spinnerId: string | null = Reporter!.reportCircuitCompilationStartWithSpinner(
+        info.circuitName,
+        info.circuitFileName,
+      );
 
       fsExtra.mkdirSync(info.tempArtifactsPath, { recursive: true });
 
@@ -107,7 +110,7 @@ export class CompilationProcessorNew {
         renameFilesRecursively(info.tempArtifactsPath, info.circuitFileName, info.circuitName);
       }
 
-      Reporter!.reportCircuitCompilationResult(spinnerId, info.circuitName);
+      Reporter!.reportCircuitCompilationResult(spinnerId, info.circuitName, info.circuitFileName);
     }
   }
 

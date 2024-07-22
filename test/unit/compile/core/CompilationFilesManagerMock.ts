@@ -25,7 +25,7 @@ export class CompilationFilesManagerMock extends CompilationFilesResolver {
     return this._getDependencyGraph(sourceNames);
   }
 
-  public invalidateCacheMissingArtifacts(resolvedFilesInfo: ResolvedFileInfo[]) {
+  public async invalidateCacheMissingArtifacts(resolvedFilesInfo: ResolvedFileInfo[]) {
     return this._invalidateCacheMissingArtifacts(resolvedFilesInfo);
   }
 

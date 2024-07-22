@@ -9,7 +9,6 @@ import { filterCircuitFiles, getNormalizedFullPath } from "../utils/path-utils";
 import { FileFilterSettings, SetupSettings, ZKitConfig } from "../types/zkit-config";
 import { CircuitArtifact, CompilerOutputFileInfo, ICircuitArtifacts } from "../types/circuit-artifacts";
 import { CircuitSetupInfo } from "../types/setup/setup-files-resolver";
-import { ContributionSettings } from "../types/setup/setup-processor";
 
 export class SetupFilesResolver {
   private readonly _zkitConfig: ZKitConfig;
@@ -33,12 +32,23 @@ export class SetupFilesResolver {
     if (!force) {
       Reporter!.verboseLog("setup-file-resolver", "Force flag disabled. Start filtering circuits to setup...");
 
-      circuitSetupInfoArr = circuitSetupInfoArr.filter((fileInfo) =>
-        this._needsCompilation(fileInfo, setupSettings.contributionSettings),
+      circuitSetupInfoArr = circuitSetupInfoArr.filter((setupInfo) =>
+        CircuitsSetupCache!.hasFileChanged(
+          setupInfo.circuitArtifactFullPath,
+          setupInfo.r1csContentHash,
+          setupSettings.contributionSettings,
+        ),
       );
     }
 
-    return this._filterCircuitSetupInfoArr(circuitSetupInfoArr, setupSettings);
+    const filteredCircuitsSetupInfo: CircuitSetupInfo[] = await this._filterCircuitSetupInfoArr(
+      circuitSetupInfoArr,
+      setupSettings,
+    );
+
+    Reporter!.reportCircuitListToSetup(circuitSetupInfoArr, filteredCircuitsSetupInfo);
+
+    return filteredCircuitsSetupInfo;
   }
 
   private async _getCircuitSetupInfoArr(fullyQualifiedNames: string[]): Promise<CircuitSetupInfo[]> {
@@ -92,13 +102,5 @@ export class SetupFilesResolver {
         CircuitsSetupCache!.removeEntry(setupInfo.circuitArtifactFullPath);
       }
     }
-  }
-
-  protected _needsCompilation(circuitSetupInfo: CircuitSetupInfo, contributionSettings: ContributionSettings): boolean {
-    return CircuitsSetupCache!.hasFileChanged(
-      circuitSetupInfo.circuitArtifactFullPath,
-      circuitSetupInfo.r1csContentHash,
-      contributionSettings,
-    );
   }
 }

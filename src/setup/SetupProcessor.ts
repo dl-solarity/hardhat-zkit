@@ -25,6 +25,8 @@ export class SetupProcessor {
     try {
       fs.mkdirSync(tempDir, { recursive: true });
 
+      Reporter!.reportSetupProcessHeader();
+
       const ptauFilePath: string = await this._getPtauFile(circuitArtifacts);
 
       await this._generateZKeyFiles(circuitArtifacts, contributionSettings, ptauFilePath);
@@ -35,6 +37,8 @@ export class SetupProcessor {
           await this._circuitArtifacts.saveCircuitArtifact(circuitArtifact, ["zkey", "vkey"]);
         }),
       );
+
+      Reporter!.reportSetupResult(circuitArtifacts);
     } finally {
       fs.rmSync(tempDir, { recursive: true, force: true });
     }
@@ -58,7 +62,7 @@ export class SetupProcessor {
         throw new HardhatZKitError(`R1CS file for ${name} circuit not found. Compile circuits and try again.`);
       }
 
-      Reporter!.verboseLog("compilation-processor:zkey", "Generating ZKey file for %s circuit with params %o", [
+      Reporter!.verboseLog("setup-processor:zkey", "Generating ZKey file for %s circuit with params %o", [
         circuitArtifact.circuitTemplateName,
         { r1csFilePath, zkeyFilePath },
       ]);
@@ -100,7 +104,7 @@ export class SetupProcessor {
       const zkeyFilePath = this._circuitArtifacts.getCircuitArtifactFileFullPath(circuitArtifact, "zkey");
       const vkeyFilePath = this._circuitArtifacts.getCircuitArtifactFileFullPath(circuitArtifact, "vkey");
 
-      Reporter!.verboseLog("compilation-processor:vkey", "Generating VKey file for %s circuit with params %o", [
+      Reporter!.verboseLog("setup-processor:vkey", "Generating VKey file for %s circuit with params %o", [
         circuitArtifact.circuitTemplateName,
         { zkeyFilePath, vkeyFilePath },
       ]);
@@ -133,7 +137,7 @@ export class SetupProcessor {
       entries = fs.readdirSync(this._ptauDirFullPath, { withFileTypes: true });
     }
 
-    Reporter!.verboseLog("compilation-processor", "Found entries in ptau directory: %o", [
+    Reporter!.verboseLog("setup-processor", "Found entries in ptau directory: %o", [
       entries.map((entry) => entry.name),
     ]);
 

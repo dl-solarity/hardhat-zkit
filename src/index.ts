@@ -26,7 +26,7 @@ import { zkitConfigExtender } from "./config/config";
 import { CircuitsCompileCache, createCircuitsCompileCache } from "./cache/CircuitsCompileCache";
 
 import { CircomCompilerFactory } from "./compile/core";
-import { CompilationProcessorNew } from "./compile/core/CompilationProcessor";
+import { CompilationProcessor } from "./compile/core/CompilationProcessor";
 import { Reporter, createReporter } from "./reporter";
 
 import {
@@ -60,7 +60,6 @@ extendEnvironment((hre) => {
 
     return {
       circuitArtifacts,
-
       getCircuit: async (circuitName: string): Promise<CircuitZKit> => {
         return hre.run(TASK_ZKIT_GET_CIRCUIT_ZKIT, { circuitName });
       },
@@ -107,7 +106,7 @@ const compileShallow: ActionType<CompileShallowTaskConfig> = async (
   );
 
   if (resolvedFilesInfo.length > 0) {
-    const compilationProcessor: CompilationProcessorNew = new CompilationProcessorNew(
+    const compilationProcessor: CompilationProcessor = new CompilationProcessor(
       {
         compilerVersion: COMPILER_VERSION,
         compileFlags,

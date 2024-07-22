@@ -70,8 +70,8 @@ class BaseCircuitsSetupCache {
     );
   }
 
-  public async writeToFile(solidityFilesCachePath: string) {
-    await fsExtra.outputJson(solidityFilesCachePath, this._setupCache, {
+  public async writeToFile(circuitsCompileCachePath: string) {
+    await fsExtra.outputJson(circuitsCompileCachePath, this._setupCache, {
       spaces: 2,
     });
   }

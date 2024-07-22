@@ -122,16 +122,3 @@ export function filterCircuitFiles<T>(
     );
   });
 }
-
-// export function cointainsInPathList(circuitsRoot: string, pathList: string[], source: any) {
-//   const isSubPath = (parent: string, child: string) => {
-//     const parentTokens = parent.split(path.posix.sep).filter((i) => i.length);
-//     const childTokens = child.split(path.posix.sep).filter((i) => i.length);
-
-//     return parentTokens.every((t, i) => childTokens[i] === t);
-//   };
-
-//   return pathList.some((p: any) => {
-//     return isSubPath(getNormalizedFullPath(circuitsRoot, p), source);
-//   });
-// };

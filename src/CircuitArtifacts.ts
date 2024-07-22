@@ -11,6 +11,7 @@ import { HardhatZKitError } from "./errors";
 import { CIRCUIT_ARTIFACTS_SUFFIX } from "./constants";
 import { ArtifactsFileType, ArtifactsCache, CircuitArtifact, ICircuitArtifacts } from "./types/circuit-artifacts";
 import { getFileHash } from "./utils/utils";
+import { Reporter } from "./reporter";
 
 export class CircuitArtifacts implements ICircuitArtifacts {
   // Undefined means that the cache is disabled.
@@ -100,6 +101,8 @@ export class CircuitArtifacts implements ICircuitArtifacts {
         fileHash: getFileHash(fileSourcePath),
       };
     }
+
+    Reporter!.verboseLog("circuit-artifacts", "Saving circuit artifact: %o", [circuitArtifact]);
 
     await fsExtra.ensureDir(path.dirname(artifactPath));
     await fsExtra.writeJSON(artifactPath, circuitArtifact, { spaces: 2 });

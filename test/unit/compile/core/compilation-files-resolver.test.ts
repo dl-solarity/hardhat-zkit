@@ -13,6 +13,7 @@ import { getNormalizedFullPath } from "../../../../src/utils/path-utils";
 import { TASK_CIRCUITS_COMPILE_SHALLOW } from "../../../../src/task-names";
 import { useEnvironment } from "../../../helpers";
 import { CompilationFilesManagerMock } from "./CompilationFilesManagerMock";
+import { CIRCUITS_COMPILE_CACHE_FILENAME } from "../../../../src/constants";
 
 describe("CompilationFilesResolver", () => {
   function getCompilationFilesManagerMock(hre: HardhatRuntimeEnvironment): CompilationFilesManagerMock {
@@ -155,9 +156,16 @@ describe("CompilationFilesResolver", () => {
         },
       );
 
-      compilationFilesManager.invalidateCacheMissingArtifacts(resolvedFilesInfo);
+      await compilationFilesManager.invalidateCacheMissingArtifacts(resolvedFilesInfo);
 
       expect(CircuitsCompileCache!.getEntry(circuitFullPath)).to.be.undefined;
+
+      const circuitsCompileCacheFullPath: string = getNormalizedFullPath(
+        this.hre.config.paths.cache,
+        CIRCUITS_COMPILE_CACHE_FILENAME,
+      );
+
+      await CircuitsCompileCache!.writeToFile(circuitsCompileCacheFullPath);
     });
   });
 });

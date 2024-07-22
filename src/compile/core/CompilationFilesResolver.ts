@@ -128,7 +128,7 @@ export class CompilationFilesResolver {
     return DependencyGraph.createFromResolvedFiles(resolver, resolvedFiles);
   }
 
-  protected _invalidateCacheMissingArtifacts(resolvedFilesInfo: ResolvedFileInfo[]) {
+  protected async _invalidateCacheMissingArtifacts(resolvedFilesInfo: ResolvedFileInfo[]) {
     for (const fileInfo of resolvedFilesInfo) {
       const cacheEntry = CircuitsCompileCache!.getEntry(fileInfo.resolvedFile.absolutePath);
 
@@ -137,9 +137,9 @@ export class CompilationFilesResolver {
       }
 
       if (
-        !this._circuitArtifacts.circuitArtifactExists(
+        !(await this._circuitArtifacts.circuitArtifactExists(
           this._circuitArtifacts.getCircuitFullyQualifiedName(fileInfo.resolvedFile.sourceName, fileInfo.circuitName),
-        )
+        ))
       ) {
         CircuitsCompileCache!.removeEntry(fileInfo.resolvedFile.absolutePath);
       }

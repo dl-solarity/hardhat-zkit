@@ -1,4 +1,5 @@
 /* eslint-disable no-console */
+import fs from "fs";
 import debug from "debug";
 import chalk from "chalk";
 import CliTable3 from "cli-table3";
@@ -9,7 +10,11 @@ import { pluralize } from "hardhat/internal/util/strings";
 
 import { SpinnerProcessor } from "./SpinnerProcessor";
 import { ProgressBarProcessor } from "./ProgressBarProcessor";
+import { CircuitSetupInfo } from "../types/setup";
+import { BYTES_IN_MB } from "../constants";
+import { HardhatZKitError } from "../errors";
 import { CompilationInfo, CompilerVersion } from "../types/compile";
+import { CircuitArtifact } from "../types/circuit-artifacts";
 
 class BaseReporter {
   private _spinnerProcessor: SpinnerProcessor;
@@ -72,23 +77,90 @@ class BaseReporter {
 
     output += `\n${chalk.bold("Starting compilation process:")}\n`;
 
-    output += `\n${chalk.italic.cyan("First step - Circuits compilation")}\n`;
-
     console.log(output);
   }
 
-  public reportCircuitCompilationStartWithSpinner(circuitName: string): string | null {
-    return this._startSpinner(circuitName, "compile", `Compiling ${circuitName} circuit`);
+  public reportCircuitCompilationStartWithSpinner(circuitName: string, circuitFileName: string): string | null {
+    const fileNameMessage: string = circuitName === circuitFileName ? "" : chalk.grey(` (${circuitFileName}.circom)`);
+
+    return this._startSpinner(circuitName, "compile", `Compiling ${circuitName}${fileNameMessage} circuit`);
   }
 
-  public reportCircuitCompilationResult(spinnerId: string | null, circuitName: string) {
+  public reportCircuitCompilationResult(spinnerId: string | null, circuitName: string, circuitFileName: string) {
     if (this.isQuiet() || !spinnerId) return;
 
+    const fileNameMessage: string = circuitName === circuitFileName ? "" : chalk.grey(` (${circuitFileName}.circom)`);
     const compilationTimeMessage: string = this._getSpinnerWorkingTimeMessage(
       this._spinnerProcessor.getWorkingTime(spinnerId),
     );
 
-    this._spinnerProcessor.succeedSpinner(spinnerId, `Compiled ${chalk.italic(circuitName)} ${compilationTimeMessage}`);
+    this._spinnerProcessor.succeedSpinner(
+      spinnerId,
+      `Compiled ${chalk.italic(circuitName)}${fileNameMessage} ${compilationTimeMessage}`,
+    );
+  }
+
+  public reportCompilationResult(compilationInfoArr: CompilationInfo[]) {
+    if (this.isQuiet()) return;
+
+    let output: string = "";
+    const circuitsMessage: string =
+      compilationInfoArr.length > 1 ? `${compilationInfoArr.length} circuits` : `one circuit`;
+
+    output += `\n${chalk.bold(`Successfully compiled ${circuitsMessage}.`)}\n`;
+
+    const table = this._getCLITable();
+
+    table.push([{ content: chalk.bold("Circuit Name") }, { content: chalk.bold(`Constraints Number`) }]);
+
+    for (const info of compilationInfoArr) {
+      table.push([{ content: info.circuitName }, { content: info.constraintsNumber.toString(), hAlign: "right" }]);
+    }
+
+    output += `\n${table.toString()}\n`;
+
+    console.log(output);
+  }
+
+  public reportCircuitListToSetup(
+    allCircuitsSetupInfo: CircuitSetupInfo[],
+    filteredCircuitsSetupInfo: CircuitSetupInfo[],
+  ) {
+    if (this.isQuiet()) return;
+
+    if (filteredCircuitsSetupInfo.length > 0) {
+      let filesToSetupMessage: string = `\n${chalk.bold("Circuits to setup:")}\n`;
+
+      for (const setupInfo of filteredCircuitsSetupInfo) {
+        filesToSetupMessage += `\n${chalk.green(">")} ${chalk.italic(setupInfo.circuitArtifact.circuitSourceName)}`;
+      }
+
+      console.log(filesToSetupMessage);
+    }
+
+    const skippedFiles: CircuitSetupInfo[] = allCircuitsSetupInfo.filter(
+      (setupInfo: CircuitSetupInfo) => !filteredCircuitsSetupInfo.includes(setupInfo),
+    );
+
+    if (skippedFiles.length > 0) {
+      let skippedFilesMessage: string = `\n${chalk.bold("Setup skipped for:")}\n`;
+
+      for (const file of skippedFiles) {
+        skippedFilesMessage += `\n${chalk.yellow(">")} ${chalk.italic.grey(file.circuitArtifact.circuitSourceName)}`;
+      }
+
+      console.log(skippedFilesMessage);
+    }
+  }
+
+  public reportSetupProcessHeader() {
+    if (this.isQuiet()) return;
+
+    let output: string = "";
+
+    output += `\n${chalk.bold("Starting keys setup process:")}`;
+
+    console.log(output);
   }
 
   public reportPtauFileInfo(maxConstraintsNumber: number, ptauId: number, ptauFileFullPath?: string) {
@@ -96,7 +168,7 @@ class BaseReporter {
 
     let output: string = "";
 
-    output += `\n${chalk.italic.cyan("Second step - Ptau file setup")}\n`;
+    output += `\n${chalk.italic.cyan("First step - Ptau file setup")}\n`;
 
     output += `\nPtau file info:\n`;
     output += `\n> Max circuits constraints number - ${maxConstraintsNumber}`;
@@ -144,7 +216,7 @@ class BaseReporter {
 
     let output: string = "";
 
-    output += `\n${chalk.italic.cyan("Third step - Generating ZKey files for circuits")}\n`;
+    output += `\n${chalk.italic.cyan("Second step - Generating ZKey files for circuits")}\n`;
 
     if (contributions > 0) {
       output += `\n> Phase-2 contributions to ZKey file ${chalk.green("enabled")}`;
@@ -180,7 +252,7 @@ class BaseReporter {
 
     let output: string = "";
 
-    output += `\n${chalk.italic.cyan("Fourth step - Generating VKey files for circuits")}\n`;
+    output += `\n${chalk.italic.cyan("Third step - Generating VKey files for circuits")}\n`;
 
     output += `\nStarting generation of VKey files:\n`;
 
@@ -204,12 +276,46 @@ class BaseReporter {
     );
   }
 
+  public reportSetupResult(circuitArtifacts: CircuitArtifact[]) {
+    if (this.isQuiet()) return;
+
+    let output: string = "";
+    const circuitsMessage: string = circuitArtifacts.length > 1 ? `${circuitArtifacts.length} circuits` : `one circuit`;
+
+    output += `\n${chalk.bold(`Successfully generated keys for ${circuitsMessage}.`)}\n`;
+
+    const table = this._getCLITable();
+
+    table.push([{ content: chalk.bold("Circuit Name") }, { content: chalk.bold(`ZKey file size (MB)`) }]);
+
+    for (const circuitArtifact of circuitArtifacts) {
+      table.push([
+        { content: circuitArtifact.circuitTemplateName },
+        { content: this._getFileSizeInMB(circuitArtifact.compilerOutputFiles.zkey?.fileSourcePath), hAlign: "right" },
+      ]);
+    }
+
+    output += `\n${table.toString()}\n`;
+
+    console.log(output);
+  }
+
+  private _getFileSizeInMB(filePath: string | undefined): string {
+    if (!filePath) {
+      throw new HardhatZKitError("File path is undefined. Unable to get file size.");
+    }
+
+    const fileSize: number = fs.statSync(filePath).size;
+
+    return (fileSize / BYTES_IN_MB).toFixed(3);
+  }
+
   public reportTypesGenerationHeaderWithSpinner(): string | null {
     if (this.isQuiet()) return null;
 
     let output: string = "";
 
-    output += `\n${chalk.italic.cyan("Fifth step - Generating types for circuits")}\n`;
+    output += `\n${chalk.italic.cyan("Fourth step - Generating types for circuits")}\n`;
 
     console.log(output);
 
@@ -224,46 +330,6 @@ class BaseReporter {
     );
 
     this._spinnerProcessor.succeedSpinner(spinnerId, `Generated types for circuits ${generationTimeMessage}`);
-  }
-
-  public reportCompilationResult(compilationInfoArr: CompilationInfo[]) {
-    if (this.isQuiet()) return;
-
-    let output: string = "";
-    const circuitsMessage: string =
-      compilationInfoArr.length > 1 ? `${compilationInfoArr.length} circuits` : `one circuit`;
-
-    output += `\n${chalk.bold(`Successfully compiled ${circuitsMessage}.`)}\n`;
-
-    const table = new CliTable3({
-      style: { head: [], border: [], "padding-left": 2, "padding-right": 2 },
-      chars: {
-        mid: "·",
-        "top-mid": "|",
-        "left-mid": " ·",
-        "mid-mid": "|",
-        "right-mid": "·",
-        left: " |",
-        "top-left": " ·",
-        "top-right": "·",
-        "bottom-left": " ·",
-        "bottom-right": "·",
-        middle: "·",
-        top: "-",
-        bottom: "-",
-        "bottom-mid": "|",
-      },
-    });
-
-    table.push([{ content: chalk.bold("Circuit Name") }, { content: chalk.bold(`Constraints Number`) }]);
-
-    for (const info of compilationInfoArr) {
-      table.push([{ content: info.circuitName }, { content: info.constraintsNumber.toString(), hAlign: "right" }]);
-    }
-
-    output += `\n${table.toString()}\n`;
-
-    console.log(output);
   }
 
   public reportNothingToCompile() {
@@ -333,6 +399,28 @@ class BaseReporter {
 
   public isQuiet(): boolean {
     return this._quiet;
+  }
+
+  private _getCLITable(): CliTable3.Table {
+    return new CliTable3({
+      style: { head: [], border: [], "padding-left": 2, "padding-right": 2 },
+      chars: {
+        mid: "·",
+        "top-mid": "|",
+        "left-mid": " ·",
+        "mid-mid": "|",
+        "right-mid": "·",
+        left: " |",
+        "top-left": " ·",
+        "top-right": "·",
+        "bottom-left": " ·",
+        "bottom-right": "·",
+        middle: "·",
+        top: "-",
+        bottom: "-",
+        "bottom-mid": "|",
+      },
+    });
   }
 
   private _getSpinnerWorkingTimeMessage(workingTime: string | undefined): string {
