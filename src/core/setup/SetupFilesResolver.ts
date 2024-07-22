@@ -8,7 +8,7 @@ import { CircuitsSetupCache } from "../../cache";
 import { filterCircuitFiles, getNormalizedFullPath } from "../../utils/path-utils";
 
 import { FileFilterSettings, SetupSettings, ZKitConfig } from "../../types/zkit-config";
-import { CircuitArtifact, CompilerOutputFileInfo, ICircuitArtifacts } from "../../types/circuit-artifacts";
+import { CircuitArtifact, CompilerOutputFileInfo, ICircuitArtifacts } from "../../types/artifacts/circuit-artifacts";
 import { CircuitSetupInfo } from "../../types/core";
 
 export class SetupFilesResolver {

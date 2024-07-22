@@ -18,7 +18,8 @@ import {
   TASK_CIRCUITS_MAKE,
   TASK_CIRCUITS_SETUP,
   TASK_GENERATE_VERIFIERS,
-  TASK_ZKIT_GET_CIRCUIT_ZKIT,
+  TASK_ZKIT_CLEAN,
+  SUBTASK_ZKIT_GET_CIRCUIT_ZKIT,
 } from "./task-names";
 
 import { zkitConfigExtender } from "./config/config";
@@ -38,7 +39,7 @@ import {
   SetupFilesResolver,
 } from "./core";
 import { Reporter, createReporter } from "./reporter";
-import { CircuitArtifacts } from "./CircuitArtifacts";
+import { CircuitArtifacts } from "./artifacts/CircuitArtifacts";
 import { CIRCUITS_COMPILE_CACHE_FILENAME, CIRCUITS_SETUP_CACHE_FILENAME, COMPILER_VERSION } from "./constants";
 import { getNormalizedFullPath } from "./utils/path-utils";
 
@@ -49,7 +50,7 @@ import {
   GetCircuitZKitConfig,
   SetupTaskConfig,
 } from "./types/tasks";
-import { CircuitArtifact } from "./types/circuit-artifacts";
+import { CircuitArtifact } from "./types/artifacts/circuit-artifacts";
 import { CompileFlags, ResolvedFileInfo, CircuitSetupInfo } from "./types/core";
 
 extendConfig(zkitConfigExtender);
@@ -63,7 +64,7 @@ extendEnvironment((hre) => {
     return {
       circuitArtifacts,
       getCircuit: async (circuitName: string): Promise<CircuitZKit> => {
-        return hre.run(TASK_ZKIT_GET_CIRCUIT_ZKIT, { circuitName });
+        return hre.run(SUBTASK_ZKIT_GET_CIRCUIT_ZKIT, { circuitName });
       },
     };
   });
@@ -241,13 +242,7 @@ const generateVerifiers: ActionType<GenerateVerifiersTaskConfig> = async (
   }
 };
 
-const clean: ActionType<any> = async (
-  _taskArgs: any,
-  env: HardhatRuntimeEnvironment,
-  runSuper: RunSuperFunction<any>,
-) => {
-  await runSuper();
-
+const clean: ActionType<any> = async (_taskArgs: any, env: HardhatRuntimeEnvironment) => {
   const circuitsCompileCacheFullPath: string = getNormalizedFullPath(
     env.config.paths.cache,
     CIRCUITS_COMPILE_CACHE_FILENAME,
@@ -313,6 +308,20 @@ const getCircuitZKit: ActionType<GetCircuitZKitConfig> = async (
   }
 };
 
+task(TASK_CLEAN).setAction(async (_taskArgs: any, env: HardhatRuntimeEnvironment, runSuper: RunSuperFunction<any>) => {
+  await runSuper();
+
+  await env.run(TASK_ZKIT_CLEAN);
+});
+
+task(TASK_CIRCUITS_MAKE, "Compile Circom circuits and generate all necessary artifacts")
+  .addFlag("sym", "Outputs witness in sym file in the compilation artifacts directory.")
+  .addFlag("json", "Outputs constraints in json file in the compilation artifacts directory.")
+  .addFlag("c", "Enables the generation of cpp files in the compilation artifacts directory.")
+  .addFlag("force", "Force compilation ignoring cache.")
+  .addFlag("quiet", "Suppresses logs during the compilation process.")
+  .setAction(make);
+
 task(TASK_CIRCUITS_COMPILE, "Compile Circom circuits")
   .addFlag("sym", "Outputs witness in sym file in the compilation artifacts directory.")
   .addFlag("json", "Outputs constraints in json file in the compilation artifacts directory.")
@@ -326,14 +335,6 @@ task(TASK_CIRCUITS_SETUP, "Create ZKey and Vkey files for compiled circuits")
   .addFlag("quiet", "Suppresses logs during the compilation process.")
   .setAction(setup);
 
-task(TASK_CIRCUITS_MAKE, "Compile Circom circuits and generate all necessary artifacts")
-  .addFlag("sym", "Outputs witness in sym file in the compilation artifacts directory.")
-  .addFlag("json", "Outputs constraints in json file in the compilation artifacts directory.")
-  .addFlag("c", "Enables the generation of cpp files in the compilation artifacts directory.")
-  .addFlag("force", "Force compilation ignoring cache.")
-  .addFlag("quiet", "Suppresses logs during the compilation process.")
-  .setAction(make);
-
 task(TASK_GENERATE_VERIFIERS, "Generate Solidity verifier contracts for Circom circuits")
   .addOptionalParam(
     "verifiersDir",
@@ -346,9 +347,9 @@ task(TASK_GENERATE_VERIFIERS, "Generate Solidity verifier contracts for Circom c
   .addFlag("quiet", "Suppresses logs during the verifier generation process.")
   .setAction(generateVerifiers);
 
-task(TASK_CLEAN).setAction(clean);
+task(TASK_ZKIT_CLEAN, "Clean all circuit artifacts, keys, types and etc").setAction(clean);
 
-subtask(TASK_ZKIT_GET_CIRCUIT_ZKIT)
+subtask(SUBTASK_ZKIT_GET_CIRCUIT_ZKIT)
   .addOptionalParam("verifiersDir", undefined, undefined, types.string)
   .addOptionalParam("verifierTemplateType", undefined, undefined, types.any)
   .addParam("circuitName", undefined, undefined, types.string)

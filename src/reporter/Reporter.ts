@@ -13,7 +13,7 @@ import { ProgressBarProcessor } from "./ProgressBarProcessor";
 import { HardhatZKitError } from "../errors";
 import { BYTES_IN_MB } from "../constants";
 
-import { CircuitArtifact } from "../types/circuit-artifacts";
+import { CircuitArtifact } from "../types/artifacts/circuit-artifacts";
 import { CompilationInfo, CompilerVersion, CircuitSetupInfo } from "../types/core";
 
 class BaseReporter {

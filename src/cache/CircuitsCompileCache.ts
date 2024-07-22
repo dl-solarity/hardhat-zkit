@@ -50,10 +50,10 @@ class BaseCircuitsCompileCache {
     const result = CompileCacheCodec.decode(cacheRaw);
 
     if (result.isRight()) {
-      const solidityFilesCache = new BaseCircuitsCompileCache(result.value);
-      await solidityFilesCache.removeNonExistingFiles();
+      const circuitsCompileCache = new BaseCircuitsCompileCache(result.value);
+      await circuitsCompileCache.removeNonExistingFiles();
 
-      return solidityFilesCache;
+      return circuitsCompileCache;
     }
 
     return new BaseCircuitsCompileCache({
@@ -74,8 +74,8 @@ class BaseCircuitsCompileCache {
     );
   }
 
-  public async writeToFile(solidityFilesCachePath: string) {
-    await fsExtra.outputJson(solidityFilesCachePath, this._compileCache, {
+  public async writeToFile(circuitsCompileCachePath: string) {
+    await fsExtra.outputJson(circuitsCompileCachePath, this._compileCache, {
       spaces: 2,
     });
   }

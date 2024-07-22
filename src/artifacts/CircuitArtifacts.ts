@@ -7,12 +7,17 @@ import { replaceBackslashes } from "hardhat/utils/source-names";
 import { ERRORS } from "hardhat/internal/core/errors-list";
 import { HardhatError, NomicLabsHardhatPluginError } from "hardhat/internal/core/errors";
 
-import { HardhatZKitError } from "./errors";
-import { CIRCUIT_ARTIFACTS_SUFFIX } from "./constants";
-import { Reporter } from "./reporter";
-import { getFileHash } from "./utils/utils";
+import { HardhatZKitError } from "../errors";
+import { CIRCUIT_ARTIFACTS_SUFFIX } from "../constants";
+import { Reporter } from "../reporter";
+import { getFileHash } from "../utils/utils";
 
-import { ArtifactsFileType, ArtifactsCache, CircuitArtifact, ICircuitArtifacts } from "./types/circuit-artifacts";
+import {
+  ArtifactsFileType,
+  ArtifactsCache,
+  CircuitArtifact,
+  ICircuitArtifacts,
+} from "../types/artifacts/circuit-artifacts";
 
 export class CircuitArtifacts implements ICircuitArtifacts {
   // Undefined means that the cache is disabled.

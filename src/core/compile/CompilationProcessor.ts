@@ -15,7 +15,7 @@ import { Reporter } from "../../reporter";
 import { getNormalizedFullPath, renameFilesRecursively, readDirRecursively } from "../../utils/path-utils";
 
 import { ZKitConfig } from "../../types/zkit-config";
-import { ArtifactsFileType, CircuitArtifact, ICircuitArtifacts } from "../../types/circuit-artifacts";
+import { ArtifactsFileType, CircuitArtifact, ICircuitArtifacts } from "../../types/artifacts/circuit-artifacts";
 import {
   ICircomCompiler,
   IWASMCircomCompiler,

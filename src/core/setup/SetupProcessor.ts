@@ -11,7 +11,7 @@ import { PTAU_FILE_REG_EXP } from "../../constants";
 import { Reporter } from "../../reporter";
 import { getNormalizedFullPath } from "../../utils/path-utils";
 
-import { CircuitArtifact, ICircuitArtifacts } from "../../types/circuit-artifacts";
+import { CircuitArtifact, ICircuitArtifacts } from "../../types/artifacts/circuit-artifacts";
 import { ContributionSettings, ContributionTemplateType } from "../../types/core";
 
 export class SetupProcessor {

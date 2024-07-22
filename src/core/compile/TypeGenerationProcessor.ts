@@ -6,7 +6,7 @@ import { Reporter } from "../../reporter";
 import { HardhatZKitError } from "../../errors";
 
 import { ZKitConfig } from "../../types/zkit-config";
-import { CircuitArtifact, ICircuitArtifacts } from "../../types/circuit-artifacts";
+import { CircuitArtifact, ICircuitArtifacts } from "../../types/artifacts/circuit-artifacts";
 
 export class TypeGenerationProcessor {
   private readonly _zkitConfig: ZKitConfig;

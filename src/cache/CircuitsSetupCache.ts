@@ -47,10 +47,10 @@ class BaseCircuitsSetupCache {
     const result = SetupCacheCodec.decode(cacheRaw);
 
     if (result.isRight()) {
-      const solidityFilesCache = new BaseCircuitsSetupCache(result.value);
-      await solidityFilesCache.removeNonExistingFiles();
+      const circuitsSetupCache = new BaseCircuitsSetupCache(result.value);
+      await circuitsSetupCache.removeNonExistingFiles();
 
-      return solidityFilesCache;
+      return circuitsSetupCache;
     }
 
     return new BaseCircuitsSetupCache({

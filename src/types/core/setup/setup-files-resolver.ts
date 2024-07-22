@@ -1,4 +1,4 @@
-import { CircuitArtifact } from "../../circuit-artifacts";
+import { CircuitArtifact } from "../../artifacts/circuit-artifacts";
 
 export type CircuitSetupInfo = {
   circuitArtifact: CircuitArtifact;

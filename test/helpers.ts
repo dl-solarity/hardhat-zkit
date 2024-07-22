@@ -2,6 +2,8 @@ import { join, dirname } from "path";
 import fsExtra from "fs-extra";
 
 import { resetHardhatContext } from "hardhat/plugins-testing";
+import { TASK_COMPILE } from "hardhat/builtin-tasks/task-names";
+
 import { getNormalizedFullPath } from "../src/utils/path-utils";
 
 export function useEnvironment(fixtureProjectName: string, networkName = "hardhat") {
@@ -12,10 +14,10 @@ export function useEnvironment(fixtureProjectName: string, networkName = "hardha
 
     this.hre = require("hardhat");
 
-    await this.hre.run("compile", { quiet: true });
+    await this.hre.run(TASK_COMPILE, { quiet: true });
   });
 
-  afterEach("Resetting hardhat", function () {
+  afterEach("Resetting hardhat", async function () {
     resetHardhatContext();
 
     const typesDir: string = getNormalizedFullPath(this.hre.config.paths.root, "generated-types/zkit");

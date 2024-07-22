@@ -43,3 +43,5 @@ typings/
 
 # Optional npm cache directory
 .npm
+
+!src/**/artifacts

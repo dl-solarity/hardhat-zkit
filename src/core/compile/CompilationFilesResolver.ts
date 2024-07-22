@@ -11,7 +11,7 @@ import { Reporter } from "../../reporter/Reporter";
 import { filterCircuitFiles, getNormalizedFullPath } from "../../utils/path-utils";
 
 import { ZKitConfig } from "../../types/zkit-config";
-import { ICircuitArtifacts } from "../../types/circuit-artifacts";
+import { ICircuitArtifacts } from "../../types/artifacts/circuit-artifacts";
 import { CompileFlags, ResolvedFileInfo } from "../../types/core";
 
 export class CompilationFilesResolver {
