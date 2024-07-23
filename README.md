@@ -213,9 +213,6 @@ The method accepts the name of the `main` component of the circuit and returns t
 
 The method works regardless of how the circuit was compiled, however, if `zkit:compile` task was used, the zkit methods that utilize proof generation or proof verification would throw an error by design.
 
-> [!NOTE]
-> Please note that the [`zktype`](https://github.com/dl-solarity/zktype) typed wrapper object gets actually returned which enables full TypeScript typization.
-
 In case there are conflicts between circuit file names and `main` component names, you should use the `fullCircuitName`, which has the following form: `circuitSourceName:circuitName`.
 
 Where:
@@ -224,7 +221,7 @@ Where:
 - `circuitName` - Circuit `main` component name.
 
 > [!IMPORTANT]
-> Check out the [`zkit`](https://github.com/dl-solarity/zkit) documentation to understand zkit objects capabilities.
+> Please note that the method actually returns the [`zktype`](https://github.com/dl-solarity/zktype) typed zkit wrapper objects which enable full TypeScript typization of signals and proofs. Also check out the [`zkit`](https://github.com/dl-solarity/zkit) documentation to understand zkit object capabilities and how to interact with circuits.
 
 ## Known limitations
 
