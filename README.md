@@ -102,7 +102,7 @@ Where:
   - `ptauDownload` - The flag to allow automatic download of required `ptau` files.
 - `typesSettings`
   - `typesArtifactsDir` - The directory where to save the generated circuits ABI.
-  - `typesDir` - The directory where to save the generated circuits wrappers.
+  - `typesDir` - The directory where to save the generated typed circuits wrappers.
 - `verifiersDir` - The directory where to generate the Solidity verifiers.
 - `nativeCompiler` - The flag indicating whether to use the natively installed compiler.
 - `quiet` - The flag indicating whether to suppress the output.
@@ -201,7 +201,7 @@ npx hardhat zkit:make
 
 This command will compile the circuit leveraging `wasm`-based Circom compiler, download the necessary `ptau` file regarding the number of circuit constraints, build the required `zkey` and `vkey` files, and generate TypeScript object wrappers to enable full typization of signals and ZK proofs.
 
-Afterwards you may proceed with the provided exemplary hardhat script.
+Afterward, you may proceed with the provided exemplary hardhat script.
 
 ### API reference
 
@@ -221,7 +221,7 @@ Where:
 - `circuitName` - Circuit `main` component name.
 
 > [!IMPORTANT]
-> Please note that the method actually returns the [`zktype`](https://github.com/dl-solarity/zktype) typed zkit wrapper objects which enable full TypeScript typization of signals and proofs. Also check out the [`zkit`](https://github.com/dl-solarity/zkit) documentation to understand zkit object capabilities and how to interact with circuits.
+> Please note that the method actually returns the [`zktype`](https://github.com/dl-solarity/zktype) typed zkit wrapper objects which enable full TypeScript typization of signals and proofs. Also, check out the [`zkit`](https://github.com/dl-solarity/zkit) documentation to understand zkit object capabilities and how to interact with circuits.
 
 ## Known limitations
 
