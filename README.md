@@ -42,7 +42,7 @@ Or if you are using TypeScript:
 import "@solarity/hardhat-zkit";
 ```
 
-> [!TIP] 
+> [!TIP]
 > There is no need to download the Circom compiler separately. The plugin works with the WASM-based version under the hood.
 
 ## Usage
@@ -60,16 +60,22 @@ module.exports = {
       c: false,
       json: false,
       sym: false,
-      contributionTemplate: "groth16",
-      contributions: 1,
+    },
+    setupSettings: {
+      contributionSettings: {
+        contributionTemplate: "groth16",
+        contributions: 1,
+      },
+      onlyFiles: [],
+      skipFiles: [],
+      ptauDir: undefined,
+      ptauDownload: true,
     },
     typesSettings: {
       typesArtifactsDir: "zkit/abi",
       typesDir: "generated-types/zkit",
     },
     verifiersDir: "contracts/verifiers",
-    ptauDir: undefined,
-    ptauDownload: true,
     nativeCompiler: false,
     quiet: false,
   },
@@ -82,23 +88,24 @@ Where:
 - `compilationSettings`
   - `artifactsDir` - The directory where to save the circuits artifacts (r1cs, zkey, etc).
   - `onlyFiles` - The list of directories (or files) to be considered for the compilation.
-  - `skipFiles` - The list of directories (or files) to be skipped for the compilation.
+  - `skipFiles` - The list of directories (or files) to be excluded from the compilation.
   - `c` - The flag to generate the c-based witness generator (generates wasm by default).
   - `json` - The flag to output the constraints in json format.
   - `sym` - The flag to output the constraint system in an annotated mode.
-  - `contributionTemplate` - The option to indicate which proving system to use.
-  - `contributions` - The number of phase-2 `zkey` contributions to make if `groth16` is chosen.
+- `setupSettings`
+  - `contributionSettings`
+    - `contributionTemplate` - The option to indicate which proving system to use.
+    - `contributions` - The number of phase-2 `zkey` contributions to make if `groth16` is chosen.
+  - `onlyFiles` - The list of directories (or files) to be considered for the setup phase.
+  - `skipFiles` - The list of directories (or files) to be excluded from the setup phase.
+  - `ptauDir` - The directory where to look for the `ptau` files. `$HOME/.zkit/ptau/` by default.
+  - `ptauDownload` - The flag to allow automatic download of required `ptau` files.
 - `typesSettings`
   - `typesArtifactsDir` - The directory where to save the generated circuits ABI.
   - `typesDir` - The directory where to save the generated circuits wrappers.
 - `verifiersDir` - The directory where to generate the Solidity verifiers.
-- `ptauDir` - The directory where to look for the `ptau` files. `$HOME/.zkit/ptau/` by default.
-- `ptauDownload` - The flag to allow automatic download of required `ptau` files.
 - `nativeCompiler` - The flag indicating whether to use the natively installed compiler.
 - `quiet` - The flag indicating whether to suppress the output.
-
-> [!IMPORTANT] 
-> The `nativeCompiler` flag requires the Circom compiler to be preinstalled and be globally available in the system.
 
 ### Typization
 
@@ -121,13 +128,15 @@ The following config may be added to `tsconfig.json` file to allow for a better 
 There are several hardhat tasks that the plugin provides:
 
 - `zkit:compile` task that compiles or recompiles the modified circuits with the main component.
-- `zkit:verifiers` task that generates Solidity verifiers for all the previously compiled circuits.
+- `zkit:setup` task that generates or regenerates `zkey` and `vkey` for the previously compiled circuits.
+- `zkit:make` task that executes both `zkit:compile` and `zkit:setup` for convenience.
+- `zkit:verifiers` task that generates Solidity verifiers for all the previously setup circuits.
+- `zkit:clean` task that cleans up the generated artifacts, types, etc.
 
 To view the available options, run the help command:
 
 ```bash
-npx hardhat help zkit:compile
-npx hardhat help zkit:verifiers
+npx hardhat help <zkit task name>
 ```
 
 ### Environment extensions
@@ -152,13 +161,13 @@ template Multiplier(){
    signal input in1;
    signal input in2;
    signal output out;
-   
+
    out <== in1 * in2;
 }
 
 component main = Multiplier();
 ```
-  
+
 </td>
 <td>
 
@@ -184,16 +193,25 @@ main()
 </tr>
 </table>
 
+To see the plugin in action, place the `Multiplier` circuit in the `circuits` directory and execute:
+
+```bash
+npx hardhat zkit:make
+```
+
+This command will compile the circuit leveraging `wasm`-based Circom compiler, download the necessary `ptau` file regarding the number of circuit constraints, build the required `zkey` and `vkey` files, and generate TypeScript object wrappers to enable full typization of signals and ZK proofs.
+
+Afterwards you may proceed with the provided exemplary hardhat script.
+
 ### API reference
 
 ---
 
 - **`getCircuit(<fullCircuitName|circuitName>) -> zkit`**
 
-The method accepts the name of the `main` component of the circuit and returns the instantiated zkit object pointing to that circuit. 
+The method accepts the name of the `main` component of the circuit and returns the instantiated zkit object pointing to that circuit.
 
-> [!NOTE]
-> Please note that the [`zktype`](https://github.com/dl-solarity/zktype) typed wrapper object gets actually returned which enables full TypeScript typization.
+The method works regardless of how the circuit was compiled, however, if `zkit:compile` task was used, the zkit methods that utilize proof generation or proof verification would throw an error by design.
 
 In case there are conflicts between circuit file names and `main` component names, you should use the `fullCircuitName`, which has the following form: `circuitSourceName:circuitName`.
 
@@ -202,8 +220,8 @@ Where:
 - `circuitSourceName` - Path to the circuit file from the project root.
 - `circuitName` - Circuit `main` component name.
 
-> [!IMPORTANT] 
-> Check out the [`zkit`](https://github.com/dl-solarity/zkit) documentation to understand zkit objects capabilities.
+> [!IMPORTANT]
+> Please note that the method actually returns the [`zktype`](https://github.com/dl-solarity/zktype) typed zkit wrapper objects which enable full TypeScript typization of signals and proofs. Also check out the [`zkit`](https://github.com/dl-solarity/zkit) documentation to understand zkit object capabilities and how to interact with circuits.
 
 ## Known limitations
 

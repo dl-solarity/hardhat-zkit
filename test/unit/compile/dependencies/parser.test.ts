@@ -4,11 +4,12 @@ import { expect } from "chai";
 import { createNonCryptographicHashBasedIdentifier } from "hardhat/internal/util/hash";
 
 import { useEnvironment } from "../../../helpers";
-import { Parser } from "../../../../src/compile/dependencies";
-import { getNormalizedFullPath } from "../../../../src/utils/path-utils";
-import { CIRCOM_CIRCUITS_CACHE_FILENAME } from "../../../../src/constants";
 import { TASK_CIRCUITS_COMPILE } from "../../../../src/task-names";
-import { ParsedData } from "../../../../src/types/compile";
+import { Parser } from "../../../../src/core/dependencies";
+import { getNormalizedFullPath } from "../../../../src/utils/path-utils";
+import { CIRCUITS_COMPILE_CACHE_FILENAME } from "../../../../src/constants";
+
+import { ParsedData } from "../../../../src/types/core";
 
 describe("Parser", () => {
   describe("parse", () => {
@@ -23,7 +24,7 @@ describe("Parser", () => {
     useEnvironment("with-circuits");
 
     beforeEach("setup", async function () {
-      circuitsCacheFullPath = getNormalizedFullPath(this.hre.config.paths.cache, CIRCOM_CIRCUITS_CACHE_FILENAME);
+      circuitsCacheFullPath = getNormalizedFullPath(this.hre.config.paths.cache, CIRCUITS_COMPILE_CACHE_FILENAME);
 
       parser = new Parser();
 

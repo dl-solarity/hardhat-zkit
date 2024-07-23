@@ -28,16 +28,22 @@ describe("config", () => {
           c: false,
           json: false,
           sym: false,
-          contributionTemplate: "groth16",
-          contributions: 1,
+        },
+        setupSettings: {
+          contributionSettings: {
+            contributionTemplate: "groth16",
+            contributions: 1,
+          },
+          ptauDir: "zkit/ptau",
+          ptauDownload: true,
+          onlyFiles: [],
+          skipFiles: [],
         },
         typesSettings: {
           typesArtifactsDir: "zkit/abi",
           typesDir: "generated-types/zkit",
         },
         verifiersDir: "contracts/verifiers",
-        ptauDir: "zkit/ptau",
-        ptauDownload: true,
         nativeCompiler: false,
         quiet: true,
       };
@@ -66,16 +72,22 @@ describe("config", () => {
           c: false,
           json: false,
           sym: false,
-          contributionTemplate: "groth16",
-          contributions: 1,
+        },
+        setupSettings: {
+          contributionSettings: {
+            contributionTemplate: "groth16",
+            contributions: 1,
+          },
+          ptauDir: undefined,
+          ptauDownload: true,
+          onlyFiles: [],
+          skipFiles: [],
         },
         typesSettings: {
           typesArtifactsDir: "zkit/abi",
           typesDir: "generated-types/zkit",
         },
         verifiersDir: "contracts/verifiers",
-        ptauDir: undefined,
-        ptauDownload: true,
         nativeCompiler: false,
         quiet: false,
       };
