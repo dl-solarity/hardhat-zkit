@@ -210,16 +210,12 @@ const generateVerifiers: ActionType<GenerateVerifiersTaskConfig> = async (
     createReporter(taskArgs.quiet || env.config.zkit.quiet);
   }
 
-  const artifactsDirFullPath: string = getNormalizedFullPath(
-    env.config.paths.root,
-    env.config.zkit.compilationSettings.artifactsDir,
-  );
   const verifiersDirFullPath: string = getNormalizedFullPath(
     env.config.paths.root,
     taskArgs.verifiersDir ?? env.config.zkit.verifiersDir,
   );
 
-  Reporter!.verboseLog("index", "Verifiers generation info: %o", [{ artifactsDirFullPath, verifiersDirFullPath }]);
+  Reporter!.verboseLog("index", "Verifiers generation dir - %s", [verifiersDirFullPath]);
 
   Reporter!.reportVerifiersGenerationHeader();
 
@@ -281,6 +277,10 @@ const getCircuitZKit: ActionType<GetCircuitZKitConfig> = async (
     env.config.paths.root,
     taskArgs.verifiersDir ?? env.config.zkit.verifiersDir,
   );
+  const circuitArtifactsDirPath: string = getNormalizedFullPath(
+    env.zkit.circuitArtifacts.getCircuitArtifactsDirFullPath(),
+    circuitArtifact.circuitSourceName,
+  );
 
   const typesGenerator: CircuitTypesGenerator = new CircuitTypesGenerator({
     basePath: env.config.zkit.circuitsDir,
@@ -292,9 +292,7 @@ const getCircuitZKit: ActionType<GetCircuitZKitConfig> = async (
 
   const circuitZKitConfig: CircuitZKitConfig = {
     circuitName: circuitArtifact.circuitTemplateName,
-    circuitArtifactsPath: path.dirname(
-      env.zkit.circuitArtifacts.formCircuitArtifactPathFromFullyQualifiedName(taskArgs.circuitName),
-    ),
+    circuitArtifactsPath: circuitArtifactsDirPath,
     verifierDirPath: verifiersDirFullPath,
     templateType: taskArgs.verifierTemplateType ?? "groth16",
   };
