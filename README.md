@@ -199,9 +199,9 @@ To see the plugin in action, place the `Multiplier` circuit in the `circuits` di
 npx hardhat zkit:make
 ```
 
-This command will compile the circuit leveraging `wasm`-based Circom compiler, download the necessary `ptau` file regarding the number of circuit constraints, build the required `zkey` and `vkey` files, and generate TypeScript object wrappers to enable full typization of signals and ZK proofs.
+This command will compile the circuit leveraging `wasm`-based Circom compiler, download the necessary `ptau` file regarding the number of constraints, build the required `zkey` and `vkey` files, and generate TypeScript object wrappers to enable full typization of signals and ZK proofs.
 
-Afterward, you may proceed with the provided exemplary hardhat script.
+Afterward, you may proceed with the provided hardhat script.
 
 ### API reference
 
