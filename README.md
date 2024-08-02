@@ -225,5 +225,6 @@ Where:
 
 ## Known limitations
 
+- There is a typization bug that the typer incorrectly parses public inputs if they are arrays (will be fixed in 0.3.1).
 - Currently the Circom `2.1.8` is used to compile circuits.
 - Temporarily, the only supported proving system is `groth16`.
