@@ -15,7 +15,7 @@ export const BYTES_IN_MB = 1048576;
 export const MAX_PTAU_ID = 27;
 export const PTAU_FILE_REG_EXP = /^(?:.+-|)(\d{1,2}).ptau$/;
 
-export const INCLUDE_REG_EXP = /include +"([.\-/\w]+)";/g;
+export const INCLUDE_REG_EXP = /^\s*include\s+"([.\-/\w]+)";/gm;
 export const PRAGMA_VERSION_REG_EXP = /pragma +circom +(\d\.\d\.\d) *;/g;
 export const CIRCOM_FILE_REG_EXP = /\w+\.circom/;
 
