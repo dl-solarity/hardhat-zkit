@@ -2,7 +2,6 @@ import { VerifierTemplateType } from "@solarity/zkit";
 
 export type MakeTaskConfig = {
   force: boolean;
-  sym: boolean;
   json: boolean;
   c: boolean;
   quiet: boolean;
@@ -15,7 +14,6 @@ export type SetupTaskConfig = {
 
 export type CompileTaskConfig = {
   force: boolean;
-  sym: boolean;
   json: boolean;
   c: boolean;
   quiet: boolean;
