@@ -113,6 +113,7 @@ const compileShallow: ActionType<CompileShallowTaskConfig> = async (
       {
         compilerVersion: COMPILER_VERSION,
         compileFlags,
+        quiet: taskArgs.quiet || env.config.zkit.quiet,
       },
       env.zkit.circuitArtifacts,
       env,

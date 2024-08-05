@@ -4,6 +4,7 @@ import { HardhatZKitError } from "../../errors";
 import { execCall } from "../../utils/utils";
 
 import { ICircomCompiler, IWASMCircomCompiler, CompileConfig, BaseCompileConfig } from "../../types/core";
+import { MAGIC_DESCRIPTOR } from "../../constants";
 
 // eslint-disable-next-line
 const { Context, CircomRunner, bindings } = require("@distributedlab/circom2");
@@ -39,12 +40,6 @@ export class NativeCircomCompiler extends BaseCircomCompiler {
     try {
       await execCall("circom", compilationArgs);
     } catch (err) {
-      if (config.quiet) {
-        throw new HardhatZKitError(
-          "Compilation failed with an unknown error. Use '--verbose' hardhat flag to see the compilation error.",
-        );
-      }
-
       throw new HardhatZKitError(`Compilation failed.\n${err}`);
     }
   }
@@ -56,36 +51,30 @@ export class WASMCircomCompiler extends BaseCircomCompiler implements IWASMCirco
   }
 
   public async compile(config: CompileConfig) {
+    const errorFileDescriptor: number = fs.openSync(config.errorFileFullPath, "w");
     const compilationArgs: string[] = this.getCompilationArgs(config);
-    const circomRunner: typeof CircomRunner = this._getCircomRunner(compilationArgs, config.quiet);
+    const circomRunner: typeof CircomRunner = this._getCircomRunner(compilationArgs, config.quiet, errorFileDescriptor);
 
     try {
       await circomRunner.execute(this._compiler);
     } catch (err) {
-      if (config.quiet) {
-        throw new HardhatZKitError(
-          "Compilation failed with an unknown error. Use '--verbose' hardhat flag to see the compilation error.",
-        );
-      }
-
       throw new HardhatZKitError(`Compilation failed.\n${err}`);
+    } finally {
+      fs.closeSync(errorFileDescriptor);
     }
   }
 
   public async generateAST(config: BaseCompileConfig) {
+    const errorFileDescriptor: number = fs.openSync(config.errorFileFullPath, "w");
     const generationArgs: string[] = this.getASTGenerationArgs(config);
-    const circomRunner: typeof CircomRunner = this._getCircomRunner(generationArgs, config.quiet);
+    const circomRunner: typeof CircomRunner = this._getCircomRunner(generationArgs, config.quiet, errorFileDescriptor);
 
     try {
       await circomRunner.execute(this._compiler);
     } catch (err) {
-      if (config.quiet) {
-        throw new HardhatZKitError(
-          "AST generation failed with an unknown error. Use '--verbose' hardhat flag to see the generation error.",
-        );
-      }
-
       throw new HardhatZKitError(`AST generation failed.\n${err}`);
+    } finally {
+      fs.closeSync(errorFileDescriptor);
     }
   }
 
@@ -97,7 +86,7 @@ export class WASMCircomCompiler extends BaseCircomCompiler implements IWASMCirco
     return args;
   }
 
-  private _getCircomRunner(callArgs: string[], quiet: boolean): typeof CircomRunner {
+  private _getCircomRunner(callArgs: string[], quiet: boolean, errDescriptor: number): typeof CircomRunner {
     return new CircomRunner({
       args: callArgs,
       preopens: { "/": "/" },
@@ -108,7 +97,7 @@ export class WASMCircomCompiler extends BaseCircomCompiler implements IWASMCirco
         },
         fs,
       },
-      quiet,
+      descriptors: { stdout: MAGIC_DESCRIPTOR, stderr: quiet ? MAGIC_DESCRIPTOR : errDescriptor },
     });
   }
 }

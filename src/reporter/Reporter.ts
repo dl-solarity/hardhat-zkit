@@ -100,6 +100,20 @@ class BaseReporter {
     );
   }
 
+  public reportCircuitCompilationFail(spinnerId: string | null, circuitName: string, circuitFileName: string) {
+    if (this.isQuiet() || !spinnerId) return;
+
+    const fileNameMessage: string = circuitName === circuitFileName ? "" : chalk.grey(` (${circuitFileName}.circom)`);
+    const compilationTimeMessage: string = this._getSpinnerWorkingTimeMessage(
+      this._spinnerProcessor.getWorkingTime(spinnerId),
+    );
+
+    this._spinnerProcessor.failSpinner(
+      spinnerId,
+      `Failed to compile ${chalk.italic(circuitName)}${fileNameMessage} ${compilationTimeMessage}\n`,
+    );
+  }
+
   public reportCompilationResult(compilationInfoArr: CompilationInfo[]) {
     if (this.isQuiet()) return;
 
@@ -300,16 +314,6 @@ class BaseReporter {
     console.log(output);
   }
 
-  private _getFileSizeInMB(filePath: string | undefined): string {
-    if (!filePath) {
-      throw new HardhatZKitError("File path is undefined. Unable to get file size.");
-    }
-
-    const fileSize: number = fs.statSync(filePath).size;
-
-    return (fileSize / BYTES_IN_MB).toFixed(3);
-  }
-
   public reportTypesGenerationHeaderWithSpinner(): string | null {
     if (this.isQuiet()) return null;
 
@@ -425,6 +429,16 @@ class BaseReporter {
 
   private _getSpinnerWorkingTimeMessage(workingTime: string | undefined): string {
     return workingTime ? chalk.grey(`(${workingTime} s)`) : "";
+  }
+
+  private _getFileSizeInMB(filePath: string | undefined): string {
+    if (!filePath) {
+      throw new HardhatZKitError("File path is undefined. Unable to get file size.");
+    }
+
+    const fileSize: number = fs.statSync(filePath).size;
+
+    return (fileSize / BYTES_IN_MB).toFixed(3);
   }
 
   private _startSpinner(circuitName: string, spinnerIdSuffix: string, spinnerText: string): string | null {

@@ -28,6 +28,7 @@ describe("CircomCompilerFactory", () => {
         this.hre.config.paths.root,
         "zkit/artifacts/test/mul2.circom",
       );
+      const errorFileFullPath: string = getNormalizedFullPath(artifactsFullPath, "errors.log");
       const typesDir: string = getNormalizedFullPath(this.hre.config.paths.root, "generated-types/zkit");
 
       fsExtra.rmSync(artifactsFullPath, { recursive: true, force: true });
@@ -36,10 +37,13 @@ describe("CircomCompilerFactory", () => {
       await compiler.compile({
         circuitFullPath,
         artifactsFullPath,
+        errorFileFullPath,
         linkLibraries: [],
         compileFlags: { ...defaultCompileFlags, sym: true },
         quiet: true,
       });
+
+      fsExtra.rmSync(errorFileFullPath, { force: true });
 
       expect(fsExtra.readdirSync(artifactsFullPath)).to.be.deep.eq(["mul2.r1cs", "mul2.sym", "mul2_js"]);
 
