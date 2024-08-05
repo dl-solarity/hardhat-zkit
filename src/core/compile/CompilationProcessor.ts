@@ -121,6 +121,8 @@ export class CompilationProcessor {
         }
 
         throw new HardhatZKitError(`${error.message}${internalMessageError}`);
+      } finally {
+        fsExtra.rmSync(errorsFilePath, { force: true });
       }
 
       if (info.circuitFileName !== info.circuitName) {
