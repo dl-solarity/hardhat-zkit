@@ -27,7 +27,6 @@ describe("config", () => {
           skipFiles: ["vendor"],
           c: false,
           json: false,
-          sym: false,
         },
         setupSettings: {
           contributionSettings: {
@@ -71,7 +70,6 @@ describe("config", () => {
           skipFiles: [],
           c: false,
           json: false,
-          sym: false,
         },
         setupSettings: {
           contributionSettings: {

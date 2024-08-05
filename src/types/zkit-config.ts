@@ -18,7 +18,6 @@ export type CircuitTypesSettings = {
 export type CompilationSettings = FileFilterSettings & {
   artifactsDir: string;
   c: boolean;
-  sym: boolean;
   json: boolean;
 };
 
