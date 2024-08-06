@@ -4,7 +4,6 @@ import debug from "debug";
 import chalk from "chalk";
 import CliTable3 from "cli-table3";
 
-import { ResolvedFile } from "hardhat/types";
 import { emoji } from "hardhat/internal/cli/emoji";
 import { pluralize } from "hardhat/internal/util/strings";
 
@@ -29,31 +28,28 @@ class BaseReporter {
     this._quiet = newValue;
   }
 
-  public reportCircuitListToCompile(
-    allResolvedFilesToCompile: ResolvedFile[],
-    filteredResolvedFilesToCompile: ResolvedFile[],
-  ) {
+  public reportCircuitListToCompile(filteredSourceNames: string[], filteredSourceNamesToCompile: string[]) {
     if (this.isQuiet()) return;
 
-    if (filteredResolvedFilesToCompile.length > 0) {
+    if (filteredSourceNamesToCompile.length > 0) {
       let filesToCompileMessage: string = `\n${chalk.bold("Circuits to compile:")}\n`;
 
-      for (const file of filteredResolvedFilesToCompile) {
-        filesToCompileMessage += `\n${chalk.green(">")} ${chalk.italic(file.sourceName)}`;
+      for (const sourceName of filteredSourceNamesToCompile) {
+        filesToCompileMessage += `\n${chalk.green(">")} ${chalk.italic(sourceName)}`;
       }
 
       console.log(filesToCompileMessage);
     }
 
-    const skippedFiles: ResolvedFile[] = allResolvedFilesToCompile.filter(
-      (file: ResolvedFile) => !filteredResolvedFilesToCompile.includes(file),
+    const skippedSourceNames: string[] = filteredSourceNames.filter(
+      (sourceName: string) => !filteredSourceNamesToCompile.includes(sourceName),
     );
 
-    if (skippedFiles.length > 0) {
+    if (skippedSourceNames.length > 0) {
       let skippedFilesMessage: string = `\n${chalk.bold("Compilation skipped for:")}\n`;
 
-      for (const file of skippedFiles) {
-        skippedFilesMessage += `\n${chalk.yellow(">")} ${chalk.italic.grey(file.sourceName)}`;
+      for (const sourceName of skippedSourceNames) {
+        skippedFilesMessage += `\n${chalk.yellow(">")} ${chalk.italic.grey(sourceName)}`;
       }
 
       console.log(skippedFilesMessage);
