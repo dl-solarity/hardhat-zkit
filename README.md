@@ -18,7 +18,7 @@ This hardhat plugin is a zero-config, one-stop Circom development environment th
 - Full TypeScript typization of signals and ZK proofs.
 - Automatic downloads of phase-1 `ptau` files.
 - Convenient phase-2 contributions to `zkey` files.
-- Convenient `witness` testing via chai assertions.
+- Available `witness` testing via chai assertions.
 - Invisible `wasm`-based Circom compiler management.
 - Simplified `node_modules` libraries resolution.
 - Rich plugin configuration.
@@ -221,7 +221,7 @@ To see the plugin in action, place the `Multiplier` circuit in the `circuits` di
 npx hardhat zkit:make
 ```
 
-This command will compile the circuit leveraging `wasm`-based Circom compiler, download the necessary `ptau` file regarding the number of constraints, build the required `zkey` and `vkey` files, and generate TypeScript object wrappers to enable full typization of signals and ZK proofs.
+This command will compile the circuit leveraging `wasm`-based Circom compiler, download the necessary `ptau` file regarding the number of circuit's constraints, build the required `zkey` and `vkey` files, and generate TypeScript object wrappers to enable full typization of signals and ZK proofs.
 
 Afterward, you may run the provided hardhat script.
 
