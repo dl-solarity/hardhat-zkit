@@ -7,20 +7,20 @@
 
 # Hardhat ZKit
 
-**The ultimate environment for building with Circom.**
+**The ultimate TypeScript environment for Circom development.**
 
 ## What
 
-This hardhat plugin is a zero-config, one-stop Circom development environment that abstracts away circuits management hassle and lets you focus on the important - code.
+This hardhat plugin is a zero-config, one-stop Circom development environment that streamlines circuits management and lets you focus on the important - code.
 
 - Developer-oriented abstractions that simplify `r1cs`, `zkey`, `vkey`, and `witness` generation processes.
 - Recompilation of only the modified circuits.
 - Full TypeScript typization of signals and ZK proofs.
 - Automatic downloads of phase-1 `ptau` files.
 - Convenient phase-2 contributions to `zkey` files.
+- Convenient `witness` testing via chai assertions.
 - Invisible `wasm`-based Circom compiler management.
 - Simplified `node_modules` libraries resolution.
-- Extensive development and testing API.
 - Rich plugin configuration.
 - And much more!
 
@@ -32,14 +32,10 @@ npm install --save-dev @solarity/hardhat-zkit
 
 And add the following line to your `hardhat.config`:
 
-```js
-require("@solarity/hardhat-zkit");
-```
-
-Or if you are using TypeScript:
-
 ```ts
-import "@solarity/hardhat-zkit";
+import "@solarity/hardhat-zkit"; // TypeScript
+
+require("@solarity/hardhat-zkit"); // JavaScript
 ```
 
 > [!TIP]
@@ -59,7 +55,6 @@ module.exports = {
       skipFiles: [],
       c: false,
       json: false,
-      sym: false,
     },
     setupSettings: {
       contributionSettings: {
@@ -91,7 +86,6 @@ Where:
   - `skipFiles` - The list of directories (or files) to be excluded from the compilation.
   - `c` - The flag to generate the c-based witness generator (generates wasm by default).
   - `json` - The flag to output the constraints in json format.
-  - `sym` - The flag to output the constraint system in an annotated mode.
 - `setupSettings`
   - `contributionSettings`
     - `contributionTemplate` - The option to indicate which proving system to use.
@@ -106,22 +100,6 @@ Where:
 - `verifiersDir` - The directory where to generate the Solidity verifiers.
 - `nativeCompiler` - The flag indicating whether to use the natively installed compiler.
 - `quiet` - The flag indicating whether to suppress the output.
-
-### Typization
-
-The plugin provides full TypeScript typization of Circom circuits leveraging [`zktype`](https://github.com/dl-solarity/zktype) library.
-
-The following config may be added to `tsconfig.json` file to allow for a better user experience:
-
-```json
-{
-  "compilerOptions": {
-    "paths": {
-      "@zkit": ["./generated-types/zkit"]
-    }
-  }
-}
-```
 
 ### Tasks
 
@@ -139,7 +117,44 @@ To view the available options, run the help command:
 npx hardhat help <zkit task name>
 ```
 
-### Environment extensions
+### Typization
+
+The plugin provides full TypeScript typization of Circom circuits leveraging [`zktype`](https://github.com/dl-solarity/zktype) library.
+
+The following config may be added to `tsconfig.json` file to allow for a better development experience:
+
+```json
+{
+  "compilerOptions": {
+    "paths": {
+      "@zkit": ["./generated-types/zkit"]
+    }
+  }
+}
+```
+
+### Testing
+
+In order to utilize user-friendly [Chai](https://www.chaijs.com/) assertions for witness and ZK proof testing, the [`chai-zkit`](https://github.com/dl-solarity/chai-zkit) package needs to be installed:
+
+```bash
+npm install --save-dev @solarity/chai-zkit
+```
+
+And add the following line to your `hardhat.config`:
+
+```ts
+import "@solarity/chai-zkit"; // TypeScript
+
+require("@solarity/chai-zkit"); // JavaScript
+```
+
+The package extends `expect` chai assertion to recognize typed `zktype` objects for frictionless testing experience.
+
+> [!NOTE]
+> Please note that for witness testing purposes it is sufficient to compile the circuit just with `zkit:compile` task, without generating the keys.
+
+### Example
 
 The plugin extends the hardhat environment with the `zkit` object that allows typed circuits to be used in scripts and tests:
 
@@ -172,16 +187,23 @@ component main = Multiplier();
 <td>
 
 ```ts
-import { zkit } from "hardhat";
-import { Multiplier } from "@zkit"; // typed circuit-object
+import { zkit } from "hardhat"; // hardhat-zkit plugin
+import { expect } from "chai"; // chai-zkit extension
+import { Multiplier } from "@zkit"; // zktype circuit-object
 
 async function main() {
   const circuit: Multiplier = await zkit.getCircuit("Multiplier");
-  // OR await zkit.getCircuit("circuits/multiplier.circom:Multiplier");
+  // or await zkit.getCircuit("circuits/multiplier.circom:Multiplier");
 
+  // witness testing
+  await expect(circuit)
+    .with.witnessInputs({ in1: "3", in2: "7" })
+    .to.have.witnessOutputs({ out: "21" });
+
+  // proof testing
   const proof = await circuit.generateProof({ in1: "4", in2: "2" });
 
-  await circuit.verifyProof(proof); // success
+  expect(await circuit.verifyProof(proof)).to.be.true;
 }
 
 main()
@@ -201,7 +223,7 @@ npx hardhat zkit:make
 
 This command will compile the circuit leveraging `wasm`-based Circom compiler, download the necessary `ptau` file regarding the number of constraints, build the required `zkey` and `vkey` files, and generate TypeScript object wrappers to enable full typization of signals and ZK proofs.
 
-Afterward, you may proceed with the provided hardhat script.
+Afterward, you may run the provided hardhat script.
 
 ### API reference
 
@@ -225,6 +247,7 @@ Where:
 
 ## Known limitations
 
-- There is a typization bug that the typer incorrectly parses public inputs if they are arrays (will be fixed in 0.3.1).
-- Currently the Circom `2.1.8` is used to compile circuits.
+- Circuits typization will not work if an expression is used to indicate the size of a signal array. Consider extending circuit's parameters if you have expressions like this: `signal arr[n + 1]`.
+- Due to current `wasm` memory limitations (address space is 32-bit), the plugin may fail to compile especially large circuits.
+- At present the `wasm`-based Circom `2.1.8` is used to compile circuits.
 - Temporarily, the only supported proving system is `groth16`.
