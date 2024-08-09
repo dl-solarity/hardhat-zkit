@@ -34,13 +34,26 @@ export class CompilationFilesResolver {
 
     const sourceNames: string[] = await this._getSourceNamesFromSourcePaths(circuitsSourcePaths);
 
-    Reporter!.verboseLog("compilation-file-resolver", "All circuits source names: %o", [sourceNames]);
+    Reporter!.verboseLog("compilation-file-resolver", "All circuit source names: %o", [sourceNames]);
 
-    const dependencyGraph: DependencyGraph = await this._getDependencyGraph(sourceNames);
-
-    let resolvedFilesInfoToCompile: ResolvedFileInfo[] = this._filterResolvedFiles(
-      dependencyGraph.getResolvedFiles(),
+    const allFilteredSourceNames: string[] = filterCircuitFiles<string>(
       sourceNames,
+      this._getCircuitsDirFullPath(),
+      this._zkitConfig.compilationSettings,
+      (sourceName: string): string => {
+        return getNormalizedFullPath(this._projectRoot, sourceName);
+      },
+    );
+
+    Reporter!.verboseLog("compilation-file-resolver", "All filtered circuit source names: %o", [
+      allFilteredSourceNames,
+    ]);
+
+    const dependencyGraph: DependencyGraph = await this._getDependencyGraph(allFilteredSourceNames);
+
+    const resolvedFilesInfoToCompile: ResolvedFileInfo[] = this._filterResolvedFiles(
+      dependencyGraph.getResolvedFiles(),
+      allFilteredSourceNames,
       dependencyGraph,
     );
 
@@ -50,31 +63,28 @@ export class CompilationFilesResolver {
 
     this._invalidateCacheMissingArtifacts(resolvedFilesInfoToCompile);
 
+    let filteredResolvedFilesInfo: ResolvedFileInfo[];
+
     if (!force) {
       Reporter!.verboseLog("compilation-file-resolver", "Force flag disabled. Start filtering...");
 
-      resolvedFilesInfoToCompile = resolvedFilesInfoToCompile.filter((fileInfo) =>
+      filteredResolvedFilesInfo = resolvedFilesInfoToCompile.filter((fileInfo) =>
         this._needsCompilation(fileInfo, compileFlags),
       );
+    } else {
+      filteredResolvedFilesInfo = resolvedFilesInfoToCompile;
     }
 
-    const filteredResolvedFilesInfo: ResolvedFileInfo[] = filterCircuitFiles<ResolvedFileInfo>(
-      resolvedFilesInfoToCompile,
-      this._getCircuitsDirFullPath(),
-      this._zkitConfig.compilationSettings,
-      (resolvedFileInfo: ResolvedFileInfo): string => {
-        return resolvedFileInfo.resolvedFile.absolutePath;
-      },
+    const filteredSourceNamesToCompile: string[] = filteredResolvedFilesInfo.map(
+      (file) => file.resolvedFile.sourceName,
     );
 
-    const filteredResolvedFilesToCompile: ResolvedFile[] = filteredResolvedFilesInfo.map((file) => file.resolvedFile);
-
     Reporter!.verboseLog("compilation-file-resolver", "Filtered circuit source names to compile: %o", [
-      filteredResolvedFilesToCompile.map((file) => file.sourceName),
+      filteredSourceNamesToCompile,
     ]);
     Reporter!.reportCircuitListToCompile(
-      resolvedFilesInfoToCompile.map((file) => file.resolvedFile),
-      filteredResolvedFilesToCompile,
+      resolvedFilesInfoToCompile.map((file) => file.resolvedFile.sourceName),
+      filteredSourceNamesToCompile,
     );
 
     return filteredResolvedFilesInfo;

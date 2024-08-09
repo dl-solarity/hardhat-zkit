@@ -16,9 +16,9 @@ describe("CircuitsCompileCache", () => {
   const defaultCompileFlags: CompileFlags = {
     r1cs: true,
     wasm: true,
+    sym: true,
     c: false,
     json: false,
-    sym: false,
   };
 
   async function getCacheEntry(

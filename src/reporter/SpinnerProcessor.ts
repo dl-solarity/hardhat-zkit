@@ -21,6 +21,16 @@ export class SpinnerProcessor {
     this._idToSpinnerData.delete(spinnerId);
   }
 
+  public failSpinner(spinnerId: string, failMessage: string) {
+    const spinnerData = this._idToSpinnerData.get(spinnerId);
+
+    if (!spinnerData) return;
+
+    spinnerData.spinner.fail(failMessage);
+
+    this._idToSpinnerData.delete(spinnerId);
+  }
+
   public getWorkingTime(spinnerId: string, fractionDigits: number = 2): string | undefined {
     const spinnerData = this._idToSpinnerData.get(spinnerId);
 

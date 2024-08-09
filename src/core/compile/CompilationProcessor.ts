@@ -28,7 +28,6 @@ import {
 export class CompilationProcessor {
   private readonly _zkitConfig: ZKitConfig;
   private readonly _nodeModulesPath: string;
-  private readonly _verbose: boolean;
 
   constructor(
     private readonly _config: CompilationProccessorConfig,
@@ -36,7 +35,6 @@ export class CompilationProcessor {
     hre: HardhatRuntimeEnvironment,
   ) {
     this._zkitConfig = hre.config.zkit;
-    this._verbose = hre.hardhatArguments.verbose;
     this._nodeModulesPath = getNormalizedFullPath(hre.config.paths.root, NODE_MODULES);
 
     Reporter!.verboseLog("compilation-processor", "Created CompilationProcessor with params: %O", [
@@ -93,19 +91,39 @@ export class CompilationProcessor {
         info.circuitName,
         info.circuitFileName,
       );
+      const errorsFilePath: string = getNormalizedFullPath(info.tempArtifactsPath, "errors.log");
 
       fsExtra.mkdirSync(info.tempArtifactsPath, { recursive: true });
 
       const compileConfig: CompileConfig = {
         circuitFullPath: info.resolvedFile.absolutePath,
         artifactsFullPath: info.tempArtifactsPath,
+        errorFileFullPath: errorsFilePath,
         linkLibraries: this._getLinkLibraries(),
         compileFlags: this._config.compileFlags,
-        quiet: !this._verbose,
+        quiet: this._config.quiet,
       };
 
-      await compiler.compile(compileConfig);
-      await wasmCompiler.generateAST(compileConfig);
+      try {
+        await compiler.compile(compileConfig);
+        await wasmCompiler.generateAST(compileConfig);
+      } catch (error) {
+        Reporter!.reportCircuitCompilationFail(spinnerId, info.circuitName, info.circuitFileName);
+
+        if (!(error instanceof HardhatZKitError)) {
+          throw error;
+        }
+
+        let internalMessageError: string = "";
+
+        if (fsExtra.existsSync(errorsFilePath)) {
+          internalMessageError = `\nWith internal error: ${fsExtra.readFileSync(errorsFilePath, "utf-8")}`;
+        }
+
+        throw new HardhatZKitError(`${error.message}${internalMessageError}`);
+      } finally {
+        fsExtra.rmSync(errorsFilePath, { force: true });
+      }
 
       if (info.circuitFileName !== info.circuitName) {
         renameFilesRecursively(info.tempArtifactsPath, info.circuitFileName, info.circuitName);

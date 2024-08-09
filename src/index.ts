@@ -44,7 +44,7 @@ import { CIRCUITS_COMPILE_CACHE_FILENAME, CIRCUITS_SETUP_CACHE_FILENAME, COMPILE
 import { getNormalizedFullPath } from "./utils/path-utils";
 
 import {
-  CompileShallowTaskConfig,
+  MakeTaskConfig,
   CompileTaskConfig,
   GenerateVerifiersTaskConfig,
   GetCircuitZKitConfig,
@@ -70,10 +70,7 @@ extendEnvironment((hre) => {
   });
 });
 
-const compileShallow: ActionType<CompileShallowTaskConfig> = async (
-  taskArgs: CompileShallowTaskConfig,
-  env: HardhatRuntimeEnvironment,
-) => {
+const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfig, env: HardhatRuntimeEnvironment) => {
   const circuitsCompileCacheFullPath: string = getNormalizedFullPath(
     env.config.paths.cache,
     CIRCUITS_COMPILE_CACHE_FILENAME,
@@ -95,7 +92,7 @@ const compileShallow: ActionType<CompileShallowTaskConfig> = async (
   const compileFlags: CompileFlags = {
     r1cs: true,
     wasm: true,
-    sym: taskArgs.sym || env.config.zkit.compilationSettings.sym,
+    sym: true,
     json: taskArgs.json || env.config.zkit.compilationSettings.json,
     c: taskArgs.c || env.config.zkit.compilationSettings.c,
   };
@@ -113,6 +110,7 @@ const compileShallow: ActionType<CompileShallowTaskConfig> = async (
       {
         compilerVersion: COMPILER_VERSION,
         compileFlags,
+        quiet: taskArgs.quiet || env.config.zkit.quiet,
       },
       env.zkit.circuitArtifacts,
       env,
@@ -192,7 +190,7 @@ const setup: ActionType<SetupTaskConfig> = async (taskArgs: SetupTaskConfig, env
   await CircuitsSetupCache!.writeToFile(circuitsSetupCacheFullPath);
 };
 
-const make: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfig, env: HardhatRuntimeEnvironment) => {
+const make: ActionType<MakeTaskConfig> = async (taskArgs: MakeTaskConfig, env: HardhatRuntimeEnvironment) => {
   await env.run(TASK_CIRCUITS_COMPILE, taskArgs);
   await env.run(TASK_CIRCUITS_SETUP, { force: taskArgs.force, quiet: taskArgs.quiet });
 };
@@ -313,7 +311,6 @@ task(TASK_CLEAN).setAction(async (_taskArgs: any, env: HardhatRuntimeEnvironment
 });
 
 task(TASK_CIRCUITS_MAKE, "Compile Circom circuits and generate all necessary artifacts")
-  .addFlag("sym", "Outputs witness in sym file in the compilation artifacts directory.")
   .addFlag("json", "Outputs constraints in json file in the compilation artifacts directory.")
   .addFlag("c", "Enables the generation of cpp files in the compilation artifacts directory.")
   .addFlag("force", "Force compilation ignoring cache.")
@@ -321,12 +318,11 @@ task(TASK_CIRCUITS_MAKE, "Compile Circom circuits and generate all necessary art
   .setAction(make);
 
 task(TASK_CIRCUITS_COMPILE, "Compile Circom circuits")
-  .addFlag("sym", "Outputs witness in sym file in the compilation artifacts directory.")
   .addFlag("json", "Outputs constraints in json file in the compilation artifacts directory.")
   .addFlag("c", "Enables the generation of cpp files in the compilation artifacts directory.")
   .addFlag("force", "Force compilation ignoring cache.")
   .addFlag("quiet", "Suppresses logs during the compilation process.")
-  .setAction(compileShallow);
+  .setAction(compile);
 
 task(TASK_CIRCUITS_SETUP, "Create ZKey and Vkey files for compiled circuits")
   .addFlag("force", "Force compilation ignoring cache.")

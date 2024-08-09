@@ -6,6 +6,7 @@ import { CompileFlags } from "../compiler/circom-compiler";
 export type CompilationProccessorConfig = {
   compilerVersion: CompilerVersion;
   compileFlags: CompileFlags;
+  quiet: boolean;
 };
 
 export type CompilationInfo = {

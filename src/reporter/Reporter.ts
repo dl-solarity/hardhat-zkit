@@ -4,9 +4,10 @@ import debug from "debug";
 import chalk from "chalk";
 import CliTable3 from "cli-table3";
 
-import { ResolvedFile } from "hardhat/types";
 import { emoji } from "hardhat/internal/cli/emoji";
 import { pluralize } from "hardhat/internal/util/strings";
+
+import { ASTParserError, ErrorObj } from "@solarity/zktype";
 
 import { SpinnerProcessor } from "./SpinnerProcessor";
 import { ProgressBarProcessor } from "./ProgressBarProcessor";
@@ -29,31 +30,28 @@ class BaseReporter {
     this._quiet = newValue;
   }
 
-  public reportCircuitListToCompile(
-    allResolvedFilesToCompile: ResolvedFile[],
-    filteredResolvedFilesToCompile: ResolvedFile[],
-  ) {
+  public reportCircuitListToCompile(filteredSourceNames: string[], filteredSourceNamesToCompile: string[]) {
     if (this.isQuiet()) return;
 
-    if (filteredResolvedFilesToCompile.length > 0) {
+    if (filteredSourceNamesToCompile.length > 0) {
       let filesToCompileMessage: string = `\n${chalk.bold("Circuits to compile:")}\n`;
 
-      for (const file of filteredResolvedFilesToCompile) {
-        filesToCompileMessage += `\n${chalk.green(">")} ${chalk.italic(file.sourceName)}`;
+      for (const sourceName of filteredSourceNamesToCompile) {
+        filesToCompileMessage += `\n${chalk.green(">")} ${chalk.italic(sourceName)}`;
       }
 
       console.log(filesToCompileMessage);
     }
 
-    const skippedFiles: ResolvedFile[] = allResolvedFilesToCompile.filter(
-      (file: ResolvedFile) => !filteredResolvedFilesToCompile.includes(file),
+    const skippedSourceNames: string[] = filteredSourceNames.filter(
+      (sourceName: string) => !filteredSourceNamesToCompile.includes(sourceName),
     );
 
-    if (skippedFiles.length > 0) {
+    if (skippedSourceNames.length > 0) {
       let skippedFilesMessage: string = `\n${chalk.bold("Compilation skipped for:")}\n`;
 
-      for (const file of skippedFiles) {
-        skippedFilesMessage += `\n${chalk.yellow(">")} ${chalk.italic.grey(file.sourceName)}`;
+      for (const sourceName of skippedSourceNames) {
+        skippedFilesMessage += `\n${chalk.yellow(">")} ${chalk.italic.grey(sourceName)}`;
       }
 
       console.log(skippedFilesMessage);
@@ -100,6 +98,20 @@ class BaseReporter {
     );
   }
 
+  public reportCircuitCompilationFail(spinnerId: string | null, circuitName: string, circuitFileName: string) {
+    if (this.isQuiet() || !spinnerId) return;
+
+    const fileNameMessage: string = circuitName === circuitFileName ? "" : chalk.grey(` (${circuitFileName}.circom)`);
+    const compilationTimeMessage: string = this._getSpinnerWorkingTimeMessage(
+      this._spinnerProcessor.getWorkingTime(spinnerId),
+    );
+
+    this._spinnerProcessor.failSpinner(
+      spinnerId,
+      `Failed to compile ${chalk.italic(circuitName)}${fileNameMessage} ${compilationTimeMessage}\n`,
+    );
+  }
+
   public reportCompilationResult(compilationInfoArr: CompilationInfo[]) {
     if (this.isQuiet()) return;
 
@@ -120,6 +132,30 @@ class BaseReporter {
     output += `\n${table.toString()}\n`;
 
     console.log(output);
+  }
+
+  public reportTypesGenerationWarnings(warnings: ErrorObj[]) {
+    if (this.isQuiet()) return;
+
+    if (warnings.length > 0) {
+      let warningsMessage: string = `\n${chalk.bold("Failed to generate types for the following circuits:")}\n`;
+
+      for (const warning of warnings) {
+        if (!warning) {
+          continue;
+        }
+
+        let circuitNameMessage = "";
+
+        if (warning instanceof ASTParserError) {
+          circuitNameMessage = `${chalk.bold(warning.error.circuitFullNames)}: `;
+        }
+
+        warningsMessage += `\n${chalk.yellow("⚠")} ${circuitNameMessage}${warning.message}`;
+      }
+
+      console.log(warningsMessage);
+    }
   }
 
   public reportCircuitListToSetup(
@@ -300,16 +336,6 @@ class BaseReporter {
     console.log(output);
   }
 
-  private _getFileSizeInMB(filePath: string | undefined): string {
-    if (!filePath) {
-      throw new HardhatZKitError("File path is undefined. Unable to get file size.");
-    }
-
-    const fileSize: number = fs.statSync(filePath).size;
-
-    return (fileSize / BYTES_IN_MB).toFixed(3);
-  }
-
   public reportTypesGenerationHeaderWithSpinner(): string | null {
     if (this.isQuiet()) return null;
 
@@ -425,6 +451,16 @@ class BaseReporter {
 
   private _getSpinnerWorkingTimeMessage(workingTime: string | undefined): string {
     return workingTime ? chalk.grey(`(${workingTime} s)`) : "";
+  }
+
+  private _getFileSizeInMB(filePath: string | undefined): string {
+    if (!filePath) {
+      throw new HardhatZKitError("File path is undefined. Unable to get file size.");
+    }
+
+    const fileSize: number = fs.statSync(filePath).size;
+
+    return (fileSize / BYTES_IN_MB).toFixed(3);
   }
 
   private _startSpinner(circuitName: string, spinnerIdSuffix: string, spinnerText: string): string | null {
