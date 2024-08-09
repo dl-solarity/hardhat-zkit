@@ -138,7 +138,7 @@ class BaseReporter {
     if (this.isQuiet()) return;
 
     if (warnings.length > 0) {
-      let warningsMessage: string = `\n${chalk.bold("Warnings during types generation:")}\n`;
+      let warningsMessage: string = `\n${chalk.bold("Failed to generate types for the following circuits:")}\n`;
 
       for (const warning of warnings) {
         if (!warning) {
