@@ -1,6 +1,6 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
-import { CircuitTypesGenerator } from "@solarity/zktype";
+import { CircuitTypesGenerator, ASTParserError, ErrorObj } from "@solarity/zktype";
 
 import { Reporter } from "../../reporter";
 import { HardhatZKitError } from "../../errors";
@@ -60,6 +60,22 @@ export class TypeGenerationProcessor {
       },
     ]);
 
-    await typesGenerator.generateTypes();
+    const warnings: ErrorObj[] = await typesGenerator.generateTypes();
+
+    Reporter!.reportTypesGenerationWarnings(warnings);
+
+    Reporter!.verboseLog("type-generation-processor", "Types generation warnings: %O", [
+      warnings.map((warning) => {
+        if (!warning) {
+          return;
+        }
+
+        if (warning instanceof ASTParserError) {
+          return JSON.stringify(warning.error);
+        }
+
+        return warning.message;
+      }),
+    ]);
   }
 }

@@ -24,6 +24,6 @@ export const CIRCOM_FILE_REG_EXP = /\w+\.circom/;
 export const NODE_MODULES_REG_EXP = /^node_modules\//;
 export const URI_SCHEME_REG_EXP = /([a-zA-Z]+):\/\//;
 
-export const MAIN_COMPONENT_REG_EXP = /component\s+main.*=\s*([\w-]+)\s*\((?:\d+,?\s*|\s*)*\)\s*;/gm;
+export const MAIN_COMPONENT_REG_EXP = /component\s+main.*=\s*([\w-]+)\s*\((?:.*\s*)*\)\s*;/gm;
 
 export const CIRCUIT_ARTIFACTS_SUFFIX = "_artifacts.json";

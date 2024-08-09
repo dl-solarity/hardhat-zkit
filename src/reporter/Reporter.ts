@@ -7,6 +7,8 @@ import CliTable3 from "cli-table3";
 import { emoji } from "hardhat/internal/cli/emoji";
 import { pluralize } from "hardhat/internal/util/strings";
 
+import { ASTParserError, ErrorObj } from "@solarity/zktype";
+
 import { SpinnerProcessor } from "./SpinnerProcessor";
 import { ProgressBarProcessor } from "./ProgressBarProcessor";
 import { HardhatZKitError } from "../errors";
@@ -130,6 +132,30 @@ class BaseReporter {
     output += `\n${table.toString()}\n`;
 
     console.log(output);
+  }
+
+  public reportTypesGenerationWarnings(warnings: ErrorObj[]) {
+    if (this.isQuiet()) return;
+
+    if (warnings.length > 0) {
+      let warningsMessage: string = `\n${chalk.bold("Warnings during types generation:")}\n`;
+
+      for (const warning of warnings) {
+        if (!warning) {
+          continue;
+        }
+
+        let circuitNameMessage = "";
+
+        if (warning instanceof ASTParserError) {
+          circuitNameMessage = `${chalk.bold(warning.error.circuitFullNames)}: `;
+        }
+
+        warningsMessage += `\n${chalk.yellow("⚠")} ${circuitNameMessage}${warning.message}`;
+      }
+
+      console.log(warningsMessage);
+    }
   }
 
   public reportCircuitListToSetup(
