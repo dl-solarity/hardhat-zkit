@@ -3,7 +3,7 @@ import path from "path";
 import fs from "fs";
 
 import { lazyObject } from "hardhat/plugins";
-import { extendConfig, extendEnvironment, task, subtask, types } from "hardhat/config";
+import { extendConfig, extendEnvironment, scope, task, subtask, types } from "hardhat/config";
 import { ActionType, HardhatRuntimeEnvironment, RunSuperFunction } from "hardhat/types";
 import { TASK_CLEAN, TASK_COMPILE_SOLIDITY_READ_FILE as TASK_READ_FILE } from "hardhat/builtin-tasks/task-names";
 import { willRunWithTypescript } from "hardhat/internal/core/typescript-support";
@@ -14,6 +14,7 @@ import { CircuitTypesGenerator } from "@solarity/zktype";
 import "./type-extensions";
 
 import {
+  ZKIT_SCOPE_NAME,
   TASK_CIRCUITS_COMPILE,
   TASK_CIRCUITS_MAKE,
   TASK_CIRCUITS_SETUP,
@@ -52,6 +53,8 @@ import {
 } from "./types/tasks";
 import { CircuitArtifact } from "./types/artifacts/circuit-artifacts";
 import { CompileFlags, ResolvedFileInfo, CircuitSetupInfo } from "./types/core";
+
+const zkitScope = scope(ZKIT_SCOPE_NAME, "The ultimate TypeScript environment for Circom development");
 
 extendConfig(zkitConfigExtender);
 
@@ -310,26 +313,30 @@ task(TASK_CLEAN).setAction(async (_taskArgs: any, env: HardhatRuntimeEnvironment
   await env.run(TASK_ZKIT_CLEAN);
 });
 
-task(TASK_CIRCUITS_MAKE, "Compile Circom circuits and generate all necessary artifacts")
+zkitScope
+  .task(TASK_CIRCUITS_MAKE, "Compile Circom circuits and generate all necessary artifacts")
   .addFlag("json", "Outputs constraints in json file in the compilation artifacts directory.")
   .addFlag("c", "Enables the generation of cpp files in the compilation artifacts directory.")
   .addFlag("force", "Force compilation ignoring cache.")
   .addFlag("quiet", "Suppresses logs during the compilation process.")
   .setAction(make);
 
-task(TASK_CIRCUITS_COMPILE, "Compile Circom circuits")
+zkitScope
+  .task(TASK_CIRCUITS_COMPILE, "Compile Circom circuits")
   .addFlag("json", "Outputs constraints in json file in the compilation artifacts directory.")
   .addFlag("c", "Enables the generation of cpp files in the compilation artifacts directory.")
   .addFlag("force", "Force compilation ignoring cache.")
   .addFlag("quiet", "Suppresses logs during the compilation process.")
   .setAction(compile);
 
-task(TASK_CIRCUITS_SETUP, "Create ZKey and Vkey files for compiled circuits")
+zkitScope
+  .task(TASK_CIRCUITS_SETUP, "Create ZKey and Vkey files for compiled circuits")
   .addFlag("force", "Force compilation ignoring cache.")
   .addFlag("quiet", "Suppresses logs during the compilation process.")
   .setAction(setup);
 
-task(TASK_GENERATE_VERIFIERS, "Generate Solidity verifier contracts for Circom circuits")
+zkitScope
+  .task(TASK_GENERATE_VERIFIERS, "Generate Solidity verifier contracts for Circom circuits")
   .addOptionalParam(
     "verifiersDir",
     "Relative path to the directory where the generated Solidity verifier contracts will be saved.",
@@ -341,7 +348,7 @@ task(TASK_GENERATE_VERIFIERS, "Generate Solidity verifier contracts for Circom c
   .addFlag("quiet", "Suppresses logs during the verifier generation process.")
   .setAction(generateVerifiers);
 
-task(TASK_ZKIT_CLEAN, "Clean all circuit artifacts, keys, types and etc").setAction(clean);
+zkitScope.task(TASK_ZKIT_CLEAN, "Clean all circuit artifacts, keys, types and etc").setAction(clean);
 
 subtask(SUBTASK_ZKIT_GET_CIRCUIT_ZKIT)
   .addOptionalParam("verifiersDir", undefined, undefined, types.string)

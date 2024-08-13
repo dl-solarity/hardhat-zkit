@@ -103,18 +103,18 @@ Where:
 
 ### Tasks
 
-There are several hardhat tasks that the plugin provides:
+There are several hardhat tasks in the `zkit` scope that the plugin provides:
 
-- `zkit:compile` task that compiles or recompiles the modified circuits with the main component.
-- `zkit:setup` task that generates or regenerates `zkey` and `vkey` for the previously compiled circuits.
-- `zkit:make` task that executes both `zkit:compile` and `zkit:setup` for convenience.
-- `zkit:verifiers` task that generates Solidity verifiers for all the previously setup circuits.
-- `zkit:clean` task that cleans up the generated artifacts, types, etc.
+- `compile` task that compiles or recompiles the modified circuits with the main component.
+- `setup` task that generates or regenerates `zkey` and `vkey` for the previously compiled circuits.
+- `make` task that executes both `compile` and `setup` for convenience.
+- `verifiers` task that generates Solidity verifiers for all the previously setup circuits.
+- `clean` task that cleans up the generated artifacts, types, etc.
 
 To view the available options, run the help command:
 
 ```bash
-npx hardhat help <zkit task name>
+npx hardhat help zkit <zkit scope task name>
 ```
 
 ### Typization
