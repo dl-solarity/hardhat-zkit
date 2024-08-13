@@ -4,7 +4,7 @@ import { expect } from "chai";
 import { createNonCryptographicHashBasedIdentifier } from "hardhat/internal/util/hash";
 
 import { useEnvironment } from "../../../helpers";
-import { TASK_CIRCUITS_COMPILE } from "../../../../src/task-names";
+import { TASK_CIRCUITS_COMPILE, ZKIT_SCOPE_NAME } from "../../../../src/task-names";
 import { Parser } from "../../../../src/core/dependencies";
 import { getNormalizedFullPath } from "../../../../src/utils/path-utils";
 import { CIRCUITS_COMPILE_CACHE_FILENAME } from "../../../../src/constants";
@@ -32,7 +32,7 @@ describe("Parser", () => {
       fileContent = fs.readFileSync(circuitPath, "utf-8");
       contentHash = createNonCryptographicHashBasedIdentifier(Buffer.from(fileContent)).toString("hex");
 
-      await this.hre.run(TASK_CIRCUITS_COMPILE);
+      await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
     });
 
     it("should correctly parse file with empty circuit files cahce", async function () {

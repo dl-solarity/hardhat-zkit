@@ -9,7 +9,7 @@ import { getAllFilesMatching } from "hardhat/internal/util/fs-utils";
 import { CompilationFilesManagerMock } from "./CompilationFilesManagerMock";
 import { useEnvironment } from "../../../helpers";
 import { CircuitsCompileCache } from "../../../../src/cache";
-import { TASK_CIRCUITS_COMPILE } from "../../../../src/task-names";
+import { TASK_CIRCUITS_COMPILE, ZKIT_SCOPE_NAME } from "../../../../src/task-names";
 import { DependencyGraph, ResolvedFile } from "../../../../src/core";
 import { getNormalizedFullPath } from "../../../../src/utils/path-utils";
 import { CIRCUITS_COMPILE_CACHE_FILENAME } from "../../../../src/constants";
@@ -34,7 +34,7 @@ describe("CompilationFilesResolver", () => {
     useEnvironment("with-circuits");
 
     beforeEach("setup", async function () {
-      await this.hre.run(TASK_CIRCUITS_COMPILE);
+      await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
 
       compilationFilesManager = getCompilationFilesManagerMock(this.hre);
 
@@ -115,7 +115,7 @@ describe("CompilationFilesResolver", () => {
     useEnvironment("with-circuits");
 
     beforeEach("setup", async function () {
-      await this.hre.run(TASK_CIRCUITS_COMPILE);
+      await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
 
       compilationFilesManager = getCompilationFilesManagerMock(this.hre);
 

@@ -194,8 +194,11 @@ const setup: ActionType<SetupTaskConfig> = async (taskArgs: SetupTaskConfig, env
 };
 
 const make: ActionType<MakeTaskConfig> = async (taskArgs: MakeTaskConfig, env: HardhatRuntimeEnvironment) => {
-  await env.run(TASK_CIRCUITS_COMPILE, taskArgs);
-  await env.run(TASK_CIRCUITS_SETUP, { force: taskArgs.force, quiet: taskArgs.quiet });
+  await env.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE }, taskArgs);
+  await env.run(
+    { scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_SETUP },
+    { force: taskArgs.force, quiet: taskArgs.quiet },
+  );
 };
 
 const generateVerifiers: ActionType<GenerateVerifiersTaskConfig> = async (
@@ -310,7 +313,7 @@ const getCircuitZKit: ActionType<GetCircuitZKitConfig> = async (
 task(TASK_CLEAN).setAction(async (_taskArgs: any, env: HardhatRuntimeEnvironment, runSuper: RunSuperFunction<any>) => {
   await runSuper();
 
-  await env.run(TASK_ZKIT_CLEAN);
+  await env.run({ scope: ZKIT_SCOPE_NAME, task: TASK_ZKIT_CLEAN });
 });
 
 zkitScope

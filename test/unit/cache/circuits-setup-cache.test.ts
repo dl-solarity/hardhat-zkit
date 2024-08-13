@@ -2,7 +2,7 @@ import fsExtra from "fs-extra";
 
 import { expect } from "chai";
 
-import { TASK_CIRCUITS_MAKE } from "../../../src/task-names";
+import { TASK_CIRCUITS_MAKE, ZKIT_SCOPE_NAME } from "../../../src/task-names";
 import { useEnvironment } from "../../helpers";
 import { CircuitsSetupCache, createCircuitsSetupCache, resetCircuitsSetupCache } from "../../../src/cache";
 import { getNormalizedFullPath } from "../../../src/utils/path-utils";
@@ -109,7 +109,7 @@ describe("CircuitsSetupCache", () => {
     useEnvironment("with-circuits");
 
     it("should return correct results", async function () {
-      await this.hre.run(TASK_CIRCUITS_MAKE, { quiet: false });
+      await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_MAKE }, { quiet: false });
 
       expect(CircuitsSetupCache!.hasFileChanged("invalid-path", "", defaultContributionSettings)).to.be.true;
 
