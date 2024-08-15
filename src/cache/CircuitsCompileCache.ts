@@ -15,6 +15,13 @@ const CompileFlagsCodec = t.type({
   c: t.boolean,
 });
 
+// const PragmaComponentCodec = t.type({
+//   isCustom: t.boolean,
+//   compilerVersion: t.string,
+// });
+
+// const MainComponentCodec =
+
 const CompileCacheEntryCodec = t.type({
   lastModificationDate: t.number,
   contentHash: t.string,

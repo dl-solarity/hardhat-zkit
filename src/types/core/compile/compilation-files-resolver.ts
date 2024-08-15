@@ -1,8 +1,8 @@
-import { ResolvedFile } from "hardhat/types/builtin-tasks";
+import { CircomResolvedFile } from "../dependencies";
 
-export type ResolvedFileInfo = {
+export type CircomResolvedFileInfo = {
   circuitName: string;
   circuitFullyQualifiedName: string;
-  resolvedFile: ResolvedFile;
-  dependencies: ResolvedFile[];
+  resolvedFile: CircomResolvedFile;
+  dependencies: CircomResolvedFile[];
 };

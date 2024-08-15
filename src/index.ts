@@ -52,7 +52,7 @@ import {
   SetupTaskConfig,
 } from "./types/tasks";
 import { CircuitArtifact } from "./types/artifacts/circuit-artifacts";
-import { CompileFlags, ResolvedFileInfo, CircuitSetupInfo } from "./types/core";
+import { CompileFlags, CircomResolvedFileInfo, CircuitSetupInfo } from "./types/core";
 
 const zkitScope = scope(ZKIT_SCOPE_NAME, "The ultimate TypeScript environment for Circom development");
 
@@ -103,7 +103,7 @@ const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfi
   Reporter!.reportCompilerVersion(COMPILER_VERSION);
   Reporter!.verboseLog("index", "Compile flags: %O", [compileFlags]);
 
-  const resolvedFilesInfo: ResolvedFileInfo[] = await compilationFileResolver.getResolvedFilesToCompile(
+  const resolvedFilesInfo: CircomResolvedFileInfo[] = await compilationFileResolver.getResolvedFilesToCompile(
     compileFlags,
     taskArgs.force,
   );
@@ -124,7 +124,7 @@ const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfi
     const typeGenerationProcessor: TypeGenerationProcessor = new TypeGenerationProcessor(env);
 
     await typeGenerationProcessor.generateTypes(
-      resolvedFilesInfo.map((fileInfo: ResolvedFileInfo) => fileInfo.circuitFullyQualifiedName),
+      resolvedFilesInfo.map((fileInfo: CircomResolvedFileInfo) => fileInfo.circuitFullyQualifiedName),
     );
 
     for (const fileInfo of resolvedFilesInfo) {
@@ -134,8 +134,8 @@ const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfi
           contentHash: file.contentHash,
           sourceName: file.sourceName,
           compileFlags,
-          imports: file.content.imports,
-          versionPragmas: file.content.versionPragmas,
+          imports: file.fileData.includes,
+          versionPragmas: [file.fileData.pragmaInfo.compilerVersion],
         });
       }
     }

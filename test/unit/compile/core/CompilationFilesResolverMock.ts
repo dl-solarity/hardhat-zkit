@@ -1,14 +1,12 @@
-import { ResolvedFile } from "hardhat/types/builtin-tasks";
-
 import { CompilationFilesResolver, DependencyGraph } from "../../../../src/core";
-import { CompileFlags, ResolvedFileInfo } from "../../../../src/types/core";
+import { CompileFlags, CircomResolvedFileInfo, CircomResolvedFile } from "../../../../src/types/core";
 
-export class CompilationFilesManagerMock extends CompilationFilesResolver {
+export class CompilationFilesResolverMock extends CompilationFilesResolver {
   public filterResolvedFiles(
-    resolvedFiles: ResolvedFile[],
+    resolvedFiles: CircomResolvedFile[],
     sourceNames: string[],
     dependencyGraph: DependencyGraph,
-  ): ResolvedFileInfo[] {
+  ): CircomResolvedFileInfo[] {
     return this._filterResolvedFiles(resolvedFiles, sourceNames, dependencyGraph);
   }
 
@@ -24,11 +22,11 @@ export class CompilationFilesManagerMock extends CompilationFilesResolver {
     return this._getDependencyGraph(sourceNames);
   }
 
-  public async invalidateCacheMissingArtifacts(resolvedFilesInfo: ResolvedFileInfo[]) {
+  public async invalidateCacheMissingArtifacts(resolvedFilesInfo: CircomResolvedFileInfo[]) {
     return this._invalidateCacheMissingArtifacts(resolvedFilesInfo);
   }
 
-  public needsCompilation(resolvedFileInfo: ResolvedFileInfo, compileFlags: CompileFlags): boolean {
+  public needsCompilation(resolvedFileInfo: CircomResolvedFileInfo, compileFlags: CompileFlags): boolean {
     return this._needsCompilation(resolvedFileInfo, compileFlags);
   }
 }

@@ -1,14 +1,13 @@
 import { HardhatError } from "hardhat/internal/core/errors";
 import { ERRORS } from "hardhat/internal/core/errors-list";
 
-import { ResolvedFile, Resolver } from "./Resolver";
-
+import { CircomFilesResolver, CircomResolvedFile } from "./CircomFilesResolver";
 import { TransitiveDependency } from "../../types/core";
 
 export class DependencyGraph {
   public static async createFromResolvedFiles(
-    resolver: Resolver,
-    resolvedFiles: ResolvedFile[],
+    resolver: CircomFilesResolver,
+    resolvedFiles: CircomResolvedFile[],
   ): Promise<DependencyGraph> {
     const graph = new DependencyGraph();
 
@@ -18,19 +17,19 @@ export class DependencyGraph {
     return graph;
   }
 
-  private _resolvedFiles = new Map<string, ResolvedFile>();
-  private _dependenciesPerFile = new Map<string, Set<ResolvedFile>>();
+  private _resolvedFiles = new Map<string, CircomResolvedFile>();
+  private _dependenciesPerFile = new Map<string, Set<CircomResolvedFile>>();
 
   // map absolute paths to source names
   private readonly _visitedFiles = new Map<string, string>();
 
   private constructor() {}
 
-  public getResolvedFiles(): ResolvedFile[] {
+  public getResolvedFiles(): CircomResolvedFile[] {
     return Array.from(this._resolvedFiles.values());
   }
 
-  public has(file: ResolvedFile): boolean {
+  public has(file: CircomResolvedFile): boolean {
     return this._resolvedFiles.has(file.sourceName);
   }
 
@@ -38,21 +37,21 @@ export class DependencyGraph {
     return this._resolvedFiles.size === 0;
   }
 
-  public entries(): Array<[ResolvedFile, Set<ResolvedFile>]> {
+  public entries(): Array<[CircomResolvedFile, Set<CircomResolvedFile>]> {
     return Array.from(this._dependenciesPerFile.entries()).map(([key, value]) => [
       this._resolvedFiles.get(key)!,
       value,
     ]);
   }
 
-  public getDependencies(file: ResolvedFile): ResolvedFile[] {
+  public getDependencies(file: CircomResolvedFile): CircomResolvedFile[] {
     const dependencies = this._dependenciesPerFile.get(file.sourceName) ?? new Set();
 
     return [...dependencies];
   }
 
-  public getTransitiveDependencies(file: ResolvedFile): TransitiveDependency[] {
-    const visited = new Set<ResolvedFile>();
+  public getTransitiveDependencies(file: CircomResolvedFile): TransitiveDependency[] {
+    const visited = new Set<CircomResolvedFile>();
 
     const transitiveDependencies = this._getTransitiveDependencies(file, visited, []);
 
@@ -60,9 +59,9 @@ export class DependencyGraph {
   }
 
   private _getTransitiveDependencies(
-    file: ResolvedFile,
-    visited: Set<ResolvedFile>,
-    path: ResolvedFile[],
+    file: CircomResolvedFile,
+    visited: Set<CircomResolvedFile>,
+    path: CircomResolvedFile[],
   ): Set<TransitiveDependency> {
     if (visited.has(file)) {
       return new Set();
@@ -86,7 +85,7 @@ export class DependencyGraph {
     return transitiveDependencies;
   }
 
-  private async _addDependenciesFrom(resolver: Resolver, file: ResolvedFile): Promise<void> {
+  private async _addDependenciesFrom(resolver: CircomFilesResolver, file: CircomResolvedFile): Promise<void> {
     const sourceName = this._visitedFiles.get(file.absolutePath);
 
     if (sourceName !== undefined) {
@@ -102,14 +101,14 @@ export class DependencyGraph {
 
     this._visitedFiles.set(file.absolutePath, file.sourceName);
 
-    const dependencies = new Set<ResolvedFile>();
+    const dependencies = new Set<CircomResolvedFile>();
 
     this._resolvedFiles.set(file.sourceName, file);
     this._dependenciesPerFile.set(file.sourceName, dependencies);
 
     // TODO refactor this to make the results deterministic
     await Promise.all(
-      file.content.imports.map(async (imp) => {
+      file.fileData.includes.map(async (imp) => {
         const dependency = await resolver.resolveImport(file, imp);
         dependencies.add(dependency);
 

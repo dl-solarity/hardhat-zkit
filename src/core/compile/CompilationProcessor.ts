@@ -21,8 +21,8 @@ import {
   IWASMCircomCompiler,
   CompilationProccessorConfig,
   CompilationInfo,
-  ResolvedFileInfo,
   CompileConfig,
+  CircomResolvedFileInfo,
 } from "../../types/core";
 
 export class CompilationProcessor {
@@ -45,7 +45,7 @@ export class CompilationProcessor {
     ]);
   }
 
-  public async compile(filesInfoToCompile: ResolvedFileInfo[]) {
+  public async compile(filesInfoToCompile: CircomResolvedFileInfo[]) {
     const tempDir: string = path.join(os.tmpdir(), ".zkit", uuid());
 
     try {
@@ -201,12 +201,12 @@ export class CompilationProcessor {
 
   private async _getCompilationInfoArr(
     tempDir: string,
-    filesInfoToCompile: ResolvedFileInfo[],
+    filesInfoToCompile: CircomResolvedFileInfo[],
   ): Promise<CompilationInfo[]> {
     const artifactsDirFullPath = this._circuitArtifacts.getCircuitArtifactsDirFullPath();
 
     return Promise.all(
-      filesInfoToCompile.map(async (fileInfo: ResolvedFileInfo): Promise<CompilationInfo> => {
+      filesInfoToCompile.map(async (fileInfo: CircomResolvedFileInfo): Promise<CompilationInfo> => {
         return {
           circuitName: fileInfo.circuitName,
           circuitFileName: path.parse(fileInfo.resolvedFile.absolutePath).name,

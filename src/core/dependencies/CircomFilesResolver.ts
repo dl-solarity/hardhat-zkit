@@ -2,7 +2,7 @@ import fsExtra from "fs-extra";
 import path from "path";
 import resolve from "resolve";
 
-import { FileContent, LibraryInfo, ResolvedFile as IResolvedFile } from "hardhat/types/builtin-tasks";
+import { LibraryInfo } from "hardhat/types/builtin-tasks";
 import {
   includesOwnPackageName,
   isAbsolutePathSourceName,
@@ -18,16 +18,17 @@ import { ERRORS } from "hardhat/internal/core/errors-list";
 import { getRealPath } from "hardhat/internal/util/fs-utils";
 import { createNonCryptographicHashBasedIdentifier } from "hardhat/internal/util/hash";
 
-import { Parser } from "./Parser";
 import { CIRCOM_FILE_REG_EXP, NODE_MODULES, NODE_MODULES_REG_EXP, URI_SCHEME_REG_EXP } from "../../constants";
+import { CircomFilesParser } from "./CircomFilesParser";
+import { CircomResolvedFile as ICircomResolvedFile, CircomFileData } from "../../types/core";
 
-export class ResolvedFile implements IResolvedFile {
+export class CircomResolvedFile implements ICircomResolvedFile {
   public readonly library?: LibraryInfo;
 
   constructor(
     public readonly sourceName: string,
     public readonly absolutePath: string,
-    public readonly content: FileContent,
+    public readonly fileData: CircomFileData,
     public readonly contentHash: string,
     public readonly lastModificationDate: Date,
     libraryName?: string,
@@ -52,21 +53,21 @@ export class ResolvedFile implements IResolvedFile {
   }
 }
 
-export class Resolver {
-  private readonly _cache: Map<string, ResolvedFile> = new Map();
+export class CircomFilesResolver {
+  private readonly _cache: Map<string, CircomResolvedFile> = new Map();
 
   constructor(
     private readonly _projectRoot: string,
-    private readonly _parser: Parser,
+    private readonly _parser: CircomFilesParser,
     private readonly _readFile: (absolutePath: string) => Promise<string>,
   ) {}
 
   /**
-   * Resolves a source name into a ResolvedFile.
+   * Resolves a source name into a CircomResolvedFile.
    *
    * @param sourceName The circuit source name.
    */
-  public async resolveSourceName(sourceName: string): Promise<ResolvedFile> {
+  public async resolveSourceName(sourceName: string): Promise<CircomResolvedFile> {
     const cached = this._cache.get(sourceName);
     if (cached !== undefined) {
       return cached;
@@ -74,7 +75,7 @@ export class Resolver {
 
     validateSourceNameFormat(sourceName);
 
-    let resolvedFile: ResolvedFile;
+    let resolvedFile: CircomResolvedFile;
 
     if (await isLocalSourceName(this._projectRoot, sourceName)) {
       resolvedFile = await this._resolveLocalSourceName(sourceName, sourceName);
@@ -91,7 +92,7 @@ export class Resolver {
    * @param from The file were the import statement is present.
    * @param importName The path in the import statement.
    */
-  public async resolveImport(from: ResolvedFile, importName: string): Promise<ResolvedFile> {
+  public async resolveImport(from: CircomResolvedFile, importName: string): Promise<CircomResolvedFile> {
     const scheme = this._getUriScheme(importName);
     if (scheme !== undefined) {
       throw new HardhatError(ERRORS.RESOLVER.INVALID_IMPORT_PROTOCOL, {
@@ -140,7 +141,7 @@ export class Resolver {
         return cached;
       }
 
-      let resolvedFile: ResolvedFile;
+      let resolvedFile: CircomResolvedFile;
 
       // We have this special case here, because otherwise local relative
       // imports can be treated as library imports. For example if
@@ -205,14 +206,14 @@ export class Resolver {
     }
   }
 
-  private async _resolveLocalSourceName(sourceName: string, remappedSourceName: string): Promise<ResolvedFile> {
+  private async _resolveLocalSourceName(sourceName: string, remappedSourceName: string): Promise<CircomResolvedFile> {
     await this._validateSourceNameExistenceAndCasing(this._projectRoot, remappedSourceName, false);
 
     const absolutePath = path.join(this._projectRoot, remappedSourceName);
     return this._resolveFile(sourceName, absolutePath);
   }
 
-  private async _resolveLibrarySourceName(sourceName: string, remappedSourceName: string): Promise<ResolvedFile> {
+  private async _resolveLibrarySourceName(sourceName: string, remappedSourceName: string): Promise<CircomResolvedFile> {
     const normalizedSourceName = remappedSourceName.replace(NODE_MODULES_REG_EXP, "");
     const libraryName = this._getLibraryName(normalizedSourceName);
 
@@ -270,7 +271,7 @@ export class Resolver {
     );
   }
 
-  private async _relativeImportToSourceName(from: ResolvedFile, imported: string): Promise<string> {
+  private async _relativeImportToSourceName(from: CircomResolvedFile, imported: string): Promise<string> {
     // This is a special case, were we turn relative imports from local files
     // into library imports if necessary. The reason for this is that many
     // users just do `import "../node_modules/lib/a.circom";`.
@@ -303,7 +304,7 @@ export class Resolver {
     absolutePath: string,
     libraryName?: string,
     libraryVersion?: string,
-  ): Promise<ResolvedFile> {
+  ): Promise<CircomResolvedFile> {
     const rawContent = await this._readFile(absolutePath);
     const stats = await fsExtra.stat(absolutePath);
     const lastModificationDate = new Date(stats.ctime);
@@ -312,15 +313,10 @@ export class Resolver {
 
     const parsedContent = this._parser.parse(rawContent, absolutePath, contentHash);
 
-    const content = {
-      rawContent,
-      ...parsedContent,
-    };
-
-    return new ResolvedFile(
+    return new CircomResolvedFile(
       sourceName,
       absolutePath,
-      content,
+      parsedContent,
       contentHash,
       lastModificationDate,
       libraryName,
@@ -328,7 +324,7 @@ export class Resolver {
     );
   }
 
-  private _isRelativeImport(from: ResolvedFile, imported: string): boolean {
+  private _isRelativeImport(from: CircomResolvedFile, imported: string): boolean {
     return (
       imported.startsWith("./") ||
       imported.startsWith("../") ||
@@ -380,13 +376,13 @@ export class Resolver {
     return packageOrPackageFile.startsWith("@");
   }
 
-  private _isRelativeImportToLibrary(from: ResolvedFile, imported: string): boolean {
+  private _isRelativeImportToLibrary(from: CircomResolvedFile, imported: string): boolean {
     return (
       this._isRelativeImport(from, imported) && from.library === undefined && imported.includes(`${NODE_MODULES}/`)
     );
   }
 
-  private _relativeImportToLibraryToSourceName(from: ResolvedFile, imported: string): string {
+  private _relativeImportToLibraryToSourceName(from: CircomResolvedFile, imported: string): string {
     const sourceName = normalizeSourceName(path.join(path.dirname(from.sourceName), imported));
 
     const nmIndex = sourceName.indexOf(`${NODE_MODULES}/`);

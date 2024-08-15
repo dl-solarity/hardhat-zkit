@@ -1,7 +1,6 @@
-import { ResolvedFile } from "hardhat/types/builtin-tasks";
-
 import { CompilerVersion } from "../compiler/circom-compiler-factory";
 import { CompileFlags } from "../compiler/circom-compiler";
+import { CircomResolvedFile } from "../dependencies";
 
 export type CompilationProccessorConfig = {
   compilerVersion: CompilerVersion;
@@ -14,6 +13,6 @@ export type CompilationInfo = {
   circuitFileName: string;
   tempArtifactsPath: string;
   artifactsPath: string;
-  resolvedFile: ResolvedFile;
+  resolvedFile: CircomResolvedFile;
   constraintsNumber: number;
 };
