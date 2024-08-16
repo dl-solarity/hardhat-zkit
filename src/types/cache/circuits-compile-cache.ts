@@ -1,12 +1,11 @@
-import { CompileFlags } from "../core/compiler/circom-compiler";
+import { CircomFileData, CompileFlags } from "../core";
 
 export type CompileCacheEntry = {
   lastModificationDate: number;
   contentHash: string;
   sourceName: string;
   compileFlags: CompileFlags;
-  imports: string[];
-  versionPragmas: string[];
+  fileData: CircomFileData;
 };
 
 export type CompileCache = {

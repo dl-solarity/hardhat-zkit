@@ -2,12 +2,13 @@ import { getCircomParser, ParserError } from "@distributed-lab/circom-parser";
 
 import { CircomFilesVisitor } from "./CircomFilesVisitor";
 import { CircomFileData } from "../../types/core";
+import { CircuitsCompileCache } from "../../cache";
 
 export class CircomFilesParser {
   private _cache = new Map<string, CircomFileData>();
 
   public parse(fileContent: string, absolutePath: string, contentHash: string): CircomFileData {
-    const cacheResult = this._getFromCache(contentHash);
+    const cacheResult = this._getFromCache(absolutePath, contentHash);
 
     if (cacheResult !== null) {
       return cacheResult;
@@ -28,13 +29,23 @@ export class CircomFilesParser {
     return circomFilesVisitor.fileData;
   }
 
-  private _getFromCache(contentHash: string): CircomFileData | null {
+  private _getFromCache(absolutePath: string, contentHash: string): CircomFileData | null {
     const internalCacheEntry = this._cache.get(contentHash);
 
     if (internalCacheEntry !== undefined) {
       return internalCacheEntry;
     }
 
-    return null;
+    const circuitsFilesCacheEntry = CircuitsCompileCache!.getEntry(absolutePath);
+
+    if (circuitsFilesCacheEntry === undefined) {
+      return null;
+    }
+
+    if (circuitsFilesCacheEntry.contentHash !== contentHash) {
+      return null;
+    }
+
+    return circuitsFilesCacheEntry.fileData;
   }
 }

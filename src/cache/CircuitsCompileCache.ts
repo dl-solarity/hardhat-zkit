@@ -1,40 +1,12 @@
 import fsExtra from "fs-extra";
-import * as t from "io-ts";
 import { isEqual } from "lodash";
 
+import { CompileCacheSchema } from "./schemas";
 import { CIRCUIT_COMPILE_CACHE_VERSION } from "../constants";
 
 import { CompileCache, CompileCacheEntry } from "../types/cache";
 import { CompileFlags } from "../types/core";
-
-const CompileFlagsCodec = t.type({
-  r1cs: t.boolean,
-  wasm: t.boolean,
-  sym: t.boolean,
-  json: t.boolean,
-  c: t.boolean,
-});
-
-// const PragmaComponentCodec = t.type({
-//   isCustom: t.boolean,
-//   compilerVersion: t.string,
-// });
-
-// const MainComponentCodec =
-
-const CompileCacheEntryCodec = t.type({
-  lastModificationDate: t.number,
-  contentHash: t.string,
-  sourceName: t.string,
-  compileFlags: CompileFlagsCodec,
-  imports: t.array(t.string),
-  versionPragmas: t.array(t.string),
-});
-
-const CompileCacheCodec = t.type({
-  _format: t.string,
-  files: t.record(t.string, CompileCacheEntryCodec),
-});
+import { Reporter } from "../reporter";
 
 class BaseCircuitsCompileCache {
   public static createEmpty(): BaseCircuitsCompileCache {
@@ -51,16 +23,26 @@ class BaseCircuitsCompileCache {
     };
 
     if (await fsExtra.pathExists(circuitsCompileCachePath)) {
-      cacheRaw = await fsExtra.readJson(circuitsCompileCachePath);
+      cacheRaw = await fsExtra.readJson(circuitsCompileCachePath, {
+        reviver: (_key: string, value: any): any => {
+          if (value != null && typeof value === "object" && "__bigintval__" in value) {
+            return BigInt(value["__bigintval__"]);
+          }
+
+          return value;
+        },
+      });
     }
 
-    const result = CompileCacheCodec.decode(cacheRaw);
+    const result = CompileCacheSchema.safeParse(cacheRaw);
 
-    if (result.isRight()) {
-      const circuitsCompileCache = new BaseCircuitsCompileCache(result.value);
+    if (result.success) {
+      const circuitsCompileCache = new BaseCircuitsCompileCache(result.data);
       await circuitsCompileCache.removeNonExistingFiles();
 
       return circuitsCompileCache;
+    } else {
+      Reporter!.verboseLog("circuits-compile-cache", "Errors during ZOD schema parsing: %o", [result.error]);
     }
 
     return new BaseCircuitsCompileCache({
@@ -82,9 +64,16 @@ class BaseCircuitsCompileCache {
   }
 
   public async writeToFile(circuitsCompileCachePath: string) {
-    await fsExtra.outputJson(circuitsCompileCachePath, this._compileCache, {
-      spaces: 2,
-    });
+    fsExtra.writeFileSync(
+      circuitsCompileCachePath,
+      JSON.stringify(this._compileCache, (_key, value) => {
+        if (typeof value === "bigint") {
+          return { __bigintval__: value.toString() };
+        }
+
+        return value;
+      }),
+    );
   }
 
   public addFile(absolutePath: string, entry: CompileCacheEntry) {

@@ -79,8 +79,8 @@ const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfi
     CIRCUITS_COMPILE_CACHE_FILENAME,
   );
 
-  await createCircuitsCompileCache(circuitsCompileCacheFullPath);
   createReporter(taskArgs.quiet || env.config.zkit.quiet);
+  await createCircuitsCompileCache(circuitsCompileCacheFullPath);
 
   if (env.config.zkit.nativeCompiler) {
     await CircomCompilerFactory.checkNativeCompilerExistence();
@@ -134,8 +134,7 @@ const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfi
           contentHash: file.contentHash,
           sourceName: file.sourceName,
           compileFlags,
-          imports: file.fileData.includes,
-          versionPragmas: [file.fileData.pragmaInfo.compilerVersion],
+          fileData: file.fileData,
         });
       }
     }
@@ -152,8 +151,8 @@ const setup: ActionType<SetupTaskConfig> = async (taskArgs: SetupTaskConfig, env
     CIRCUITS_SETUP_CACHE_FILENAME,
   );
 
-  await createCircuitsSetupCache(circuitsSetupCacheFullPath);
   createReporter(taskArgs.quiet || env.config.zkit.quiet);
+  await createCircuitsSetupCache(circuitsSetupCacheFullPath);
 
   const setupFileResolver: SetupFilesResolver = new SetupFilesResolver(env.zkit.circuitArtifacts, env.config);
 
@@ -206,10 +205,13 @@ const generateVerifiers: ActionType<GenerateVerifiersTaskConfig> = async (
   env: HardhatRuntimeEnvironment,
 ) => {
   if (!taskArgs.noCompile) {
-    await env.run(TASK_CIRCUITS_MAKE, {
-      quiet: taskArgs.quiet,
-      force: taskArgs.force,
-    });
+    await env.run(
+      { scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_MAKE },
+      {
+        quiet: taskArgs.quiet,
+        force: taskArgs.force,
+      },
+    );
   } else {
     createReporter(taskArgs.quiet || env.config.zkit.quiet);
   }
