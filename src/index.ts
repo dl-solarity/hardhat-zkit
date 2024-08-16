@@ -206,10 +206,13 @@ const generateVerifiers: ActionType<GenerateVerifiersTaskConfig> = async (
   env: HardhatRuntimeEnvironment,
 ) => {
   if (!taskArgs.noCompile) {
-    await env.run(TASK_CIRCUITS_MAKE, {
-      quiet: taskArgs.quiet,
-      force: taskArgs.force,
-    });
+    await env.run(
+      { scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_MAKE },
+      {
+        quiet: taskArgs.quiet,
+        force: taskArgs.force,
+      },
+    );
   } else {
     createReporter(taskArgs.quiet || env.config.zkit.quiet);
   }
