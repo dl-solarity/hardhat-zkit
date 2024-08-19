@@ -28,6 +28,8 @@ export class CompilationFilesResolver {
     compileFlags: CompileFlags,
     force: boolean,
   ): Promise<CircomResolvedFileInfo[]> {
+    const spinnerId: string | null = Reporter!.reportCircuitFilesResolvingStartWithSpinner();
+
     const circuitsSourcePaths: string[] = await getAllFilesMatching(this._getCircuitsDirFullPath(), (f) =>
       f.endsWith(".circom"),
     );
@@ -49,19 +51,27 @@ export class CompilationFilesResolver {
       allFilteredSourceNames,
     ]);
 
-    const dependencyGraph: DependencyGraph = await this._getDependencyGraph(allFilteredSourceNames);
+    let resolvedFilesInfoToCompile: CircomResolvedFileInfo[];
 
-    const resolvedFilesInfoToCompile: CircomResolvedFileInfo[] = this._filterResolvedFiles(
-      dependencyGraph.getResolvedFiles(),
-      allFilteredSourceNames,
-      dependencyGraph,
-    );
+    try {
+      const dependencyGraph: DependencyGraph = await this._getDependencyGraph(allFilteredSourceNames);
 
-    Reporter!.verboseLog("compilation-file-resolver", "All circuit source names to compile: %o", [
-      resolvedFilesInfoToCompile.map((fileInfo) => fileInfo.resolvedFile.sourceName),
-    ]);
+      resolvedFilesInfoToCompile = this._filterResolvedFiles(
+        dependencyGraph.getResolvedFiles(),
+        allFilteredSourceNames,
+        dependencyGraph,
+      );
 
-    this._invalidateCacheMissingArtifacts(resolvedFilesInfoToCompile);
+      Reporter!.verboseLog("compilation-file-resolver", "All circuit source names to compile: %o", [
+        resolvedFilesInfoToCompile.map((fileInfo) => fileInfo.resolvedFile.sourceName),
+      ]);
+
+      this._invalidateCacheMissingArtifacts(resolvedFilesInfoToCompile);
+    } catch (e) {
+      Reporter!.reportCircuitFilesResolvingFail(spinnerId);
+
+      throw e;
+    }
 
     let filteredResolvedFilesInfo: CircomResolvedFileInfo[];
 
@@ -74,6 +84,8 @@ export class CompilationFilesResolver {
     } else {
       filteredResolvedFilesInfo = resolvedFilesInfoToCompile;
     }
+
+    Reporter!.reportCircuitFilesResolvingResult(spinnerId);
 
     const filteredSourceNamesToCompile: string[] = filteredResolvedFilesInfo.map(
       (file) => file.resolvedFile.sourceName,

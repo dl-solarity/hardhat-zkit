@@ -63,9 +63,36 @@ class BaseReporter {
 
     let output: string = "";
 
-    output += `\n${chalk.bold("Compiler version:")} ${chalk.green(compilerVersion)}`;
+    output += `\n${chalk.bold("Compiler version:")} ${chalk.green(compilerVersion)}\n`;
 
     console.log(output);
+  }
+
+  public reportCircuitFilesResolvingStartWithSpinner(): string | null {
+    return this._startSpinner("circuits", "files-resolving", `Resolving circuit files to compile`);
+  }
+
+  public reportCircuitFilesResolvingResult(spinnerId: string | null) {
+    if (this.isQuiet() || !spinnerId) return;
+
+    const resolvingTimeMessage: string = this._getSpinnerWorkingTimeMessage(
+      this._spinnerProcessor.getWorkingTime(spinnerId),
+    );
+
+    this._spinnerProcessor.succeedSpinner(
+      spinnerId,
+      `Successfully resolved circuit files to compile ${resolvingTimeMessage}`,
+    );
+  }
+
+  public reportCircuitFilesResolvingFail(spinnerId: string | null) {
+    if (this.isQuiet() || !spinnerId) return;
+
+    const resolvingTimeMessage: string = this._getSpinnerWorkingTimeMessage(
+      this._spinnerProcessor.getWorkingTime(spinnerId),
+    );
+
+    this._spinnerProcessor.failSpinner(spinnerId, `Failed to resolve circuit files ${resolvingTimeMessage}\n`);
   }
 
   public reportCompilationProcessHeader() {
@@ -463,10 +490,10 @@ class BaseReporter {
     return (fileSize / BYTES_IN_MB).toFixed(3);
   }
 
-  private _startSpinner(circuitName: string, spinnerIdSuffix: string, spinnerText: string): string | null {
+  private _startSpinner(spinnerIdName: string, spinnerIdSuffix: string, spinnerText: string): string | null {
     if (this.isQuiet()) return null;
 
-    const spinnerId: string = `${circuitName}-${spinnerIdSuffix}`;
+    const spinnerId: string = `${spinnerIdName}-${spinnerIdSuffix}`;
 
     this._spinnerProcessor.createSpinner(spinnerId, { text: spinnerText });
 

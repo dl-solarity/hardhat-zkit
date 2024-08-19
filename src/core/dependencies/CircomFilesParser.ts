@@ -3,6 +3,7 @@ import { getCircomParser, ParserError } from "@distributed-lab/circom-parser";
 import { CircomFilesVisitor } from "./CircomFilesVisitor";
 import { CircomFileData } from "../../types/core";
 import { CircuitsCompileCache } from "../../cache";
+import { Reporter } from "../../reporter";
 
 export class CircomFilesParser {
   private _cache = new Map<string, CircomFileData>();
@@ -14,14 +15,16 @@ export class CircomFilesParser {
       return cacheResult;
     }
 
-    const { parser, errorListener } = getCircomParser(fileContent);
+    const parser = getCircomParser(fileContent);
 
     const circomFilesVisitor = new CircomFilesVisitor();
 
+    Reporter!.verboseLog("circom-files-parser", "Parsing '%s' file", [absolutePath]);
+
     circomFilesVisitor.visit(parser.circuit());
 
-    if (errorListener.hasErrors()) {
-      throw new ParserError(errorListener.getErrors());
+    if (parser.hasAnyErrors()) {
+      throw new ParserError(parser.getAllErrors());
     }
 
     this._cache.set(contentHash, circomFilesVisitor.fileData);

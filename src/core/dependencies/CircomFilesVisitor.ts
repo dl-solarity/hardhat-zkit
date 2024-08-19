@@ -61,11 +61,15 @@ export class CircomFilesVisitor extends CircomVisitor<void> {
     this.currentTemplate = ctx.ID().getText();
 
     const parameters: string[] = [];
-    ctx.args_list().forEach((argCtx) => {
-      argCtx.ID_list().forEach((arg) => {
-        parameters.push(arg.getText());
-      });
-    });
+
+    if (ctx.args() && ctx.args().ID_list()) {
+      ctx
+        .args()
+        .ID_list()
+        .forEach((arg) => {
+          parameters.push(arg.getText());
+        });
+    }
 
     this.fileData.templates[this.currentTemplate] = {
       inputs: [],
@@ -111,8 +115,9 @@ export class CircomFilesVisitor extends CircomVisitor<void> {
   visitComponentMainDeclaration = (ctx: ComponentMainDeclarationContext) => {
     this.fileData.mainComponentInfo.templateName = ctx.ID().getText();
 
-    if (ctx.args()) {
+    if (ctx.publicInputsList() && ctx.publicInputsList().args()) {
       ctx
+        .publicInputsList()
         .args()
         .ID_list()
         .forEach((input) => {
