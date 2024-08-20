@@ -99,7 +99,7 @@ Where:
   - `typesArtifactsDir` - The directory where to save the generated circuits ABI.
   - `typesDir` - The directory where to save the generated typed circuits wrappers.
 - `verifiersDir` - The directory where to generate the verifiers.
-- `verifiersType` - The option to indicate which contracts language to use for verifiers generation.
+- `verifiersType` - The option (`sol` or `vy`) to indicate which language to use for verifiers generation.
 - `nativeCompiler` - The flag indicating whether to use the natively installed compiler.
 - `quiet` - The flag indicating whether to suppress the output.
 
@@ -110,7 +110,7 @@ There are several hardhat tasks that the plugin provides:
 - `zkit:compile` task that compiles or recompiles the modified circuits with the main component.
 - `zkit:setup` task that generates or regenerates `zkey` and `vkey` for the previously compiled circuits.
 - `zkit:make` task that executes both `zkit:compile` and `zkit:setup` for convenience.
-- `zkit:verifiers` task that generates verifiers for all the previously setup circuits.
+- `zkit:verifiers` task that generates Solidity | Vyper verifiers for all the previously setup circuits.
 - `zkit:clean` task that cleans up the generated artifacts, types, etc.
 
 To view the available options, run the help command:

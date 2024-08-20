@@ -348,7 +348,7 @@ task(TASK_GENERATE_VERIFIERS, "Generate verifier contracts for Circom circuits")
   )
   .addOptionalParam(
     "verifiersType",
-    "Verifier contracts laguage to generate. Use 'sol' fro Solidity and 'vy' for Vyper",
+    "Verifier contracts laguage to generate. Use 'sol' for Solidity and 'vy' for Vyper",
     undefined,
     types.string,
   )
