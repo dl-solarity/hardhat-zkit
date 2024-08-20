@@ -8,7 +8,7 @@ import { ActionType, HardhatRuntimeEnvironment, RunSuperFunction } from "hardhat
 import { TASK_CLEAN, TASK_COMPILE_SOLIDITY_READ_FILE as TASK_READ_FILE } from "hardhat/builtin-tasks/task-names";
 import { willRunWithTypescript } from "hardhat/internal/core/typescript-support";
 
-import { CircuitZKit, CircuitZKitConfig } from "@solarity/zkit";
+import { CircuitZKit, CircuitZKitConfig, VerifierLanguageType } from "@solarity/zkit";
 import { CircuitTypesGenerator } from "@solarity/zktype";
 
 import "./type-extensions";
@@ -212,27 +212,37 @@ const generateVerifiers: ActionType<GenerateVerifiersTaskConfig> = async (
     env.config.paths.root,
     taskArgs.verifiersDir ?? env.config.zkit.verifiersDir,
   );
+  const verifiersType: VerifierLanguageType = taskArgs.verifiersType ?? env.config.zkit.verifiersType;
 
   Reporter!.verboseLog("index", "Verifiers generation dir - %s", [verifiersDirFullPath]);
 
-  Reporter!.reportVerifiersGenerationHeader();
-
   const allFullyQualifiedNames: string[] = await env.zkit.circuitArtifacts.getAllCircuitFullyQualifiedNames();
 
-  for (const name of allFullyQualifiedNames) {
-    const circuitArtifact: CircuitArtifact = await env.zkit.circuitArtifacts.readCircuitArtifact(name);
+  if (allFullyQualifiedNames.length > 0) {
+    Reporter!.reportVerifiersGenerationHeader(verifiersType);
 
-    const spinnerId: string | null = Reporter!.reportVerifierGenerationStartWithSpinner(
-      circuitArtifact.circuitTemplateName,
-    );
+    for (const name of allFullyQualifiedNames) {
+      const circuitArtifact: CircuitArtifact = await env.zkit.circuitArtifacts.readCircuitArtifact(name);
 
-    await new CircuitZKit({
-      circuitName: circuitArtifact.circuitTemplateName,
-      circuitArtifactsPath: path.dirname(env.zkit.circuitArtifacts.formCircuitArtifactPathFromFullyQualifiedName(name)),
-      verifierDirPath: verifiersDirFullPath,
-    }).createVerifier();
+      const spinnerId: string | null = Reporter!.reportVerifierGenerationStartWithSpinner(
+        circuitArtifact.circuitTemplateName,
+        verifiersType,
+      );
 
-    Reporter!.reportVerifierGenerationResult(spinnerId, circuitArtifact.circuitTemplateName);
+      await new CircuitZKit({
+        circuitName: circuitArtifact.circuitTemplateName,
+        circuitArtifactsPath: path.dirname(
+          env.zkit.circuitArtifacts.formCircuitArtifactPathFromFullyQualifiedName(name),
+        ),
+        verifierDirPath: verifiersDirFullPath,
+      }).createVerifier(verifiersType);
+
+      Reporter!.reportVerifierGenerationResult(spinnerId, circuitArtifact.circuitTemplateName, verifiersType);
+    }
+
+    Reporter!.reportVerifiersGenerationResult(verifiersType, allFullyQualifiedNames.length);
+  } else {
+    Reporter!.reportNothingToGenerate();
   }
 };
 
@@ -292,7 +302,7 @@ const getCircuitZKit: ActionType<GetCircuitZKitConfig> = async (
     circuitName: circuitArtifact.circuitTemplateName,
     circuitArtifactsPath: circuitArtifactsDirPath,
     verifierDirPath: verifiersDirFullPath,
-    templateType: taskArgs.verifierTemplateType ?? "groth16",
+    provingSystem: taskArgs.verifierTemplateType ?? "groth16",
   };
 
   if (willRunWithTypescript(env.hardhatArguments.config)) {
@@ -329,10 +339,16 @@ task(TASK_CIRCUITS_SETUP, "Create ZKey and Vkey files for compiled circuits")
   .addFlag("quiet", "Suppresses logs during the compilation process.")
   .setAction(setup);
 
-task(TASK_GENERATE_VERIFIERS, "Generate Solidity verifier contracts for Circom circuits")
+task(TASK_GENERATE_VERIFIERS, "Generate verifier contracts for Circom circuits")
   .addOptionalParam(
     "verifiersDir",
-    "Relative path to the directory where the generated Solidity verifier contracts will be saved.",
+    "Relative path to the directory where the generated verifier contracts will be saved.",
+    undefined,
+    types.string,
+  )
+  .addOptionalParam(
+    "verifiersType",
+    "Verifier contracts laguage to generate. Use 'sol' for Solidity and 'vy' for Vyper",
     undefined,
     types.string,
   )
