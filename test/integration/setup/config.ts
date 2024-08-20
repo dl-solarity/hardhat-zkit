@@ -43,6 +43,7 @@ describe("config", () => {
           typesDir: "generated-types/zkit",
         },
         verifiersDir: "contracts/verifiers",
+        verifiersType: "vy",
         nativeCompiler: false,
         quiet: true,
       };
@@ -86,6 +87,7 @@ describe("config", () => {
           typesDir: "generated-types/zkit",
         },
         verifiersDir: "contracts/verifiers",
+        verifiersType: "sol",
         nativeCompiler: false,
         quiet: false,
       };

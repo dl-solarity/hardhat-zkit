@@ -51,7 +51,7 @@
   },
   "dependencies": {
     "@distributedlab/circom2": "0.2.18-rc.4",
-    "@solarity/zkit": "0.2.5",
+    "@solarity/zkit": "0.2.6",
     "@solarity/zktype": "0.2.7",
     "chalk": "4.1.2",
     "cli-progress": "3.12.0",
