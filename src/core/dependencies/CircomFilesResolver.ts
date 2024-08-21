@@ -252,17 +252,20 @@ export class CircomFilesResolver {
 
       for (const key of Object.keys(parsedInputs)) {
         const signalType: SignalType = this._getSignalType(parsedInputs[key].type);
-        const visibilityType: VisibilityType =
-          signalType == "Output" || resolvedFile.fileData.parsedFileData.mainComponentInfo.publicInputs.includes(key)
-            ? "Public"
-            : "Private";
 
-        mainComponentData.signals.push({
-          name: key,
-          dimension: parsedInputs[key].dimension,
-          type: signalType,
-          visibility: visibilityType,
-        });
+        if (signalType != "Intermediate") {
+          const visibilityType: VisibilityType =
+            signalType == "Output" || resolvedFile.fileData.parsedFileData.mainComponentInfo.publicInputs.includes(key)
+              ? "Public"
+              : "Private";
+
+          mainComponentData.signals.push({
+            name: key,
+            dimension: parsedInputs[key].dimension,
+            type: signalType,
+            visibility: visibilityType,
+          });
+        }
       }
 
       resolvedFile.fileData.mainComponentData = mainComponentData;
