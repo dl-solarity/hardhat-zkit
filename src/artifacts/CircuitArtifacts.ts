@@ -227,8 +227,6 @@ export class CircuitArtifacts implements ICircuitArtifacts {
         return `${circuitTemplateName}.vkey.json`;
       case "zkey":
         return `${circuitTemplateName}.zkey`;
-      case "ast":
-        return `${circuitTemplateName}_ast.json`;
 
       default:
         throw new HardhatZKitError(`Invalid artifacts file type ${fileType}`);

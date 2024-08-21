@@ -38,11 +38,8 @@ describe("config", () => {
           onlyFiles: [],
           skipFiles: [],
         },
-        typesSettings: {
-          typesArtifactsDir: "zkit/abi",
-          typesDir: "generated-types/zkit",
-        },
         verifiersDir: "contracts/verifiers",
+        typesDir: "generated-types/zkit",
         nativeCompiler: false,
         quiet: true,
       };
@@ -81,11 +78,8 @@ describe("config", () => {
           onlyFiles: [],
           skipFiles: [],
         },
-        typesSettings: {
-          typesArtifactsDir: "zkit/abi",
-          typesDir: "generated-types/zkit",
-        },
         verifiersDir: "contracts/verifiers",
+        typesDir: "generated-types/zkit",
         nativeCompiler: false,
         quiet: false,
       };

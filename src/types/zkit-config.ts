@@ -3,16 +3,11 @@ import { ContributionSettings } from "./core";
 export type ZKitConfig = {
   compilationSettings: CompilationSettings;
   setupSettings: SetupSettings;
-  typesSettings: CircuitTypesSettings;
   circuitsDir: string;
   verifiersDir: string;
+  typesDir: string;
   nativeCompiler: boolean;
   quiet: boolean;
-};
-
-export type CircuitTypesSettings = {
-  typesArtifactsDir: string;
-  typesDir: string;
 };
 
 export type CompilationSettings = FileFilterSettings & {

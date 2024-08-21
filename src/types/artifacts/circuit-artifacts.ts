@@ -48,5 +48,5 @@ export type ArtifactsCache = {
   artifactNameToArtifactPathCache: Map<string, string>;
 };
 
-export const ArtifactsFileTypes = ["r1cs", "zkey", "vkey", "sym", "json", "wasm", "c", "ast"] as const;
+export const ArtifactsFileTypes = ["r1cs", "zkey", "vkey", "sym", "json", "wasm", "c"] as const;
 export type ArtifactsFileType = (typeof ArtifactsFileTypes)[number];

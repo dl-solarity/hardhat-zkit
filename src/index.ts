@@ -123,9 +123,7 @@ const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfi
 
     const typeGenerationProcessor: TypeGenerationProcessor = new TypeGenerationProcessor(env);
 
-    await typeGenerationProcessor.generateTypes(
-      resolvedFilesInfo.map((fileInfo: CircomResolvedFileInfo) => fileInfo.circuitFullyQualifiedName),
-    );
+    await typeGenerationProcessor.generateAllTypes();
 
     for (const fileInfo of resolvedFilesInfo) {
       for (const file of [fileInfo.resolvedFile, ...fileInfo.dependencies]) {
@@ -257,19 +255,11 @@ const clean: ActionType<any> = async (_taskArgs: any, env: HardhatRuntimeEnviron
     env.config.paths.root,
     env.config.zkit.compilationSettings.artifactsDir,
   );
-  const typesArtifactsFullPath: string = getNormalizedFullPath(
-    env.config.paths.root,
-    env.config.zkit.typesSettings.typesArtifactsDir,
-  );
-  const circuitTypesFullPath: string = getNormalizedFullPath(
-    env.config.paths.root,
-    env.config.zkit.typesSettings.typesDir,
-  );
+  const circuitTypesFullPath: string = getNormalizedFullPath(env.config.paths.root, env.config.zkit.typesDir);
 
   fs.rmSync(circuitsCompileCacheFullPath, { force: true });
   fs.rmSync(circuitsSetupCacheFullPath, { force: true });
   fs.rmSync(artifactsDirFullPath, { recursive: true, force: true });
-  fs.rmSync(typesArtifactsFullPath, { recursive: true, force: true });
   fs.rmSync(circuitTypesFullPath, { recursive: true, force: true });
 };
 
@@ -291,9 +281,8 @@ const getCircuitZKit: ActionType<GetCircuitZKitConfig> = async (
   const typesGenerator: CircuitTypesGenerator = new CircuitTypesGenerator({
     basePath: env.config.zkit.circuitsDir,
     projectRoot: env.config.paths.root,
-    outputArtifactsDir: env.config.zkit.typesSettings.typesArtifactsDir,
-    outputTypesDir: env.config.zkit.typesSettings.typesDir,
-    circuitsASTPaths: [],
+    outputTypesDir: env.config.zkit.typesDir,
+    circuitsArtifactsPaths: [],
   });
 
   const circuitZKitConfig: CircuitZKitConfig = {
