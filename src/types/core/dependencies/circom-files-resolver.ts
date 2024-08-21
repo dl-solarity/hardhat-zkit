@@ -2,7 +2,7 @@ import { LibraryInfo } from "hardhat/types/builtin-tasks";
 
 import { BigIntOrNestedArray } from "@distributed-lab/circom-parser";
 
-import { CircomFileData } from "./circom-files-visitor";
+import { CircomFileData } from "./parser/circom-files-visitor";
 
 export interface CircomResolvedFile {
   library?: LibraryInfo;
@@ -14,11 +14,6 @@ export interface CircomResolvedFile {
 
   getVersionedName(): string;
 }
-
-export type ResolvedFileData = {
-  parsedFileData: CircomFileData;
-  mainComponentData?: ResolvedMainComponentData;
-};
 
 export type SignalType = "Input" | "Output" | "Intermediate";
 export type VisibilityType = "Public" | "Private";
@@ -33,4 +28,9 @@ export type SignalInfo = {
 export type ResolvedMainComponentData = {
   parameters: Record<string, BigIntOrNestedArray>;
   signals: SignalInfo[];
+};
+
+export type ResolvedFileData = {
+  parsedFileData: CircomFileData;
+  mainComponentData?: ResolvedMainComponentData;
 };

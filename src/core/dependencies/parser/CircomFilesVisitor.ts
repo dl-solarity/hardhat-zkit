@@ -8,9 +8,10 @@ import {
   TemplateDeclarationContext,
   SignalDeclarationContext,
   parseIdentifier,
+  IdentifierContext,
 } from "@distributed-lab/circom-parser";
 
-import { CircomFileData } from "../../types/core";
+import { CircomFileData } from "../../../types/core";
 
 export class CircomFilesVisitor extends CircomVisitor<void> {
   fileData: CircomFileData;
@@ -91,28 +92,15 @@ export class CircomFilesVisitor extends CircomVisitor<void> {
     if (this.currentTemplate) {
       const signalDefinition = ctx.signalDefinition();
 
-      const identifier = signalDefinition.identifier();
       let signalType = "intermediate";
 
       if (signalDefinition.SIGNAL_TYPE()) {
         signalType = signalDefinition.SIGNAL_TYPE().getText();
       }
 
-      const parsedIdentifierData = parseIdentifier(identifier);
-
-      this.fileData.templates[this.currentTemplate].inputs[parsedIdentifierData.name] = {
-        dimension: parsedIdentifierData.dimension,
-        type: signalType,
-      };
-
-      ctx.identifier_list().forEach((identifier) => {
-        const parsedData = parseIdentifier(identifier);
-
-        this.fileData.templates[this.currentTemplate!].inputs[parsedData.name] = {
-          dimension: parsedData.dimension,
-          type: signalType,
-        };
-      });
+      [signalDefinition.identifier(), ...ctx.identifier_list()].forEach((identifier) =>
+        this._saveInputData(identifier, signalType),
+      );
     }
   };
 
@@ -140,4 +128,13 @@ export class CircomFilesVisitor extends CircomVisitor<void> {
         });
     }
   };
+
+  private _saveInputData(identifier: IdentifierContext, signalType: string) {
+    const parsedData = parseIdentifier(identifier);
+
+    this.fileData.templates[this.currentTemplate!].inputs[parsedData.name] = {
+      dimension: parsedData.dimension,
+      type: signalType,
+    };
+  }
 }

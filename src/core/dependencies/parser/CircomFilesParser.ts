@@ -2,10 +2,10 @@ import { getCircomParser, ParserError, MainComponent, BigIntOrNestedArray } from
 
 import { CircomFilesVisitor } from "./CircomFilesVisitor";
 import { CircomTemplateInputsVisitor } from "./CircomTemplateInputsVisitor";
-import { CircuitsCompileCache } from "../../cache";
-import { Reporter } from "../../reporter";
+import { CircuitsCompileCache } from "../../../cache";
+import { Reporter } from "../../../reporter";
 
-import { InputData, ResolvedFileData } from "../../types/core";
+import { InputData, ResolvedFileData } from "../../../types/core";
 
 export class CircomFilesParser {
   private _cache = new Map<string, ResolvedFileData>();

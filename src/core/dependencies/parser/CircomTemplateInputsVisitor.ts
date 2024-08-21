@@ -8,8 +8,8 @@ import {
   Variables,
 } from "@distributed-lab/circom-parser";
 
-import { InputData } from "../../types/core";
-import { HardhatZKitError } from "../../errors";
+import { InputData } from "../../../types/core";
+import { HardhatZKitError } from "../../../errors";
 
 export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
   templateInputs: Record<string, InputData>;
@@ -50,29 +50,25 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
   visitSignalDeclaration = (ctx: SignalDeclarationContext) => {
     const signalDefinition = ctx.signalDefinition();
 
-    const identifier = signalDefinition.identifier();
     let signalType = "intermediate";
 
     if (signalDefinition.SIGNAL_TYPE()) {
       signalType = signalDefinition.SIGNAL_TYPE().getText();
     }
 
-    const parsedIdentifierData = this._parseIdentifier(identifier);
+    [signalDefinition.identifier(), ...ctx.identifier_list()].forEach((identifier) =>
+      this._saveInputData(identifier, signalType),
+    );
+  };
 
-    this.templateInputs[parsedIdentifierData.name] = {
-      dimension: parsedIdentifierData.dimension,
+  private _saveInputData(identifier: IdentifierContext, signalType: string) {
+    const parsedData = this._parseIdentifier(identifier);
+
+    this.templateInputs[parsedData.name] = {
+      dimension: parsedData.dimension,
       type: signalType,
     };
-
-    ctx.identifier_list().forEach((identifier) => {
-      const parsedData = this._parseIdentifier(identifier);
-
-      this.templateInputs[parsedData.name] = {
-        dimension: parsedData.dimension,
-        type: signalType,
-      };
-    });
-  };
+  }
 
   private _parseIdentifier(identifier: IdentifierContext) {
     const inputDimension: string[] = [];
