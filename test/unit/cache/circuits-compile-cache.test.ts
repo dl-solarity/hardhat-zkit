@@ -9,7 +9,7 @@ import { CIRCUITS_COMPILE_CACHE_FILENAME, CIRCUIT_COMPILE_CACHE_VERSION } from "
 import { TASK_CIRCUITS_COMPILE, ZKIT_SCOPE_NAME } from "../../../src/task-names";
 import { getFileHash } from "../../../src/utils/utils";
 
-import { CircomFileData, CompileFlags } from "../../../src/types/core";
+import { CompileFlags, ResolvedFileData } from "../../../src/types/core";
 import { CompileCacheEntry } from "../../../src/types/cache";
 import { CircomFilesParser } from "../../../src/core";
 
@@ -35,7 +35,11 @@ describe("CircuitsCompileCache", () => {
     }
 
     const parser: CircomFilesParser = new CircomFilesParser();
-    const fileData: CircomFileData = parser.parse(fsExtra.readFileSync(circuitPath, "utf-8"), circuitPath, contentHash);
+    const fileData: ResolvedFileData = parser.parse(
+      fsExtra.readFileSync(circuitPath, "utf-8"),
+      circuitPath,
+      contentHash,
+    );
 
     const stats = await fsExtra.stat(circuitPath);
     const lastModificationDate: Date = new Date(stats.ctime);

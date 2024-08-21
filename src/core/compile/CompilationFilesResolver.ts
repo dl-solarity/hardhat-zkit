@@ -54,7 +54,8 @@ export class CompilationFilesResolver {
     let resolvedFilesInfoToCompile: CircomResolvedFileInfo[];
 
     try {
-      const dependencyGraph: DependencyGraph = await this._getDependencyGraph(allFilteredSourceNames);
+      const resolver = new CircomFilesResolver(this._projectRoot, new CircomFilesParser(), this._readFile);
+      const dependencyGraph: DependencyGraph = await this._getDependencyGraph(allFilteredSourceNames, resolver);
 
       resolvedFilesInfoToCompile = this._filterResolvedFiles(
         dependencyGraph.getResolvedFiles(),
@@ -65,6 +66,10 @@ export class CompilationFilesResolver {
       Reporter!.verboseLog("compilation-file-resolver", "All circuit source names to compile: %o", [
         resolvedFilesInfoToCompile.map((fileInfo) => fileInfo.resolvedFile.sourceName),
       ]);
+
+      for (const fileInfo of resolvedFilesInfoToCompile) {
+        await resolver.resolveMainComponentData(fileInfo.resolvedFile, fileInfo.dependencies);
+      }
 
       this._invalidateCacheMissingArtifacts(resolvedFilesInfoToCompile);
     } catch (e) {
@@ -114,12 +119,12 @@ export class CompilationFilesResolver {
     const resolvedFilesInfo: CircomResolvedFileInfo[] = [];
 
     for (const file of circomResolvedFiles) {
-      if (file.fileData.mainComponentInfo.templateName && sourceNames.includes(file.sourceName)) {
+      if (file.fileData.parsedFileData.mainComponentInfo.templateName && sourceNames.includes(file.sourceName)) {
         resolvedFilesInfo.push({
-          circuitName: file.fileData.mainComponentInfo.templateName,
+          circuitName: file.fileData.parsedFileData.mainComponentInfo.templateName,
           circuitFullyQualifiedName: this._circuitArtifacts.getCircuitFullyQualifiedName(
             file.sourceName,
-            file.fileData.mainComponentInfo.templateName,
+            file.fileData.parsedFileData.mainComponentInfo.templateName,
           ),
           resolvedFile: file,
           dependencies: dependencyGraph.getTransitiveDependencies(file).map((dep) => dep.dependency),
@@ -134,10 +139,7 @@ export class CompilationFilesResolver {
     return Promise.all(sourcePaths.map((p) => localPathToSourceName(this._projectRoot, p)));
   }
 
-  protected async _getDependencyGraph(sourceNames: string[]): Promise<DependencyGraph> {
-    const parser = new CircomFilesParser();
-    const resolver = new CircomFilesResolver(this._projectRoot, parser, this._readFile);
-
+  protected async _getDependencyGraph(sourceNames: string[], resolver: CircomFilesResolver): Promise<DependencyGraph> {
     const resolvedFiles = await Promise.all(sourceNames.map((sn) => resolver.resolveSourceName(sn)));
 
     return DependencyGraph.createFromResolvedFiles(resolver, resolvedFiles);

@@ -18,9 +18,17 @@ import { ERRORS } from "hardhat/internal/core/errors-list";
 import { getRealPath } from "hardhat/internal/util/fs-utils";
 import { createNonCryptographicHashBasedIdentifier } from "hardhat/internal/util/hash";
 
-import { CIRCOM_FILE_REG_EXP, NODE_MODULES, NODE_MODULES_REG_EXP, URI_SCHEME_REG_EXP } from "../../constants";
 import { CircomFilesParser } from "./CircomFilesParser";
-import { CircomResolvedFile as ICircomResolvedFile, CircomFileData } from "../../types/core";
+import { CIRCOM_FILE_REG_EXP, NODE_MODULES, NODE_MODULES_REG_EXP, URI_SCHEME_REG_EXP } from "../../constants";
+import { HardhatZKitError } from "../../errors";
+
+import {
+  CircomResolvedFile as ICircomResolvedFile,
+  ResolvedMainComponentData,
+  ResolvedFileData,
+  SignalType,
+  VisibilityType,
+} from "../../types/core";
 
 export class CircomResolvedFile implements ICircomResolvedFile {
   public readonly library?: LibraryInfo;
@@ -28,9 +36,9 @@ export class CircomResolvedFile implements ICircomResolvedFile {
   constructor(
     public readonly sourceName: string,
     public readonly absolutePath: string,
-    public readonly fileData: CircomFileData,
     public readonly contentHash: string,
     public readonly lastModificationDate: Date,
+    public fileData: ResolvedFileData,
     libraryName?: string,
     libraryVersion?: string,
   ) {
@@ -206,6 +214,61 @@ export class CircomFilesResolver {
     }
   }
 
+  public async resolveMainComponentData(resolvedFile: CircomResolvedFile, dependencies: CircomResolvedFile[]) {
+    const templateName = resolvedFile.fileData.parsedFileData.mainComponentInfo.templateName;
+
+    if (!templateName) {
+      throw new HardhatZKitError(`Unable to resolve main component data for ${resolvedFile.sourceName} circuit`);
+    }
+
+    if (!resolvedFile.fileData.mainComponentData) {
+      const mainComponentData: ResolvedMainComponentData = {
+        parameters: {},
+        signals: [],
+      };
+
+      const fileWithTemplate: CircomResolvedFile | undefined = [resolvedFile, ...dependencies].find(
+        (file: CircomResolvedFile) => {
+          return !!file.fileData.parsedFileData.templates[templateName];
+        },
+      );
+
+      if (!fileWithTemplate) {
+        throw new HardhatZKitError(`Template not found for the main component with ${templateName} name`);
+      }
+
+      fileWithTemplate.fileData.parsedFileData.templates[templateName].parameters.forEach(
+        (param: string, index: number) => {
+          mainComponentData.parameters[param] =
+            resolvedFile.fileData.parsedFileData.mainComponentInfo.parameters[index];
+        },
+      );
+
+      const parsedInputs = this._parser.parseTemplateInputs(
+        fileWithTemplate.absolutePath,
+        templateName,
+        mainComponentData.parameters,
+      );
+
+      for (const key of Object.keys(parsedInputs)) {
+        const signalType: SignalType = this._getSignalType(parsedInputs[key].type);
+        const visibilityType: VisibilityType =
+          signalType == "Output" || resolvedFile.fileData.parsedFileData.mainComponentInfo.publicInputs.includes(key)
+            ? "Public"
+            : "Private";
+
+        mainComponentData.signals.push({
+          name: key,
+          dimension: parsedInputs[key].dimension,
+          type: signalType,
+          visibility: visibilityType,
+        });
+      }
+
+      resolvedFile.fileData.mainComponentData = mainComponentData;
+    }
+  }
+
   private async _resolveLocalSourceName(sourceName: string, remappedSourceName: string): Promise<CircomResolvedFile> {
     await this._validateSourceNameExistenceAndCasing(this._projectRoot, remappedSourceName, false);
 
@@ -311,17 +374,19 @@ export class CircomFilesResolver {
 
     const contentHash = createNonCryptographicHashBasedIdentifier(Buffer.from(rawContent)).toString("hex");
 
-    const parsedContent = this._parser.parse(rawContent, absolutePath, contentHash);
+    const fileData = this._parser.parse(rawContent, absolutePath, contentHash);
 
-    return new CircomResolvedFile(
+    const resolvedFile = new CircomResolvedFile(
       sourceName,
       absolutePath,
-      parsedContent,
       contentHash,
       lastModificationDate,
+      fileData,
       libraryName,
       libraryVersion,
     );
+
+    return resolvedFile;
   }
 
   private _isRelativeImport(from: CircomResolvedFile, imported: string): boolean {
@@ -354,6 +419,19 @@ export class CircomFilesResolver {
     }
 
     return sourceName.slice(0, endIndex);
+  }
+
+  private _getSignalType(type: string): SignalType {
+    switch (type) {
+      case "input":
+        return "Input";
+      case "output":
+        return "Output";
+      case "intermediate":
+        return "Intermediate";
+      default:
+        throw new HardhatZKitError(`Invalid signal type - ${type}`);
+    }
   }
 
   private _getUriScheme(s: string): string | undefined {

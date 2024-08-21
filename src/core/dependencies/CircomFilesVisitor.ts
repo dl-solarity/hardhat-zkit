@@ -7,7 +7,7 @@ import {
   CircomExpressionVisitor,
   TemplateDeclarationContext,
   SignalDeclarationContext,
-  IdentifierContext,
+  parseIdentifier,
 } from "@distributed-lab/circom-parser";
 
 import { CircomFileData } from "../../types/core";
@@ -72,7 +72,7 @@ export class CircomFilesVisitor extends CircomVisitor<void> {
     }
 
     this.fileData.templates[this.currentTemplate] = {
-      inputs: [],
+      inputs: {},
       parameters: parameters,
       isCustom: !!ctx.CUSTOM(),
     };
@@ -92,22 +92,26 @@ export class CircomFilesVisitor extends CircomVisitor<void> {
       const signalDefinition = ctx.signalDefinition();
 
       const identifier = signalDefinition.identifier();
-      let signalType = "";
+      let signalType = "intermediate";
 
       if (signalDefinition.SIGNAL_TYPE()) {
         signalType = signalDefinition.SIGNAL_TYPE().getText();
       }
 
-      this.fileData.templates[this.currentTemplate].inputs.push({
-        ...parseIdentifier(identifier),
+      const parsedIdentifierData = parseIdentifier(identifier);
+
+      this.fileData.templates[this.currentTemplate].inputs[parsedIdentifierData.name] = {
+        dimension: parsedIdentifierData.dimension,
         type: signalType,
-      });
+      };
 
       ctx.identifier_list().forEach((identifier) => {
-        this.fileData.templates[this.currentTemplate!].inputs.push({
-          ...parseIdentifier(identifier),
+        const parsedData = parseIdentifier(identifier);
+
+        this.fileData.templates[this.currentTemplate!].inputs[parsedData.name] = {
+          dimension: parsedData.dimension,
           type: signalType,
-        });
+        };
       });
     }
   };
@@ -115,7 +119,7 @@ export class CircomFilesVisitor extends CircomVisitor<void> {
   visitComponentMainDeclaration = (ctx: ComponentMainDeclarationContext) => {
     this.fileData.mainComponentInfo.templateName = ctx.ID().getText();
 
-    if (ctx.publicInputsList() && ctx.publicInputsList().args()) {
+    if (ctx.publicInputsList() && ctx.publicInputsList().args() && ctx.publicInputsList().args().ID_list()) {
       ctx
         .publicInputsList()
         .args()
@@ -125,7 +129,7 @@ export class CircomFilesVisitor extends CircomVisitor<void> {
         });
     }
 
-    if (ctx.expressionList()) {
+    if (ctx.expressionList() && ctx.expressionList().expression_list()) {
       const expressionVisitor = new CircomExpressionVisitor(false);
 
       ctx
@@ -135,18 +139,5 @@ export class CircomFilesVisitor extends CircomVisitor<void> {
           this.fileData.mainComponentInfo.parameters.push(expressionVisitor.visitExpression(expression));
         });
     }
-  };
-}
-
-function parseIdentifier(identifier: IdentifierContext) {
-  const inputDimension: string[] = [];
-
-  identifier.arrayDimension_list().forEach((dimension) => {
-    inputDimension.push(dimension.getText().slice(1, -1));
-  });
-
-  return {
-    name: identifier.ID().getText(),
-    dimension: inputDimension,
   };
 }

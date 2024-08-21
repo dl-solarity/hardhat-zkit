@@ -1,11 +1,11 @@
-import { CircomFileData, CompileFlags } from "../core";
+import { CompileFlags, ResolvedFileData } from "../core";
 
 export type CompileCacheEntry = {
   lastModificationDate: number;
   contentHash: string;
   sourceName: string;
   compileFlags: CompileFlags;
-  fileData: CircomFileData;
+  fileData: ResolvedFileData;
 };
 
 export type CompileCache = {

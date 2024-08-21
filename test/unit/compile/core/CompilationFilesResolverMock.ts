@@ -1,4 +1,4 @@
-import { CompilationFilesResolver, DependencyGraph } from "../../../../src/core";
+import { CircomFilesResolver, CompilationFilesResolver, DependencyGraph } from "../../../../src/core";
 import { CompileFlags, CircomResolvedFileInfo, CircomResolvedFile } from "../../../../src/types/core";
 
 export class CompilationFilesResolverMock extends CompilationFilesResolver {
@@ -18,8 +18,8 @@ export class CompilationFilesResolverMock extends CompilationFilesResolver {
     return this._getSourceNamesFromSourcePaths(sourcePaths);
   }
 
-  public async getDependencyGraph(sourceNames: string[]): Promise<DependencyGraph> {
-    return this._getDependencyGraph(sourceNames);
+  public async getDependencyGraph(sourceNames: string[], resolver: CircomFilesResolver): Promise<DependencyGraph> {
+    return this._getDependencyGraph(sourceNames, resolver);
   }
 
   public async invalidateCacheMissingArtifacts(resolvedFilesInfo: CircomResolvedFileInfo[]) {

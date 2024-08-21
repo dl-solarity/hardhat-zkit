@@ -10,7 +10,7 @@ import { CompilationFilesResolverMock } from "./CompilationFilesResolverMock";
 import { useEnvironment } from "../../../helpers";
 import { CircuitsCompileCache } from "../../../../src/cache";
 import { TASK_CIRCUITS_COMPILE, ZKIT_SCOPE_NAME } from "../../../../src/task-names";
-import { DependencyGraph } from "../../../../src/core";
+import { DependencyGraph, CircomFilesResolver, CircomFilesParser } from "../../../../src/core";
 import { getNormalizedFullPath } from "../../../../src/utils/path-utils";
 import { CIRCUITS_COMPILE_CACHE_FILENAME } from "../../../../src/constants";
 
@@ -38,13 +38,19 @@ describe("CompilationFilesResolver", () => {
 
       compilationFilesManager = getCompilationFilesManagerMock(this.hre);
 
+      const resolver = new CircomFilesResolver(
+        this.hre.config.paths.root,
+        new CircomFilesParser(),
+        (absolutePath: string) => this.hre.run(TASK_READ_FILE, { absolutePath }),
+      );
+
       const sourcePaths: string[] = await getAllFilesMatching(compilationFilesManager.getCircuitsDirFullPath(), (f) =>
         f.endsWith(".circom"),
       );
 
       sourceNames = await compilationFilesManager.getSourceNamesFromSourcePaths(sourcePaths);
 
-      dependencyGraph = await compilationFilesManager.getDependencyGraph(sourceNames);
+      dependencyGraph = await compilationFilesManager.getDependencyGraph(sourceNames, resolver);
 
       resolvedFiles = dependencyGraph.getResolvedFiles();
     });
@@ -125,7 +131,12 @@ describe("CompilationFilesResolver", () => {
 
       sourceNames = await compilationFilesManager.getSourceNamesFromSourcePaths(sourcePaths);
 
-      const dependencyGraph: DependencyGraph = await compilationFilesManager.getDependencyGraph(sourceNames);
+      const resolver = new CircomFilesResolver(
+        this.hre.config.paths.root,
+        new CircomFilesParser(),
+        (absolutePath: string) => this.hre.run(TASK_READ_FILE, { absolutePath }),
+      );
+      const dependencyGraph: DependencyGraph = await compilationFilesManager.getDependencyGraph(sourceNames, resolver);
 
       resolvedFilesInfo = compilationFilesManager.filterResolvedFiles(
         dependencyGraph.getResolvedFiles(),

@@ -1,14 +1,17 @@
-import { getCircomParser, ParserError } from "@distributed-lab/circom-parser";
+import { getCircomParser, ParserError, MainComponent, BigIntOrNestedArray } from "@distributed-lab/circom-parser";
 
 import { CircomFilesVisitor } from "./CircomFilesVisitor";
-import { CircomFileData } from "../../types/core";
+import { CircomTemplateInputsVisitor } from "./CircomTemplateInputsVisitor";
 import { CircuitsCompileCache } from "../../cache";
 import { Reporter } from "../../reporter";
 
-export class CircomFilesParser {
-  private _cache = new Map<string, CircomFileData>();
+import { InputData, ResolvedFileData } from "../../types/core";
 
-  public parse(fileContent: string, absolutePath: string, contentHash: string): CircomFileData {
+export class CircomFilesParser {
+  private _cache = new Map<string, ResolvedFileData>();
+  private _mainComponentsCache = new Map<string, MainComponent>();
+
+  public parse(fileContent: string, absolutePath: string, contentHash: string): ResolvedFileData {
     const cacheResult = this._getFromCache(absolutePath, contentHash);
 
     if (cacheResult !== null) {
@@ -21,18 +24,44 @@ export class CircomFilesParser {
 
     Reporter!.verboseLog("circom-files-parser", "Parsing '%s' file", [absolutePath]);
 
-    circomFilesVisitor.visit(parser.circuit());
+    const context = parser.circuit();
 
     if (parser.hasAnyErrors()) {
       throw new ParserError(parser.getAllErrors());
     }
 
-    this._cache.set(contentHash, circomFilesVisitor.fileData);
+    circomFilesVisitor.visit(context);
 
-    return circomFilesVisitor.fileData;
+    this._cache.set(contentHash, { parsedFileData: circomFilesVisitor.fileData });
+
+    return { parsedFileData: circomFilesVisitor.fileData };
   }
 
-  private _getFromCache(absolutePath: string, contentHash: string): CircomFileData | null {
+  public parseTemplateInputs(
+    absolutePath: string,
+    templateName: string,
+    parameterValues: Record<string, BigIntOrNestedArray>,
+  ): Record<string, InputData> {
+    const parser = getCircomParser(absolutePath);
+
+    const circomTemplateInputsVisitor = new CircomTemplateInputsVisitor(templateName, parameterValues);
+
+    const context = parser.circuit();
+
+    if (parser.hasAnyErrors()) {
+      throw new ParserError(parser.getAllErrors());
+    }
+
+    circomTemplateInputsVisitor.visit(context);
+
+    return circomTemplateInputsVisitor.templateInputs;
+  }
+
+  public getMainComponentInfo(absolutePath: string): MainComponent | undefined {
+    return this._mainComponentsCache.get(absolutePath);
+  }
+
+  private _getFromCache(absolutePath: string, contentHash: string): ResolvedFileData | null {
     const internalCacheEntry = this._cache.get(contentHash);
 
     if (internalCacheEntry !== undefined) {

@@ -1,3 +1,5 @@
+import { SignalInfo } from "../core";
+
 export interface ICircuitArtifacts {
   readCircuitArtifact(circuitNameOrFullyQualifiedName: string): Promise<CircuitArtifact>;
 
@@ -33,6 +35,7 @@ export type CircuitArtifact = {
 
 export type BaseCircuitInfo = {
   constraintsNumber: number;
+  signals: SignalInfo[];
 };
 
 export type CompilerOutputFileInfo = {

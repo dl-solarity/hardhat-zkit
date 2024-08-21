@@ -163,12 +163,22 @@ export class CompilationProcessor {
           circuitTemplateName: info.circuitName,
           circuitFileName: info.circuitFileName,
           circuitSourceName: info.resolvedFile.sourceName,
-          baseCircuitInfo: { constraintsNumber: 0 },
+          baseCircuitInfo: {
+            constraintsNumber: 0,
+            signals: [],
+          },
           compilerOutputFiles: {},
         };
       }
 
-      circuitArtifact.baseCircuitInfo = { constraintsNumber: info.constraintsNumber };
+      if (!info.resolvedFile.fileData.mainComponentData) {
+        throw new HardhatZKitError("Unable to emit artifacts for resolved file without main component data");
+      }
+
+      circuitArtifact.baseCircuitInfo = {
+        constraintsNumber: info.constraintsNumber,
+        signals: info.resolvedFile.fileData.mainComponentData.signals,
+      };
 
       await this._circuitArtifacts.saveCircuitArtifact(circuitArtifact, this._getUpdatedArtifactFileTypes());
     }

@@ -9,7 +9,7 @@ import { CircomFilesParser } from "../../../../src/core/dependencies";
 import { getNormalizedFullPath } from "../../../../src/utils/path-utils";
 import { CIRCUITS_COMPILE_CACHE_FILENAME } from "../../../../src/constants";
 
-import { CircomFileData } from "../../../../src/types/core";
+import { ResolvedFileData } from "../../../../src/types/core";
 
 describe("CircomFilesParser", () => {
   describe("parse", () => {
@@ -38,42 +38,42 @@ describe("CircomFilesParser", () => {
     it("should correctly parse file with empty circuit files cahce", async function () {
       const newParser: CircomFilesParser = new CircomFilesParser();
 
-      const result: CircomFileData = newParser.parse(fileContent, circuitPath, contentHash);
+      const result: ResolvedFileData = newParser.parse(fileContent, circuitPath, contentHash);
 
-      expect(result.includes).to.be.deep.eq(["../base/mul2Base.circom", "../base/sumMul.circom"]);
-      expect(result.pragmaInfo.compilerVersion).to.be.eq("2.0.0");
+      expect(result.parsedFileData.includes).to.be.deep.eq(["../base/mul2Base.circom", "../base/sumMul.circom"]);
+      expect(result.parsedFileData.pragmaInfo.compilerVersion).to.be.eq("2.0.0");
     });
 
     it("should correctly parse circuit file content wihout cache", async function () {
       fs.rmSync(circuitsCacheFullPath, { force: true });
 
-      const result: CircomFileData = parser.parse(fileContent, circuitPath, contentHash);
+      const result: ResolvedFileData = parser.parse(fileContent, circuitPath, contentHash);
 
-      expect(result.includes).to.be.deep.eq(["../base/mul2Base.circom", "../base/sumMul.circom"]);
-      expect(result.pragmaInfo.compilerVersion).to.be.eq("2.0.0");
+      expect(result.parsedFileData.includes).to.be.deep.eq(["../base/mul2Base.circom", "../base/sumMul.circom"]);
+      expect(result.parsedFileData.pragmaInfo.compilerVersion).to.be.eq("2.0.0");
     });
 
     it("should return parsed data from the parser cache", async function () {
       fs.rmSync(circuitsCacheFullPath, { force: true });
 
-      const result1: CircomFileData = parser.parse(fileContent, circuitPath, contentHash);
-      const result2: CircomFileData = parser.parse(fileContent, circuitPath, contentHash);
+      const result1: ResolvedFileData = parser.parse(fileContent, circuitPath, contentHash);
+      const result2: ResolvedFileData = parser.parse(fileContent, circuitPath, contentHash);
 
       expect(result1).to.be.deep.eq(result2);
     });
 
     it("should get parsed data from the extension cache", async function () {
-      const result: CircomFileData = parser.parse(fileContent, circuitPath, contentHash);
+      const result: ResolvedFileData = parser.parse(fileContent, circuitPath, contentHash);
 
-      expect(result.includes).to.be.deep.eq(["../base/mul2Base.circom", "../base/sumMul.circom"]);
-      expect(result.pragmaInfo.compilerVersion).to.be.eq("2.0.0");
+      expect(result.parsedFileData.includes).to.be.deep.eq(["../base/mul2Base.circom", "../base/sumMul.circom"]);
+      expect(result.parsedFileData.pragmaInfo.compilerVersion).to.be.eq("2.0.0");
     });
 
     it("should correctly parse data if the content hash in cache is not equal to passed content hash", async function () {
-      const result: CircomFileData = parser.parse(fileContent, circuitPath, contentHash + "1");
+      const result: ResolvedFileData = parser.parse(fileContent, circuitPath, contentHash + "1");
 
-      expect(result.includes).to.be.deep.eq(["../base/mul2Base.circom", "../base/sumMul.circom"]);
-      expect(result.pragmaInfo.compilerVersion).to.be.eq("2.0.0");
+      expect(result.parsedFileData.includes).to.be.deep.eq(["../base/mul2Base.circom", "../base/sumMul.circom"]);
+      expect(result.parsedFileData.pragmaInfo.compilerVersion).to.be.eq("2.0.0");
     });
   });
 });
