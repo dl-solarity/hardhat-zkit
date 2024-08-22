@@ -6,7 +6,7 @@ import { useEnvironment } from "../../helpers";
 import { CircuitsCompileCache, createCircuitsCompileCache, resetCircuitsCompileCache } from "../../../src/cache";
 import { getNormalizedFullPath } from "../../../src/utils/path-utils";
 import { CIRCUITS_COMPILE_CACHE_FILENAME, CIRCUIT_COMPILE_CACHE_VERSION } from "../../../src/constants";
-import { TASK_CIRCUITS_COMPILE } from "../../../src/task-names";
+import { TASK_CIRCUITS_COMPILE, ZKIT_SCOPE_NAME } from "../../../src/task-names";
 import { getFileHash } from "../../../src/utils/utils";
 
 import { CompileFlags } from "../../../src/types/core";
@@ -69,7 +69,7 @@ describe("CircuitsCompileCache", () => {
     });
 
     it("should correctly create CircuitsCompileCache instance and remove non existing files", async function () {
-      await this.hre.run(TASK_CIRCUITS_COMPILE);
+      await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
 
       const circuitsCacheFullPath: string = getNormalizedFullPath(
         this.hre.config.paths.cache,
@@ -122,7 +122,7 @@ describe("CircuitsCompileCache", () => {
     useEnvironment("with-circuits");
 
     it("should return correct results", async function () {
-      await this.hre.run(TASK_CIRCUITS_COMPILE);
+      await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
 
       expect(CircuitsCompileCache!.hasFileChanged("invalid-path", "", defaultCompileFlags)).to.be.true;
 

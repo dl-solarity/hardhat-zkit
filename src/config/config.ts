@@ -29,6 +29,7 @@ const defaultConfig: ZKitConfig = {
     typesDir: "generated-types/zkit",
   },
   verifiersDir: "contracts/verifiers",
+  verifiersType: "sol",
   nativeCompiler: false,
   quiet: false,
 };
