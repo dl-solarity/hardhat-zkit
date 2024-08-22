@@ -68,6 +68,7 @@ module.exports = {
     },
     verifiersDir: "contracts/verifiers",
     typesDir: "generated-types/zkit",
+    verifiersType: "sol",
     nativeCompiler: false,
     quiet: false,
   },
@@ -93,6 +94,7 @@ Where:
   - `ptauDownload` - The flag to allow automatic download of required `ptau` files.
 - `verifiersDir` - The directory where to generate the Solidity verifiers.
 - `typesDir` - The directory where to save the generated typed circuits wrappers.
+- `verifiersType` - The option (`sol` or `vy`) to indicate which language to use for verifiers generation.
 - `nativeCompiler` - The flag indicating whether to use the natively installed compiler.
 - `quiet` - The flag indicating whether to suppress the output.
 
@@ -103,7 +105,7 @@ There are several hardhat tasks in the `zkit` scope that the plugin provides:
 - `compile` task that compiles or recompiles the modified circuits with the main component.
 - `setup` task that generates or regenerates `zkey` and `vkey` for the previously compiled circuits.
 - `make` task that executes both `compile` and `setup` for convenience.
-- `verifiers` task that generates Solidity verifiers for all the previously setup circuits.
+- `verifiers` task that generates Solidity | Vyper verifiers for all the previously setup circuits.
 - `clean` task that cleans up the generated artifacts, types, etc.
 
 To view the available options, run the help command:
@@ -147,7 +149,7 @@ require("@solarity/chai-zkit"); // JavaScript
 The package extends `expect` chai assertion to recognize typed `zktype` objects for frictionless testing experience.
 
 > [!NOTE]
-> Please note that for witness testing purposes it is sufficient to compile the circuit just with `zkit:compile` task, without generating the keys.
+> Please note that for witness testing purposes it is sufficient to compile the circuit just with `zkit compile` task, without generating the keys.
 
 ### Example
 
@@ -213,7 +215,7 @@ main()
 To see the plugin in action, place the `Multiplier` circuit in the `circuits` directory and execute:
 
 ```bash
-npx hardhat zkit:make
+npx hardhat zkit make
 ```
 
 This command will compile the circuit leveraging `wasm`-based Circom compiler, download the necessary `ptau` file regarding the number of circuit's constraints, build the required `zkey` and `vkey` files, and generate TypeScript object wrappers to enable full typization of signals and ZK proofs.
@@ -228,7 +230,7 @@ Afterward, you may run the provided hardhat script.
 
 The method accepts the name of the `main` component of the circuit and returns the instantiated zkit object pointing to that circuit.
 
-The method works regardless of how the circuit was compiled, however, if `zkit:compile` task was used, the zkit methods that utilize proof generation or proof verification would throw an error by design.
+The method works regardless of how the circuit was compiled, however, if `zkit compile` task was used, the zkit methods that utilize proof generation or proof verification would throw an error by design.
 
 In case there are conflicts between circuit file names and `main` component names, you should use the `fullCircuitName`, which has the following form: `circuitSourceName:circuitName`.
 

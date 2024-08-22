@@ -7,6 +7,8 @@ import CliTable3 from "cli-table3";
 import { emoji } from "hardhat/internal/cli/emoji";
 import { pluralize } from "hardhat/internal/util/strings";
 
+import { VerifierLanguageType } from "@solarity/zkit";
+
 import { SpinnerProcessor } from "./SpinnerProcessor";
 import { ProgressBarProcessor } from "./ProgressBarProcessor";
 import { HardhatZKitError } from "../errors";
@@ -371,25 +373,38 @@ class BaseReporter {
     console.log(`\n${chalk.bold("Nothing to setup.")}\n`);
   }
 
-  public reportVerifiersGenerationHeader() {
+  public reportNothingToGenerate() {
+    if (this.isQuiet()) return;
+
+    console.log(`\n${chalk.bold("Nothing to generate.")}\n`);
+  }
+
+  public reportVerifiersGenerationHeader(verifiersType: VerifierLanguageType) {
     if (this.isQuiet()) return;
 
     let output: string = "";
 
-    output += `\n${chalk.bold("Starting generation of Solidity verifier contracts...")}\n`;
+    output += `\n${chalk.bold(`Starting generation of ${this._getVerifierLanguageMessage(verifiersType)} verifier contracts...`)}\n`;
 
     console.log(output);
   }
 
-  public reportVerifierGenerationStartWithSpinner(circuitName: string): string | null {
+  public reportVerifierGenerationStartWithSpinner(
+    circuitName: string,
+    verifiersType: VerifierLanguageType,
+  ): string | null {
     return this._startSpinner(
       circuitName,
       "verifier-generation",
-      `Generating Solidity verifier contract for ${circuitName} circuit`,
+      `Generating ${this._getVerifierLanguageMessage(verifiersType)} verifier contract for ${circuitName} circuit`,
     );
   }
 
-  public reportVerifierGenerationResult(spinnerId: string | null, circuitName: string) {
+  public reportVerifierGenerationResult(
+    spinnerId: string | null,
+    circuitName: string,
+    verifiersType: VerifierLanguageType,
+  ) {
     if (this.isQuiet() || !spinnerId) return;
 
     const generationTimeMessage: string = this._getSpinnerWorkingTimeMessage(
@@ -398,7 +413,7 @@ class BaseReporter {
 
     this._spinnerProcessor.succeedSpinner(
       spinnerId,
-      `Generated Solidity verifier contract for ${chalk.italic(circuitName)} circuit ${generationTimeMessage}`,
+      `Generated ${this._getVerifierLanguageMessage(verifiersType)} verifier contract for ${chalk.italic(circuitName)} circuit ${generationTimeMessage}`,
     );
   }
 
@@ -414,6 +429,16 @@ class BaseReporter {
       totalValue,
       startValue,
     );
+  }
+
+  public reportVerifiersGenerationResult(verifiersType: VerifierLanguageType, verifiersCount: number) {
+    if (this.isQuiet()) return;
+
+    let output: string = "";
+
+    output += `\n${chalk.bold(`Successfully generated ${verifiersCount} ${this._getVerifierLanguageMessage(verifiersType)} verifier contracts.`)}\n`;
+
+    console.log(output);
   }
 
   public updateProgressBarValue(valueToAdd: number) {
@@ -452,6 +477,17 @@ class BaseReporter {
 
   private _getSpinnerWorkingTimeMessage(workingTime: string | undefined): string {
     return workingTime ? chalk.grey(`(${workingTime} s)`) : "";
+  }
+
+  private _getVerifierLanguageMessage(verifiersType: VerifierLanguageType): string {
+    switch (verifiersType) {
+      case "sol":
+        return "Solidity";
+      case "vy":
+        return "Vyper";
+      default:
+        throw new HardhatZKitError(`Invalid verifiers type - ${verifiersType}`);
+    }
   }
 
   private _getFileSizeInMB(filePath: string | undefined): string {

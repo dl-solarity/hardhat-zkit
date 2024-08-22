@@ -15,6 +15,7 @@ const defaultConfig: HardhatUserConfig = {
     },
     quiet: true,
     verifiersDir: "contracts/verifiers",
+    verifiersType: "vy",
   },
 };
 
