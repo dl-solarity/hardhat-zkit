@@ -8,6 +8,8 @@ import { TASK_CIRCUITS_COMPILE, ZKIT_SCOPE_NAME } from "../../../../src/task-nam
 import { CircomFilesParser } from "../../../../src/core/dependencies";
 import { getNormalizedFullPath } from "../../../../src/utils/path-utils";
 import { CIRCUITS_COMPILE_CACHE_FILENAME } from "../../../../src/constants";
+import { createCircuitsCompileCache } from "../../../../src/cache";
+import { createReporter } from "../../../../src/reporter";
 
 import { ResolvedFileData } from "../../../../src/types/core";
 
@@ -74,6 +76,25 @@ describe("CircomFilesParser", () => {
 
       expect(result.parsedFileData.includes).to.be.deep.eq(["../base/mul2Base.circom", "../base/sumMul.circom"]);
       expect(result.parsedFileData.pragmaInfo.compilerVersion).to.be.eq("2.0.0");
+    });
+  });
+
+  describe("invalid parse", () => {
+    useEnvironment("with-complex-circuits");
+
+    it("should get exception if circuit has function call inside main component parameters", async function () {
+      createReporter(true);
+      await createCircuitsCompileCache(undefined);
+
+      const parser = new CircomFilesParser();
+
+      const circuitPath = getNormalizedFullPath(this.hre.config.paths.root, "circuits/mul3Arr.circom");
+      const fileContent = fs.readFileSync(circuitPath, "utf-8");
+      const contentHash = createNonCryptographicHashBasedIdentifier(Buffer.from(fileContent)).toString("hex");
+
+      expect(function () {
+        parser.parse(fileContent, circuitPath, contentHash);
+      }).to.throw("Expression value must be of type bigint or bigint array (16:32)");
     });
   });
 });

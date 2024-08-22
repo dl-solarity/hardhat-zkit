@@ -57,10 +57,6 @@ export class CircomFilesParser {
     return circomTemplateInputsVisitor.templateInputs;
   }
 
-  public getMainComponentInfo(absolutePath: string): MainComponent | undefined {
-    return this._mainComponentsCache.get(absolutePath);
-  }
-
   private _getFromCache(absolutePath: string, contentHash: string): ResolvedFileData | null {
     const internalCacheEntry = this._cache.get(contentHash);
 
