@@ -1,6 +1,6 @@
 import { LibraryInfo } from "hardhat/types/builtin-tasks";
 
-import { BigIntOrNestedArray } from "@distributed-lab/circom-parser";
+import { BigIntOrNestedArray } from "@distributedlab/circom-parser";
 
 import { CircomFileData } from "./parser/circom-files-visitor";
 

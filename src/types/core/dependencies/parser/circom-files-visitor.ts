@@ -1,4 +1,4 @@
-import { MainComponent, PragmaComponent } from "@distributed-lab/circom-parser";
+import { MainComponent, PragmaComponent } from "@distributedlab/circom-parser";
 
 export type InputData = {
   dimension: string[];

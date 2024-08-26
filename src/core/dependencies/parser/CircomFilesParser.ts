@@ -1,4 +1,4 @@
-import { getCircomParser, ParserError, MainComponent, BigIntOrNestedArray } from "@distributed-lab/circom-parser";
+import { getCircomParser, ParserError, MainComponent, BigIntOrNestedArray } from "@distributedlab/circom-parser";
 
 import { CircomFilesVisitor } from "./CircomFilesVisitor";
 import { CircomTemplateInputsVisitor } from "./CircomTemplateInputsVisitor";

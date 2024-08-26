@@ -9,7 +9,7 @@ import {
   SignalDeclarationContext,
   parseIdentifier,
   IdentifierContext,
-} from "@distributed-lab/circom-parser";
+} from "@distributedlab/circom-parser";
 
 import { CircomFileData } from "../../../types/core";
 

@@ -1,4 +1,4 @@
-import { BigIntOrNestedArray } from "@distributed-lab/circom-parser";
+import { BigIntOrNestedArray } from "@distributedlab/circom-parser";
 import { z } from "zod";
 
 export const BigIntOrNestedArraySchema: z.ZodType<BigIntOrNestedArray> = z.lazy(() =>

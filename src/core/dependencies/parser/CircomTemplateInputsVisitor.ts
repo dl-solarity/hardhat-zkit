@@ -6,7 +6,7 @@ import {
   BigIntOrNestedArray,
   IdentifierContext,
   Variables,
-} from "@distributed-lab/circom-parser";
+} from "@distributedlab/circom-parser";
 
 import { InputData } from "../../../types/core";
 import { HardhatZKitError } from "../../../errors";
