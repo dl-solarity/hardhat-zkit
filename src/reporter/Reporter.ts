@@ -69,7 +69,7 @@ class BaseReporter {
   }
 
   public reportCircuitFilesResolvingStartWithSpinner(): string | null {
-    return this._startSpinner("circuits", "files-resolving", `Resolving circuit files to compile`);
+    return this._startSpinner("circuits", "files-resolving", `Resolving and parsing circuits`);
   }
 
   public reportCircuitFilesResolvingResult(spinnerId: string | null) {
@@ -79,10 +79,7 @@ class BaseReporter {
       this._spinnerProcessor.getWorkingTime(spinnerId),
     );
 
-    this._spinnerProcessor.succeedSpinner(
-      spinnerId,
-      `Successfully resolved circuit files to compile ${resolvingTimeMessage}`,
-    );
+    this._spinnerProcessor.succeedSpinner(spinnerId, `Circuits are ready for the compilation ${resolvingTimeMessage}`);
   }
 
   public reportCircuitFilesResolvingFail(spinnerId: string | null) {
