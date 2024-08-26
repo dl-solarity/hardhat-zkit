@@ -8,7 +8,6 @@ import { emoji } from "hardhat/internal/cli/emoji";
 import { pluralize } from "hardhat/internal/util/strings";
 
 import { VerifierLanguageType } from "@solarity/zkit";
-import { ASTParserError, ErrorObj } from "@solarity/zktype";
 
 import { SpinnerProcessor } from "./SpinnerProcessor";
 import { ProgressBarProcessor } from "./ProgressBarProcessor";
@@ -64,9 +63,33 @@ class BaseReporter {
 
     let output: string = "";
 
-    output += `\n${chalk.bold("Compiler version:")} ${chalk.green(compilerVersion)}`;
+    output += `\n${chalk.bold("Compiler version:")} ${chalk.green(compilerVersion)}\n`;
 
     console.log(output);
+  }
+
+  public reportCircuitFilesResolvingStartWithSpinner(): string | null {
+    return this._startSpinner("circuits", "files-resolving", `Resolving and parsing circuits`);
+  }
+
+  public reportCircuitFilesResolvingResult(spinnerId: string | null) {
+    if (this.isQuiet() || !spinnerId) return;
+
+    const resolvingTimeMessage: string = this._getSpinnerWorkingTimeMessage(
+      this._spinnerProcessor.getWorkingTime(spinnerId),
+    );
+
+    this._spinnerProcessor.succeedSpinner(spinnerId, `Circuits are ready for the compilation ${resolvingTimeMessage}`);
+  }
+
+  public reportCircuitFilesResolvingFail(spinnerId: string | null) {
+    if (this.isQuiet() || !spinnerId) return;
+
+    const resolvingTimeMessage: string = this._getSpinnerWorkingTimeMessage(
+      this._spinnerProcessor.getWorkingTime(spinnerId),
+    );
+
+    this._spinnerProcessor.failSpinner(spinnerId, `Failed to resolve circuit files ${resolvingTimeMessage}\n`);
   }
 
   public reportCompilationProcessHeader() {
@@ -133,30 +156,6 @@ class BaseReporter {
     output += `\n${table.toString()}\n`;
 
     console.log(output);
-  }
-
-  public reportTypesGenerationWarnings(warnings: ErrorObj[]) {
-    if (this.isQuiet()) return;
-
-    if (warnings.length > 0) {
-      let warningsMessage: string = `\n${chalk.bold("Failed to generate types for the following circuits:")}\n`;
-
-      for (const warning of warnings) {
-        if (!warning) {
-          continue;
-        }
-
-        let circuitNameMessage = "";
-
-        if (warning instanceof ASTParserError) {
-          circuitNameMessage = `${chalk.bold(warning.error.circuitFullNames)}: `;
-        }
-
-        warningsMessage += `\n${chalk.yellow("⚠")} ${circuitNameMessage}${warning.message}`;
-      }
-
-      console.log(warningsMessage);
-    }
   }
 
   public reportCircuitListToSetup(
@@ -498,10 +497,10 @@ class BaseReporter {
     return (fileSize / BYTES_IN_MB).toFixed(3);
   }
 
-  private _startSpinner(circuitName: string, spinnerIdSuffix: string, spinnerText: string): string | null {
+  private _startSpinner(spinnerIdName: string, spinnerIdSuffix: string, spinnerText: string): string | null {
     if (this.isQuiet()) return null;
 
-    const spinnerId: string = `${circuitName}-${spinnerIdSuffix}`;
+    const spinnerId: string = `${spinnerIdName}-${spinnerIdSuffix}`;
 
     this._spinnerProcessor.createSpinner(spinnerId, { text: spinnerText });
 

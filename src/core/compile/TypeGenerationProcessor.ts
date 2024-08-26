@@ -1,12 +1,12 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { localPathToSourceName } from "hardhat/utils/source-names";
 
-import { CircuitTypesGenerator, ASTParserError, ErrorObj } from "@solarity/zktype";
+import { CircuitTypesGenerator } from "@solarity/zktype";
 
 import { Reporter } from "../../reporter";
-import { HardhatZKitError } from "../../errors";
 
 import { ZKitConfig } from "../../types/zkit-config";
-import { CircuitArtifact, ICircuitArtifacts } from "../../types/artifacts/circuit-artifacts";
+import { ICircuitArtifacts } from "../../types/artifacts/circuit-artifacts";
 
 export class TypeGenerationProcessor {
   private readonly _zkitConfig: ZKitConfig;
@@ -20,62 +20,28 @@ export class TypeGenerationProcessor {
   }
 
   public async generateAllTypes() {
-    const allFullyQualifiedNames: string[] = await this._circuitArtifacts.getAllCircuitFullyQualifiedNames();
-
-    await this.generateTypes(allFullyQualifiedNames);
-  }
-
-  public async generateTypes(circuitFullyQualifiedNames: string[]) {
-    const circuitsASTPaths: string[] = await Promise.all(
-      circuitFullyQualifiedNames.map(async (name: string): Promise<string> => {
-        const circuitArtifact: CircuitArtifact = await this._circuitArtifacts.readCircuitArtifact(name);
-
-        const astFilePath: string | undefined = circuitArtifact.compilerOutputFiles.ast?.fileSourcePath;
-
-        if (!astFilePath) {
-          throw new HardhatZKitError(
-            `AST file for ${circuitArtifact.circuitTemplateName} circuit not found. Compile circuits and try again.`,
-          );
-        }
-
-        return astFilePath;
+    const circuitsArtifactsPaths: string[] = await Promise.all(
+      (await this._circuitArtifacts.getCircuitArtifactPaths()).map(async (fullPath: string) => {
+        return localPathToSourceName(this._root, fullPath);
       }),
     );
 
     const typesGenerator: CircuitTypesGenerator = new CircuitTypesGenerator({
       basePath: this._zkitConfig.circuitsDir,
       projectRoot: this._root,
-      outputArtifactsDir: this._zkitConfig.typesSettings.typesArtifactsDir,
-      outputTypesDir: this._zkitConfig.typesSettings.typesDir,
-      circuitsASTPaths,
+      outputTypesDir: this._zkitConfig.typesDir,
+      circuitsArtifactsPaths,
     });
+
+    await typesGenerator.generateTypes();
 
     Reporter!.verboseLog("type-generation-processor", "Created CircuitTypesGenerator with params: %O", [
       {
         basePath: this._zkitConfig.circuitsDir,
         projectRoot: this._root,
-        outputArtifactsDir: this._zkitConfig.typesSettings.typesArtifactsDir,
-        outputTypesDir: this._zkitConfig.typesSettings.typesDir,
-        circuitsASTPaths,
+        outputTypesDir: this._zkitConfig.typesDir,
+        circuitsArtifactsPaths,
       },
-    ]);
-
-    const warnings: ErrorObj[] = await typesGenerator.generateTypes();
-
-    Reporter!.reportTypesGenerationWarnings(warnings);
-
-    Reporter!.verboseLog("type-generation-processor", "Types generation warnings: %O", [
-      warnings.map((warning) => {
-        if (!warning) {
-          return;
-        }
-
-        if (warning instanceof ASTParserError) {
-          return JSON.stringify(warning.error);
-        }
-
-        return warning.message;
-      }),
     ]);
   }
 }

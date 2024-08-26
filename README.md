@@ -66,11 +66,8 @@ module.exports = {
       ptauDir: undefined,
       ptauDownload: true,
     },
-    typesSettings: {
-      typesArtifactsDir: "zkit/abi",
-      typesDir: "generated-types/zkit",
-    },
     verifiersDir: "contracts/verifiers",
+    typesDir: "generated-types/zkit",
     verifiersType: "sol",
     nativeCompiler: false,
     quiet: false,
@@ -95,10 +92,8 @@ Where:
   - `skipFiles` - The list of directories (or files) to be excluded from the setup phase.
   - `ptauDir` - The directory where to look for the `ptau` files. `$HOME/.zkit/ptau/` by default.
   - `ptauDownload` - The flag to allow automatic download of required `ptau` files.
-- `typesSettings`
-  - `typesArtifactsDir` - The directory where to save the generated circuits ABI.
-  - `typesDir` - The directory where to save the generated typed circuits wrappers.
-- `verifiersDir` - The directory where to generate the verifiers.
+- `verifiersDir` - The directory where to generate the Solidity verifiers.
+- `typesDir` - The directory where to save the generated typed circuits wrappers.
 - `verifiersType` - The option (`sol` or `vy`) to indicate which language to use for verifiers generation.
 - `nativeCompiler` - The flag indicating whether to use the natively installed compiler.
 - `quiet` - The flag indicating whether to suppress the output.

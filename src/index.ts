@@ -52,7 +52,7 @@ import {
   SetupTaskConfig,
 } from "./types/tasks";
 import { CircuitArtifact } from "./types/artifacts/circuit-artifacts";
-import { CompileFlags, ResolvedFileInfo, CircuitSetupInfo } from "./types/core";
+import { CompileFlags, CircomResolvedFileInfo, CircuitSetupInfo } from "./types/core";
 
 const zkitScope = scope(ZKIT_SCOPE_NAME, "The ultimate TypeScript environment for Circom development");
 
@@ -79,8 +79,8 @@ const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfi
     CIRCUITS_COMPILE_CACHE_FILENAME,
   );
 
-  await createCircuitsCompileCache(circuitsCompileCacheFullPath);
   createReporter(taskArgs.quiet || env.config.zkit.quiet);
+  await createCircuitsCompileCache(circuitsCompileCacheFullPath);
 
   if (env.config.zkit.nativeCompiler) {
     await CircomCompilerFactory.checkNativeCompilerExistence();
@@ -103,7 +103,7 @@ const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfi
   Reporter!.reportCompilerVersion(COMPILER_VERSION);
   Reporter!.verboseLog("index", "Compile flags: %O", [compileFlags]);
 
-  const resolvedFilesInfo: ResolvedFileInfo[] = await compilationFileResolver.getResolvedFilesToCompile(
+  const resolvedFilesInfo: CircomResolvedFileInfo[] = await compilationFileResolver.getResolvedFilesToCompile(
     compileFlags,
     taskArgs.force,
   );
@@ -123,9 +123,7 @@ const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfi
 
     const typeGenerationProcessor: TypeGenerationProcessor = new TypeGenerationProcessor(env);
 
-    await typeGenerationProcessor.generateTypes(
-      resolvedFilesInfo.map((fileInfo: ResolvedFileInfo) => fileInfo.circuitFullyQualifiedName),
-    );
+    await typeGenerationProcessor.generateAllTypes();
 
     for (const fileInfo of resolvedFilesInfo) {
       for (const file of [fileInfo.resolvedFile, ...fileInfo.dependencies]) {
@@ -134,8 +132,7 @@ const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfi
           contentHash: file.contentHash,
           sourceName: file.sourceName,
           compileFlags,
-          imports: file.content.imports,
-          versionPragmas: file.content.versionPragmas,
+          fileData: file.fileData,
         });
       }
     }
@@ -152,8 +149,8 @@ const setup: ActionType<SetupTaskConfig> = async (taskArgs: SetupTaskConfig, env
     CIRCUITS_SETUP_CACHE_FILENAME,
   );
 
-  await createCircuitsSetupCache(circuitsSetupCacheFullPath);
   createReporter(taskArgs.quiet || env.config.zkit.quiet);
+  await createCircuitsSetupCache(circuitsSetupCacheFullPath);
 
   const setupFileResolver: SetupFilesResolver = new SetupFilesResolver(env.zkit.circuitArtifacts, env.config);
 
@@ -268,19 +265,11 @@ const clean: ActionType<any> = async (_taskArgs: any, env: HardhatRuntimeEnviron
     env.config.paths.root,
     env.config.zkit.compilationSettings.artifactsDir,
   );
-  const typesArtifactsFullPath: string = getNormalizedFullPath(
-    env.config.paths.root,
-    env.config.zkit.typesSettings.typesArtifactsDir,
-  );
-  const circuitTypesFullPath: string = getNormalizedFullPath(
-    env.config.paths.root,
-    env.config.zkit.typesSettings.typesDir,
-  );
+  const circuitTypesFullPath: string = getNormalizedFullPath(env.config.paths.root, env.config.zkit.typesDir);
 
   fs.rmSync(circuitsCompileCacheFullPath, { force: true });
   fs.rmSync(circuitsSetupCacheFullPath, { force: true });
   fs.rmSync(artifactsDirFullPath, { recursive: true, force: true });
-  fs.rmSync(typesArtifactsFullPath, { recursive: true, force: true });
   fs.rmSync(circuitTypesFullPath, { recursive: true, force: true });
 };
 
@@ -302,9 +291,8 @@ const getCircuitZKit: ActionType<GetCircuitZKitConfig> = async (
   const typesGenerator: CircuitTypesGenerator = new CircuitTypesGenerator({
     basePath: env.config.zkit.circuitsDir,
     projectRoot: env.config.paths.root,
-    outputArtifactsDir: env.config.zkit.typesSettings.typesArtifactsDir,
-    outputTypesDir: env.config.zkit.typesSettings.typesDir,
-    circuitsASTPaths: [],
+    outputTypesDir: env.config.zkit.typesDir,
+    circuitsArtifactsPaths: [],
   });
 
   const circuitZKitConfig: CircuitZKitConfig = {

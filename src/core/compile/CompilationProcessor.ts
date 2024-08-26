@@ -6,8 +6,6 @@ import { v4 as uuid } from "uuid";
 
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
-import { CircuitAST } from "@solarity/zktype";
-
 import { CircomCompilerFactory } from "../compiler/CircomCompilerFactory";
 import { HardhatZKitError } from "../../errors";
 import { CIRCUIT_ARTIFACT_VERSION, NODE_MODULES } from "../../constants";
@@ -18,11 +16,10 @@ import { ZKitConfig } from "../../types/zkit-config";
 import { ArtifactsFileType, CircuitArtifact, ICircuitArtifacts } from "../../types/artifacts/circuit-artifacts";
 import {
   ICircomCompiler,
-  IWASMCircomCompiler,
   CompilationProccessorConfig,
   CompilationInfo,
-  ResolvedFileInfo,
   CompileConfig,
+  CircomResolvedFileInfo,
 } from "../../types/core";
 
 export class CompilationProcessor {
@@ -45,7 +42,7 @@ export class CompilationProcessor {
     ]);
   }
 
-  public async compile(filesInfoToCompile: ResolvedFileInfo[]) {
+  public async compile(filesInfoToCompile: CircomResolvedFileInfo[]) {
     const tempDir: string = path.join(os.tmpdir(), ".zkit", uuid());
 
     try {
@@ -54,18 +51,13 @@ export class CompilationProcessor {
       Reporter!.verboseLog("compilation-processor", "Compilation temp directory: %s", [tempDir]);
       Reporter!.reportCompilationProcessHeader();
 
-      const nativeCompiler: ICircomCompiler | undefined = this._zkitConfig.nativeCompiler
+      const compiler: ICircomCompiler = this._zkitConfig.nativeCompiler
         ? await CircomCompilerFactory.createNativeCircomCompiler(this._config.compilerVersion)
-        : undefined;
-      const wasmCompiler: IWASMCircomCompiler = CircomCompilerFactory.createWASMCircomCompiler(
-        this._config.compilerVersion,
-      );
+        : CircomCompilerFactory.createWASMCircomCompiler(this._config.compilerVersion);
 
       const compilationInfoArr: CompilationInfo[] = await this._getCompilationInfoArr(tempDir, filesInfoToCompile);
 
-      await this._compileCircuits(nativeCompiler ?? wasmCompiler, wasmCompiler, compilationInfoArr);
-
-      await this._createCircuitASTFiles(compilationInfoArr);
+      await this._compileCircuits(compiler, compilationInfoArr);
 
       compilationInfoArr.forEach((info: CompilationInfo) => {
         info.constraintsNumber = this._getConstraintsNumber(info);
@@ -81,11 +73,7 @@ export class CompilationProcessor {
     }
   }
 
-  private async _compileCircuits(
-    compiler: ICircomCompiler,
-    wasmCompiler: IWASMCircomCompiler,
-    compilationInfoArr: CompilationInfo[],
-  ) {
+  private async _compileCircuits(compiler: ICircomCompiler, compilationInfoArr: CompilationInfo[]) {
     for (const info of compilationInfoArr) {
       const spinnerId: string | null = Reporter!.reportCircuitCompilationStartWithSpinner(
         info.circuitName,
@@ -106,7 +94,6 @@ export class CompilationProcessor {
 
       try {
         await compiler.compile(compileConfig);
-        await wasmCompiler.generateAST(compileConfig);
       } catch (error) {
         Reporter!.reportCircuitCompilationFail(spinnerId, info.circuitName, info.circuitFileName);
 
@@ -133,19 +120,6 @@ export class CompilationProcessor {
     }
   }
 
-  private async _createCircuitASTFiles(compilationInfoArr: CompilationInfo[]) {
-    compilationInfoArr.forEach((info: CompilationInfo) => {
-      const compilerASTFilePath: string = getNormalizedFullPath(info.tempArtifactsPath, `${info.circuitName}_ast.json`);
-
-      const circuitAST: CircuitAST = {
-        sourcePath: info.resolvedFile.sourceName,
-        circomCompilerOutput: JSON.parse(fs.readFileSync(compilerASTFilePath, "utf-8")),
-      };
-
-      fs.writeFileSync(compilerASTFilePath, JSON.stringify(circuitAST));
-    });
-  }
-
   private async _emitArtifacts(compilationInfoArr: CompilationInfo[]) {
     for (const info of compilationInfoArr) {
       const fullyQualifiedName: string = this._circuitArtifacts.getCircuitFullyQualifiedName(
@@ -163,12 +137,22 @@ export class CompilationProcessor {
           circuitTemplateName: info.circuitName,
           circuitFileName: info.circuitFileName,
           circuitSourceName: info.resolvedFile.sourceName,
-          baseCircuitInfo: { constraintsNumber: 0 },
+          baseCircuitInfo: {
+            constraintsNumber: 0,
+            signals: [],
+          },
           compilerOutputFiles: {},
         };
       }
 
-      circuitArtifact.baseCircuitInfo = { constraintsNumber: info.constraintsNumber };
+      if (!info.resolvedFile.fileData.mainComponentData) {
+        throw new HardhatZKitError("Unable to emit artifacts for resolved file without main component data");
+      }
+
+      circuitArtifact.baseCircuitInfo = {
+        constraintsNumber: info.constraintsNumber,
+        signals: info.resolvedFile.fileData.mainComponentData.signals,
+      };
 
       await this._circuitArtifacts.saveCircuitArtifact(circuitArtifact, this._getUpdatedArtifactFileTypes());
     }
@@ -201,12 +185,12 @@ export class CompilationProcessor {
 
   private async _getCompilationInfoArr(
     tempDir: string,
-    filesInfoToCompile: ResolvedFileInfo[],
+    filesInfoToCompile: CircomResolvedFileInfo[],
   ): Promise<CompilationInfo[]> {
     const artifactsDirFullPath = this._circuitArtifacts.getCircuitArtifactsDirFullPath();
 
     return Promise.all(
-      filesInfoToCompile.map(async (fileInfo: ResolvedFileInfo): Promise<CompilationInfo> => {
+      filesInfoToCompile.map(async (fileInfo: CircomResolvedFileInfo): Promise<CompilationInfo> => {
         return {
           circuitName: fileInfo.circuitName,
           circuitFileName: path.parse(fileInfo.resolvedFile.absolutePath).name,
@@ -220,7 +204,7 @@ export class CompilationProcessor {
   }
 
   private _getUpdatedArtifactFileTypes(): ArtifactsFileType[] {
-    const fileTypes: ArtifactsFileType[] = ["ast"];
+    const fileTypes: ArtifactsFileType[] = [];
 
     this._config.compileFlags.wasm && fileTypes.push("wasm");
     this._config.compileFlags.c && fileTypes.push("c");
