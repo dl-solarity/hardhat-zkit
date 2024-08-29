@@ -51,7 +51,7 @@ describe("CircomCompilerFactory", () => {
     });
 
     it("should correctly throw error if pass invalid version", async function () {
-      const invalidVersion = "2.0.0";
+      const invalidVersion = "2.1.10";
 
       const reason = `Unsupported Circom compiler version - ${invalidVersion}. Please provide another version.`;
 
