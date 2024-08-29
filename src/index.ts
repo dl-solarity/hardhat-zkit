@@ -38,10 +38,13 @@ import {
   SetupProcessor,
   SetupFilesResolver,
 } from "./core";
+
+import { HardhatZKitError } from "./errors";
 import { Reporter, createReporter } from "./reporter";
 import { CircuitArtifacts } from "./artifacts/CircuitArtifacts";
-import { CIRCUITS_COMPILE_CACHE_FILENAME, CIRCUITS_SETUP_CACHE_FILENAME, COMPILER_VERSION } from "./constants";
+import { CIRCUITS_COMPILE_CACHE_FILENAME, CIRCUITS_SETUP_CACHE_FILENAME } from "./constants";
 import { getNormalizedFullPath } from "./utils/path-utils";
+import { isCircomVersionValid } from "./core/utils/versioning";
 
 import {
   MakeTaskConfig,
@@ -95,13 +98,18 @@ const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfi
     c: taskArgs.c || env.config.zkit.compilationSettings.c,
   };
 
-  Reporter!.reportCompilerVersion(COMPILER_VERSION);
   Reporter!.verboseLog("index", "Compile flags: %O", [compileFlags]);
 
   const resolvedFilesInfo: CircomResolvedFileInfo[] = await compilationFileResolver.getResolvedFilesToCompile(
     compileFlags,
     taskArgs.force,
   );
+
+  const configCompilerVersion = env.config.zkit.compilerVersion;
+
+  if (configCompilerVersion && !isCircomVersionValid(configCompilerVersion)) {
+    throw new HardhatZKitError(`Invalid Circom compiler version ${configCompilerVersion} specified in the config`);
+  }
 
   if (resolvedFilesInfo.length > 0) {
     const compilationProcessor: CompilationProcessor = new CompilationProcessor(

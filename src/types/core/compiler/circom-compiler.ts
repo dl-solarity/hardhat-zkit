@@ -23,9 +23,3 @@ export interface ICircomCompiler {
 
   getCompilationArgs: (config: CompileConfig) => string[];
 }
-
-export interface IWASMCircomCompiler extends ICircomCompiler {
-  generateAST: (config: BaseCompileConfig) => Promise<void>;
-
-  getASTGenerationArgs: (config: BaseCompileConfig) => string[];
-}

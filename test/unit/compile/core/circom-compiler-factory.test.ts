@@ -21,7 +21,7 @@ describe("CircomCompilerFactory", () => {
     useEnvironment("with-circuits");
 
     it("should correctly create circom compiler instance", async function () {
-      const compiler: ICircomCompiler = CircomCompilerFactory.createWASMCircomCompiler("0.2.18");
+      const compiler: ICircomCompiler = await CircomCompilerFactory.createBinaryCircomCompiler(undefined, "0.2.18");
 
       const circuitFullPath: string = getNormalizedFullPath(this.hre.config.paths.root, "circuits/main/mul2.circom");
       const artifactsFullPath: string = getNormalizedFullPath(
@@ -53,11 +53,11 @@ describe("CircomCompilerFactory", () => {
     it("should correctly throw error if pass invalid version", async function () {
       const invalidVersion = "2.1.10";
 
-      const reason = `Unsupported Circom compiler version - ${invalidVersion}. Please provide another version.`;
+      const reason = `Unsupported Circom compiler version - ${invalidVersion} specified inside a circuit. Please provide another version.`;
 
-      expect(function () {
-        CircomCompilerFactory.createWASMCircomCompiler(invalidVersion as any);
-      }).to.throw(reason);
+      await expect(CircomCompilerFactory.createBinaryCircomCompiler(undefined, invalidVersion)).to.be.rejectedWith(
+        reason,
+      );
     });
   });
 });

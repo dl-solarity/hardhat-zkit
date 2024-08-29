@@ -41,6 +41,7 @@ describe("config", () => {
         verifiersDir: "contracts/verifiers",
         typesDir: "generated-types/zkit",
         verifiersType: "vy",
+        compilerVersion: "2.1.8",
         quiet: true,
       };
 

@@ -1,11 +1,3 @@
-export interface ICompilerDownloader {
-  isCompatibleCompilerDownloaded(highestVersion: string): Promise<boolean>;
-
-  getLatestCompilerBinary(): Promise<string>;
-
-  downloadLatestCompiler(): Promise<void>;
-}
-
 export enum CompilerPlatformBinary {
   LINUX_AMD = "circom-linux-amd64",
   LINUX_ARM = "circom-linux-arm64",

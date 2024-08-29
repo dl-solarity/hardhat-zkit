@@ -9,6 +9,7 @@ export type ZKitConfig = {
   verifiersDir: string;
   typesDir: string;
   verifiersType: VerifierLanguageType;
+  compilerVersion?: string;
   quiet: boolean;
 };
 

@@ -15,7 +15,7 @@ import { HardhatZKitError } from "../errors";
 import { BYTES_IN_MB } from "../constants";
 
 import { CircuitArtifact } from "../types/artifacts/circuit-artifacts";
-import { CompilationInfo, CompilerVersion, CircuitSetupInfo } from "../types/core";
+import { CompilationInfo, CircuitSetupInfo } from "../types/core";
 
 class BaseReporter {
   private _spinnerProcessor: SpinnerProcessor;
@@ -58,7 +58,7 @@ class BaseReporter {
     }
   }
 
-  public reportCompilerVersion(compilerVersion: CompilerVersion) {
+  public reportCompilerVersion(compilerVersion: string) {
     if (this.isQuiet()) return;
 
     let output: string = "";

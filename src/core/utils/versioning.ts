@@ -37,3 +37,13 @@ export function isVersionHigherOrEqual(version1: string, version2: string): bool
 
   return v1Patch >= v2Patch;
 }
+
+export function isCircomVersionValid(version: string) {
+  const versionParts = version.trim().split(".");
+
+  if (versionParts.length !== 3) {
+    return false;
+  }
+
+  return !isNaN(Number(versionParts[0])) && !isNaN(Number(versionParts[1])) && !isNaN(Number(versionParts[2]));
+}

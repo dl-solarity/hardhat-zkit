@@ -4,52 +4,74 @@ import fs from "fs-extra";
 import { promisify } from "util";
 import { exec } from "child_process";
 
+import { Reporter } from "../../reporter";
 import { HardhatZKitError } from "../../errors";
+import { LATEST_SUPPORTED_CIRCOM_VERSION, OLDEST_SUPPORTED_ARM_CIRCOM_VERSION } from "../../constants";
 
 import { BinaryCircomCompiler, WASMCircomCompiler } from "./CircomCompiler";
 import { CompilerDownloader } from "./CircomCompilerDownloader";
 
-import { ICircomCompiler, IWASMCircomCompiler, NativeCompiler } from "../../types/core";
-import { CompilerPlatformBinary } from "../../types/core/compiler/circom-compiler-downloader";
+import { isVersionHigherOrEqual } from "../utils/versioning";
 
-import { isVersionHigherOrEqual } from "../utils/VersionManagement";
+import { ICircomCompiler, NativeCompiler, CompilerPlatformBinary } from "../../types/core";
 
 // eslint-disable-next-line
 const { Context } = require("@distributedlab/circom2");
 
 export class CircomCompilerFactory {
-  public static createWASMCircomCompiler(highestVersion: string): IWASMCircomCompiler {
-    if (!isVersionHigherOrEqual("2.1.9", highestVersion)) {
+  public static async createBinaryCircomCompiler(
+    configVersion: string | undefined,
+    highestVersion: string,
+  ): Promise<ICircomCompiler> {
+    if (!isVersionHigherOrEqual(LATEST_SUPPORTED_CIRCOM_VERSION, highestVersion)) {
       throw new HardhatZKitError(
-        `Unsupported Circom compiler version - ${highestVersion}. Please provide another version.`,
+        `Unsupported Circom compiler version - ${highestVersion} specified inside a circuit. Please provide another version.`,
       );
     }
 
-    return new WASMCircomCompiler(this._getCircomWasmCompiler("@distributedlab/circom2/circom.wasm"));
-  }
-
-  public static async createBinaryCircomCompiler(
-    highestVersion: string,
-  ): Promise<ICircomCompiler | IWASMCircomCompiler> {
-    if (!isVersionHigherOrEqual("2.1.9", highestVersion)) {
+    if (configVersion && !isVersionHigherOrEqual(LATEST_SUPPORTED_CIRCOM_VERSION, configVersion)) {
       throw new HardhatZKitError(
-        `Unsupported Circom compiler version - ${highestVersion}. Please provide another version.`,
+        `Unsupported Circom compiler version - ${configVersion} specified in config. Please provide another version.`,
+      );
+    }
+
+    if (
+      configVersion &&
+      os.arch() === "arm64" &&
+      !isVersionHigherOrEqual(configVersion, OLDEST_SUPPORTED_ARM_CIRCOM_VERSION)
+    ) {
+      throw new HardhatZKitError(
+        `Circom compiler v${highestVersion} is not supported for ARM. Please provide a version not prior to ${OLDEST_SUPPORTED_ARM_CIRCOM_VERSION}.`,
       );
     }
 
     const nativeCompiler = await this._getNativeCompiler();
 
-    if (nativeCompiler && isVersionHigherOrEqual(nativeCompiler.version, highestVersion)) {
-      return new BinaryCircomCompiler(nativeCompiler.binaryPath);
+    if (nativeCompiler) {
+      const isValidVersion = configVersion
+        ? nativeCompiler.version === configVersion
+        : isVersionHigherOrEqual(nativeCompiler.version, highestVersion);
+
+      if (isValidVersion) {
+        Reporter!.reportCompilerVersion(nativeCompiler.version);
+
+        return new BinaryCircomCompiler(nativeCompiler.binaryPath);
+      }
     }
 
-    const { compilerPath, isWasm } = await this._getCircomCompiler(highestVersion);
+    try {
+      const compilerPath = await this._getCircomCompiler(configVersion, highestVersion);
 
-    if (isWasm) {
-      return new WASMCircomCompiler(this._getCircomWasmCompiler(compilerPath));
+      if (compilerPath.isWasm) {
+        return new WASMCircomCompiler(this._getCircomWasmCompiler(compilerPath.binaryPath));
+      }
+
+      return new BinaryCircomCompiler(compilerPath.binaryPath);
+    } catch (error: any) {
+      const wasmCompilerPath = await this._getCircomCompiler(configVersion, highestVersion, true);
+
+      return new WASMCircomCompiler(this._getCircomWasmCompiler(wasmCompilerPath.binaryPath));
     }
-
-    return new BinaryCircomCompiler(compilerPath);
   }
 
   private static async _getNativeCompiler(): Promise<NativeCompiler | undefined> {
@@ -81,38 +103,40 @@ export class CircomCompilerFactory {
   }
 
   private static async _getCircomCompiler(
+    configVersion: string | undefined,
     highestVersion: string,
     isWasm: boolean = false,
-  ): Promise<{ compilerPath: string; isWasm: boolean }> {
+  ): Promise<{ binaryPath: string; isWasm: boolean }> {
     const compilersDir = await this._getCompilersDir();
 
     const compilerPlatformBinary = isWasm
       ? CompilerPlatformBinary.WASM
       : CompilerDownloader.getCompilerPlatformBinary();
-    const downloader = CompilerDownloader.getConcurrencySafeDownloader(compilerPlatformBinary, compilersDir);
+    const downloader = new CompilerDownloader(compilerPlatformBinary, compilersDir);
 
-    if (await downloader.isCompatibleCompilerDownloaded(highestVersion)) {
-      const compilerPath = await downloader.getLatestCompilerBinary();
-      return { compilerPath, isWasm: this._isCompilerWasm(compilerPlatformBinary) };
-    } else {
-      try {
-        await downloader.downloadLatestCompiler();
+    const isCompilerDownloaded = configVersion
+      ? downloader.isCompilerDownloaded(configVersion)
+      : await downloader.isCompatibleCompilerDownloaded(highestVersion);
 
-        const compilerPath = await downloader.getLatestCompilerBinary();
+    if (isCompilerDownloaded) {
+      Reporter!.reportCompilerVersion(configVersion || (await downloader.getLatestDownloadedCircomVersion()));
 
-        return { compilerPath, isWasm: this._isCompilerWasm(compilerPlatformBinary) };
-      } catch (error: any) {
-        if (this._isCompilerWasm(compilerPlatformBinary)) {
-          throw new HardhatZKitError(error);
-        }
+      const compilerBinaryPath = configVersion
+        ? await downloader.getCompilerBinary(configVersion)
+        : await downloader.getLatestCompilerBinary();
 
-        return this._getCircomCompiler(highestVersion, true);
-      }
+      return { binaryPath: compilerBinaryPath.binaryPath, isWasm: compilerBinaryPath.isWasm };
     }
-  }
 
-  private static _isCompilerWasm(compilerPlatformBinary: string): boolean {
-    return compilerPlatformBinary === CompilerPlatformBinary.WASM;
+    await downloader.downloadCompiler(configVersion);
+
+    Reporter!.reportCompilerVersion(configVersion || (await downloader.getLatestDownloadedCircomVersion()));
+
+    const compilerBinaryPath = configVersion
+      ? await downloader.getCompilerBinary(configVersion)
+      : await downloader.getLatestCompilerBinary();
+
+    return { binaryPath: compilerBinaryPath.binaryPath, isWasm: compilerBinaryPath.isWasm };
   }
 
   private static _getCircomWasmCompiler(compilerPath: string): typeof Context {

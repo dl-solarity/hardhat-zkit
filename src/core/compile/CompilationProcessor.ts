@@ -6,11 +6,12 @@ import { v4 as uuid } from "uuid";
 
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
-import { CircomCompilerFactory } from "../compiler/CircomCompilerFactory";
+import { CircomCompilerFactory } from "../compiler";
 import { HardhatZKitError } from "../../errors";
 import { CIRCUIT_ARTIFACT_VERSION, NODE_MODULES } from "../../constants";
 import { Reporter } from "../../reporter";
-import { getHighestCircomVersion } from "../utils/VersionManagement";
+
+import { getHighestCircomVersion, isVersionHigherOrEqual } from "../utils/versioning";
 import { getNormalizedFullPath, renameFilesRecursively, readDirRecursively } from "../../utils/path-utils";
 
 import { ZKitConfig } from "../../types/zkit-config";
@@ -54,7 +55,19 @@ export class CompilationProcessor {
 
       const highestCircomVersion = getHighestCircomVersion(filesInfoToCompile);
 
-      const compiler = await CircomCompilerFactory.createBinaryCircomCompiler(highestCircomVersion);
+      if (
+        this._zkitConfig.compilerVersion &&
+        !isVersionHigherOrEqual(this._zkitConfig.compilerVersion, highestCircomVersion)
+      ) {
+        throw new HardhatZKitError(
+          `Unable to compile a circuit with Circom version ${highestCircomVersion} using compiler version ${this._zkitConfig.compilerVersion} specified in the config`,
+        );
+      }
+
+      const compiler = await CircomCompilerFactory.createBinaryCircomCompiler(
+        this._zkitConfig.compilerVersion,
+        highestCircomVersion,
+      );
 
       const compilationInfoArr: CompilationInfo[] = await this._getCompilationInfoArr(tempDir, filesInfoToCompile);
 
