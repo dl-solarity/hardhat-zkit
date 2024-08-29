@@ -33,12 +33,16 @@ abstract class BaseCircomCompiler implements ICircomCompiler {
   }
 }
 
-export class NativeCircomCompiler extends BaseCircomCompiler {
+export class BinaryCircomCompiler extends BaseCircomCompiler {
+  constructor(private readonly _compiler: string) {
+    super();
+  }
+
   public async compile(config: CompileConfig) {
     const compilationArgs: string[] = this.getCompilationArgs(config);
 
     try {
-      await execCall("circom", compilationArgs);
+      await execCall(this._compiler, compilationArgs);
     } catch (err) {
       throw new HardhatZKitError(`Compilation failed.\n${err}`);
     }

@@ -9,7 +9,6 @@ export type ZKitConfig = {
   verifiersDir: string;
   typesDir: string;
   verifiersType: VerifierLanguageType;
-  nativeCompiler: boolean;
   quiet: boolean;
 };
 

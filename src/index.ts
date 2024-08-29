@@ -32,7 +32,6 @@ import {
   createCircuitsSetupCache,
 } from "./cache";
 import {
-  CircomCompilerFactory,
   CompilationProcessor,
   CompilationFilesResolver,
   TypeGenerationProcessor,
@@ -82,10 +81,6 @@ const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfi
   createReporter(taskArgs.quiet || env.config.zkit.quiet);
   await createCircuitsCompileCache(circuitsCompileCacheFullPath);
 
-  if (env.config.zkit.nativeCompiler) {
-    await CircomCompilerFactory.checkNativeCompilerExistence();
-  }
-
   const compilationFileResolver: CompilationFilesResolver = new CompilationFilesResolver(
     (absolutePath: string) => env.run(TASK_READ_FILE, { absolutePath }),
     env.zkit.circuitArtifacts,
@@ -111,7 +106,6 @@ const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfi
   if (resolvedFilesInfo.length > 0) {
     const compilationProcessor: CompilationProcessor = new CompilationProcessor(
       {
-        compilerVersion: COMPILER_VERSION,
         compileFlags,
         quiet: taskArgs.quiet || env.config.zkit.quiet,
       },

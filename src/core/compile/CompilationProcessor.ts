@@ -10,6 +10,7 @@ import { CircomCompilerFactory } from "../compiler/CircomCompilerFactory";
 import { HardhatZKitError } from "../../errors";
 import { CIRCUIT_ARTIFACT_VERSION, NODE_MODULES } from "../../constants";
 import { Reporter } from "../../reporter";
+import { getHighestCircomVersion } from "../utils/VersionManagement";
 import { getNormalizedFullPath, renameFilesRecursively, readDirRecursively } from "../../utils/path-utils";
 
 import { ZKitConfig } from "../../types/zkit-config";
@@ -51,9 +52,9 @@ export class CompilationProcessor {
       Reporter!.verboseLog("compilation-processor", "Compilation temp directory: %s", [tempDir]);
       Reporter!.reportCompilationProcessHeader();
 
-      const compiler: ICircomCompiler = this._zkitConfig.nativeCompiler
-        ? await CircomCompilerFactory.createNativeCircomCompiler(this._config.compilerVersion)
-        : CircomCompilerFactory.createWASMCircomCompiler(this._config.compilerVersion);
+      const highestCircomVersion = getHighestCircomVersion(filesInfoToCompile);
+
+      const compiler = await CircomCompilerFactory.createBinaryCircomCompiler(highestCircomVersion);
 
       const compilationInfoArr: CompilationInfo[] = await this._getCompilationInfoArr(tempDir, filesInfoToCompile);
 
