@@ -50,7 +50,7 @@
     ]
   },
   "dependencies": {
-    "@distributedlab/circom-parser": "0.1.0",
+    "@distributedlab/circom-parser": "0.1.1",
     "@distributedlab/circom2": "0.2.18-rc.4",
     "@solarity/zkit": "0.2.6",
     "@solarity/zktype": "0.3.0",
