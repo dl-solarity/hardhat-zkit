@@ -15,7 +15,7 @@ import {
 import { Reporter } from "../../reporter";
 import { HardhatZKitError } from "../../errors";
 
-import { CompilerPlatformBinary } from "../../types/core";
+import { CompilerPath, CompilerPlatformBinary } from "../../types/core";
 
 import { downloadFile } from "../../utils/utils";
 import { getHighestCircomVersion, isVersionHigherOrEqual } from "../utils/versioning";
@@ -42,6 +42,18 @@ export class CompilerDownloader {
     }
   }
 
+  private static _downloaderPerPlatform: Map<string, CompilerDownloader> = new Map();
+
+  public static getConcurrencySafeDownloader(platform: CompilerPlatformBinary, compilersDir: string) {
+    const key = platform + compilersDir;
+
+    if (!this._downloaderPerPlatform.has(key)) {
+      this._downloaderPerPlatform.set(key, new CompilerDownloader(platform, compilersDir));
+    }
+
+    return this._downloaderPerPlatform.get(key)!;
+  }
+
   private readonly _mutex = new MultiProcessMutex("compiler-download");
 
   constructor(
@@ -61,32 +73,25 @@ export class CompilerDownloader {
 
     const isVersionCompatible = isVersionHigherOrEqual(latestDownloadedVersion, highestVersion);
 
-    if (!isVersionCompatible) {
-      return false;
-    }
-
-    const downloadPath = this._getCompilerDownloadPath(latestDownloadedVersion);
-    const downloadPathWasm = this._getWasmCompilerDownloadPath(latestDownloadedVersion);
-
-    return isVersionCompatible && (fs.pathExistsSync(downloadPath) || fs.pathExistsSync(downloadPathWasm));
+    return isVersionCompatible && this.isCompilerDownloaded(latestDownloadedVersion);
   }
 
-  public async getCompilerBinary(version: string): Promise<{ binaryPath: string; isWasm: boolean }> {
+  public async getCompilerBinary(version: string): Promise<CompilerPath> {
     const compilerBinaryPath = this._getCompilerDownloadPath(version);
     const wasmCompilerBinaryPath = this._getWasmCompilerDownloadPath(version);
 
-    if (!(await fs.pathExists(compilerBinaryPath))) {
-      if (!(await fs.pathExists(wasmCompilerBinaryPath))) {
-        throw new HardhatZKitError(`Trying to get a Circom compiler v${version} before it was downloaded`);
-      }
+    if (await fs.pathExists(compilerBinaryPath)) {
+      return { binaryPath: compilerBinaryPath, isWasm: false };
+    }
 
+    if (await fs.pathExists(wasmCompilerBinaryPath)) {
       return { binaryPath: wasmCompilerBinaryPath, isWasm: true };
     }
 
-    return { binaryPath: compilerBinaryPath, isWasm: false };
+    throw new HardhatZKitError(`Trying to get a Circom compiler v${version} before it was downloaded`);
   }
 
-  public async getLatestCompilerBinary(): Promise<{ binaryPath: string; isWasm: boolean }> {
+  public async getLatestCompilerBinary(): Promise<CompilerPath> {
     const latestDownloadedCompilerVersion = await this.getLatestDownloadedCircomVersion();
     if (!latestDownloadedCompilerVersion || latestDownloadedCompilerVersion === "0.0.0") {
       throw new HardhatZKitError("No latest compiler found");
@@ -94,18 +99,18 @@ export class CompilerDownloader {
 
     const compilerBinaryPath = this._getCompilerDownloadPath(latestDownloadedCompilerVersion);
 
-    if (!fs.existsSync(compilerBinaryPath)) {
-      return { binaryPath: this._getWasmCompilerDownloadPath(latestDownloadedCompilerVersion), isWasm: true };
+    if (fs.existsSync(compilerBinaryPath)) {
+      return { binaryPath: compilerBinaryPath, isWasm: false };
     }
 
-    return { binaryPath: compilerBinaryPath, isWasm: false };
+    return { binaryPath: this._getWasmCompilerDownloadPath(latestDownloadedCompilerVersion), isWasm: true };
   }
 
-  public async downloadCompiler(version: string | undefined): Promise<void> {
+  public async downloadCompiler(version: string, isVersionStrict: boolean): Promise<void> {
     await this._mutex.use(async () => {
-      const versionToDownload = version || (await this._getLatestCircomVersion());
+      const versionToDownload = isVersionStrict ? version : await this._getLatestCircomVersion();
 
-      const isDownloaded = version
+      const isDownloaded = isVersionStrict
         ? this.isCompilerDownloaded(versionToDownload)
         : await this.isCompatibleCompilerDownloaded(versionToDownload);
 

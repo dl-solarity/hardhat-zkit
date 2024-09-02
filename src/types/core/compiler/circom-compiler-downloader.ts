@@ -7,3 +7,8 @@ export enum CompilerPlatformBinary {
   MACOS_ARM = "circom-darwin-arm64",
   WASM = "circom.wasm",
 }
+
+export type CompilerPath = {
+  binaryPath: string;
+  isWasm: boolean;
+};
