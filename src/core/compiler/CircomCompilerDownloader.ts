@@ -15,10 +15,10 @@ import {
 import { Reporter } from "../../reporter";
 import { HardhatZKitError } from "../../errors";
 
-import { CompilerPath, CompilerPlatformBinary } from "../../types/core";
+import { CompilerInfo, CompilerPlatformBinary } from "../../types/core";
 
 import { downloadFile } from "../../utils/utils";
-import { getHighestCircomVersion, isVersionHigherOrEqual } from "../utils/versioning";
+import { getHighestVersion, isVersionHigherOrEqual } from "./versioning";
 
 import { MultiProcessMutex } from "hardhat/internal/util/multi-process-mutex";
 
@@ -61,60 +61,46 @@ export class CompilerDownloader {
     private readonly _compilersDir: string,
   ) {}
 
-  public isCompilerDownloaded(version: string): boolean {
-    const downloadPath = this._getCompilerDownloadPath(version);
-    const downloadPathWasm = this._getWasmCompilerDownloadPath(version);
+  public async isCompilerDownloaded(version: string, isVersionStrict: boolean): Promise<boolean> {
+    if (isVersionStrict) {
+      const downloadPath = this._getCompilerDownloadPath(version);
+      const downloadPathWasm = this._getWasmCompilerDownloadPath(version);
 
-    return fs.pathExistsSync(downloadPath) || fs.pathExistsSync(downloadPathWasm);
+      return (await fs.pathExists(downloadPath)) || fs.pathExists(downloadPathWasm);
+    }
+
+    const latestDownloadedVersion = await this._getLatestDownloadedCircomVersion();
+
+    return isVersionHigherOrEqual(latestDownloadedVersion, version);
   }
 
-  public async isCompatibleCompilerDownloaded(highestVersion: string): Promise<boolean> {
-    const latestDownloadedVersion = await this.getLatestDownloadedCircomVersion();
+  public async getCompilerBinary(version?: string): Promise<CompilerInfo> {
+    if (!version) {
+      version = await this._getLatestDownloadedCircomVersion();
+      if (!version || version === "0.0.0") {
+        throw new HardhatZKitError("No latest compiler found");
+      }
+    }
 
-    const isVersionCompatible = isVersionHigherOrEqual(latestDownloadedVersion, highestVersion);
-
-    return isVersionCompatible && this.isCompilerDownloaded(latestDownloadedVersion);
-  }
-
-  public async getCompilerBinary(version: string): Promise<CompilerPath> {
     const compilerBinaryPath = this._getCompilerDownloadPath(version);
     const wasmCompilerBinaryPath = this._getWasmCompilerDownloadPath(version);
 
     if (await fs.pathExists(compilerBinaryPath)) {
-      return { binaryPath: compilerBinaryPath, isWasm: false };
+      return { binaryPath: compilerBinaryPath, version: version, isWasm: false };
     }
 
     if (await fs.pathExists(wasmCompilerBinaryPath)) {
-      return { binaryPath: wasmCompilerBinaryPath, isWasm: true };
+      return { binaryPath: wasmCompilerBinaryPath, version: version, isWasm: true };
     }
 
     throw new HardhatZKitError(`Trying to get a Circom compiler v${version} before it was downloaded`);
   }
 
-  public async getLatestCompilerBinary(): Promise<CompilerPath> {
-    const latestDownloadedCompilerVersion = await this.getLatestDownloadedCircomVersion();
-    if (!latestDownloadedCompilerVersion || latestDownloadedCompilerVersion === "0.0.0") {
-      throw new HardhatZKitError("No latest compiler found");
-    }
-
-    const compilerBinaryPath = this._getCompilerDownloadPath(latestDownloadedCompilerVersion);
-
-    if (fs.existsSync(compilerBinaryPath)) {
-      return { binaryPath: compilerBinaryPath, isWasm: false };
-    }
-
-    return { binaryPath: this._getWasmCompilerDownloadPath(latestDownloadedCompilerVersion), isWasm: true };
-  }
-
-  public async downloadCompiler(version: string, isVersionStrict: boolean): Promise<void> {
+  public async downloadCompiler(version?: string): Promise<void> {
     await this._mutex.use(async () => {
-      const versionToDownload = isVersionStrict ? version : await this._getLatestCircomVersion();
+      const versionToDownload = version || (await this._getLatestCircomVersion());
 
-      const isDownloaded = isVersionStrict
-        ? this.isCompilerDownloaded(versionToDownload)
-        : await this.isCompatibleCompilerDownloaded(versionToDownload);
-
-      if (isDownloaded) {
+      if (await this.isCompilerDownloaded(versionToDownload, version !== undefined)) {
         return;
       }
 
@@ -132,19 +118,21 @@ export class CompilerDownloader {
     });
   }
 
-  public async getLatestDownloadedCircomVersion(): Promise<string> {
+  private async _getLatestDownloadedCircomVersion(): Promise<string> {
     try {
       const entries = await fs.promises.readdir(this._compilersDir, { withFileTypes: true });
 
       const versions = entries
-        .filter((entry) => {
+        .filter(async (entry) => {
           if (!entry.isDirectory()) {
             return false;
           }
 
           const dirPath = path.join(this._compilersDir, entry.name);
 
-          return fs.readdirSync(dirPath).length > 0;
+          const files = await fs.promises.readdir(dirPath);
+
+          return files.includes(this._platform) || files.includes("circom.wasm");
         })
         .map((entry) => entry.name);
 
@@ -152,7 +140,7 @@ export class CompilerDownloader {
         return "0.0.0";
       }
 
-      return getHighestCircomVersion(versions);
+      return getHighestVersion(versions);
     } catch (error) {
       throw new HardhatZKitError(`Error reading directory: ${error}`);
     }
@@ -224,7 +212,7 @@ export class CompilerDownloader {
       this._platform !== CompilerPlatformBinary.WINDOWS_ARM &&
       this._platform !== CompilerPlatformBinary.WASM
     ) {
-      fs.chmodSync(downloadPath, 0o755);
+      await fs.chmod(downloadPath, 0o755);
     }
 
     if (this._platform !== CompilerPlatformBinary.WASM && !(await this._checkCompilerWork(downloadPath))) {

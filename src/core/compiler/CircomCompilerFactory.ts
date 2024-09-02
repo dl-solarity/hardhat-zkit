@@ -11,9 +11,9 @@ import { LATEST_SUPPORTED_CIRCOM_VERSION, OLDEST_SUPPORTED_ARM_CIRCOM_VERSION } 
 import { BinaryCircomCompiler, WASMCircomCompiler } from "./CircomCompiler";
 import { CompilerDownloader } from "./CircomCompilerDownloader";
 
-import { isVersionHigherOrEqual } from "../utils/versioning";
+import { isVersionHigherOrEqual } from "./versioning";
 
-import { CompilerPath, CompilerPlatformBinary, ICircomCompiler, NativeCompiler } from "../../types/core";
+import { CompilerInfo, CompilerPlatformBinary, ICircomCompiler, NativeCompiler } from "../../types/core";
 
 // eslint-disable-next-line
 const { Context } = require("@distributedlab/circom2");
@@ -51,17 +51,17 @@ export class CircomCompilerFactory {
     try {
       const compilerPlatformBinary = CompilerDownloader.getCompilerPlatformBinary();
 
-      const compilerPath = await this._getCircomCompilerPath(compilerPlatformBinary, version, isVersionStrict);
+      const compilerInfo = await this._getCircomCompilerInfo(compilerPlatformBinary, version, isVersionStrict);
 
-      if (compilerPath.isWasm) {
-        return new WASMCircomCompiler(this._getCircomWasmCompiler(compilerPath.binaryPath));
+      if (compilerInfo.isWasm) {
+        return new WASMCircomCompiler(this._getCircomWasmCompiler(compilerInfo.binaryPath));
       }
 
-      return new BinaryCircomCompiler(compilerPath.binaryPath);
+      return new BinaryCircomCompiler(compilerInfo.binaryPath);
     } catch (error: any) {
-      const wasmCompilerPath = await this._getCircomCompilerPath(CompilerPlatformBinary.WASM, version, isVersionStrict);
+      const wasmCompilerInfo = await this._getCircomCompilerInfo(CompilerPlatformBinary.WASM, version, isVersionStrict);
 
-      return new WASMCircomCompiler(this._getCircomWasmCompiler(wasmCompilerPath.binaryPath));
+      return new WASMCircomCompiler(this._getCircomWasmCompiler(wasmCompilerInfo.binaryPath));
     }
   }
 
@@ -93,60 +93,24 @@ export class CircomCompilerFactory {
     }
   }
 
-  private static async _getCircomCompilerPath(
+  private static async _getCircomCompilerInfo(
     platform: CompilerPlatformBinary,
     version: string,
     isVersionStrict: boolean,
-  ): Promise<CompilerPath> {
+  ): Promise<CompilerInfo> {
     const compilersDir = await this._getCompilersDir();
 
     const downloader = CompilerDownloader.getConcurrencySafeDownloader(platform, compilersDir);
 
-    return isVersionStrict
-      ? this._getCircomCompilerPathStrict(version, downloader)
-      : this._getCompatibleCircomCompilerPath(version, downloader);
-  }
-
-  private static async _getCompatibleCircomCompilerPath(
-    version: string,
-    downloader: CompilerDownloader,
-  ): Promise<CompilerPath> {
-    if (await downloader.isCompatibleCompilerDownloaded(version)) {
-      Reporter!.reportCompilerVersion(await downloader.getLatestDownloadedCircomVersion());
-
-      const compilerBinaryPath = await downloader.getLatestCompilerBinary();
-
-      return { binaryPath: compilerBinaryPath.binaryPath, isWasm: compilerBinaryPath.isWasm };
+    if (!(await downloader.isCompilerDownloaded(version, isVersionStrict))) {
+      await downloader.downloadCompiler(isVersionStrict ? version : undefined);
     }
 
-    await downloader.downloadCompiler(version, false);
+    const compilerBinaryInfo = await downloader.getCompilerBinary(isVersionStrict ? version : undefined);
 
-    Reporter!.reportCompilerVersion(version);
+    Reporter!.reportCompilerVersion(compilerBinaryInfo.version);
 
-    const compilerBinaryPath = await downloader.getLatestCompilerBinary();
-
-    return { binaryPath: compilerBinaryPath.binaryPath, isWasm: compilerBinaryPath.isWasm };
-  }
-
-  private static async _getCircomCompilerPathStrict(
-    version: string,
-    downloader: CompilerDownloader,
-  ): Promise<CompilerPath> {
-    if (downloader.isCompilerDownloaded(version)) {
-      Reporter!.reportCompilerVersion(version);
-
-      const compilerBinaryPath = await downloader.getCompilerBinary(version);
-
-      return { binaryPath: compilerBinaryPath.binaryPath, isWasm: compilerBinaryPath.isWasm };
-    }
-
-    await downloader.downloadCompiler(version, true);
-
-    Reporter!.reportCompilerVersion(version);
-
-    const compilerBinaryPath = await downloader.getCompilerBinary(version);
-
-    return { binaryPath: compilerBinaryPath.binaryPath, isWasm: compilerBinaryPath.isWasm };
+    return compilerBinaryInfo;
   }
 
   private static _getCircomWasmCompiler(compilerPath: string): typeof Context {

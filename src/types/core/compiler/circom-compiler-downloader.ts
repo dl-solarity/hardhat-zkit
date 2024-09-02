@@ -8,7 +8,8 @@ export enum CompilerPlatformBinary {
   WASM = "circom.wasm",
 }
 
-export type CompilerPath = {
+export type CompilerInfo = {
   binaryPath: string;
+  version: string;
   isWasm: boolean;
 };

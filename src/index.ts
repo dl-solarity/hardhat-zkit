@@ -44,7 +44,7 @@ import { Reporter, createReporter } from "./reporter";
 import { CircuitArtifacts } from "./artifacts/CircuitArtifacts";
 import { CIRCUITS_COMPILE_CACHE_FILENAME, CIRCUITS_SETUP_CACHE_FILENAME } from "./constants";
 import { getNormalizedFullPath } from "./utils/path-utils";
-import { isCircomVersionValid } from "./core/utils/versioning";
+import { isVersionValid } from "./core/compiler/versioning";
 
 import {
   MakeTaskConfig,
@@ -107,7 +107,7 @@ const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfi
 
   const configCompilerVersion = env.config.zkit.compilerVersion;
 
-  if (configCompilerVersion && !isCircomVersionValid(configCompilerVersion)) {
+  if (configCompilerVersion && !isVersionValid(configCompilerVersion)) {
     throw new HardhatZKitError(`Invalid Circom compiler version ${configCompilerVersion} specified in the config`);
   }
 

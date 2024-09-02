@@ -1,6 +1,6 @@
 import { CircomResolvedFileInfo } from "../../types/core";
 
-export function getHighestCircomVersion(circomVersions: CircomResolvedFileInfo[] | string[]) {
+export function getHighestVersion(circomVersions: CircomResolvedFileInfo[] | string[]) {
   let highestVersion = "";
 
   for (const info of circomVersions) {
@@ -38,7 +38,7 @@ export function isVersionHigherOrEqual(version1: string, version2: string): bool
   return v1Patch >= v2Patch;
 }
 
-export function isCircomVersionValid(version: string) {
+export function isVersionValid(version: string) {
   const versionParts = version.trim().split(".");
 
   if (versionParts.length !== 3) {
