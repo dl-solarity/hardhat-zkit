@@ -69,7 +69,8 @@ export class CompilationProcessor {
         version = this._zkitConfig.compilerVersion;
       }
 
-      const compiler = await CircomCompilerFactory.createBinaryCircomCompiler(version, isVersionStrict);
+      const compilerFactory = CircomCompilerFactory.getInstance();
+      const compiler = await compilerFactory.createBinaryCircomCompiler(version, isVersionStrict);
 
       const compilationInfoArr: CompilationInfo[] = await this._getCompilationInfoArr(tempDir, filesInfoToCompile);
 

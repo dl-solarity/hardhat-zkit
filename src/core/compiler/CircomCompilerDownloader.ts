@@ -22,10 +22,12 @@ import { getHighestVersion, isVersionHigherOrEqual } from "./versioning";
 
 import { MultiProcessMutex } from "hardhat/internal/util/multi-process-mutex";
 
-export class CompilerDownloader {
-  public static getCompilerPlatformBinary(): CompilerPlatformBinary {
-    const arch = os.arch();
+export class CircomCompilerDownloader {
+  private static _downloaderPerPlatform: Map<string, CircomCompilerDownloader> = new Map();
 
+  private readonly _mutex = new MultiProcessMutex("compiler-download");
+
+  public static getCompilerPlatformBinary(arch = os.arch()): CompilerPlatformBinary {
     if (arch !== "x64" && arch !== "arm64") {
       return CompilerPlatformBinary.WASM;
     }
@@ -42,21 +44,17 @@ export class CompilerDownloader {
     }
   }
 
-  private static _downloaderPerPlatform: Map<string, CompilerDownloader> = new Map();
-
-  public static getConcurrencySafeDownloader(platform: CompilerPlatformBinary, compilersDir: string) {
+  public static getCircomCompilerDownloader(platform: CompilerPlatformBinary, compilersDir: string) {
     const key = platform + compilersDir;
 
     if (!this._downloaderPerPlatform.has(key)) {
-      this._downloaderPerPlatform.set(key, new CompilerDownloader(platform, compilersDir));
+      this._downloaderPerPlatform.set(key, new CircomCompilerDownloader(platform, compilersDir));
     }
 
     return this._downloaderPerPlatform.get(key)!;
   }
 
-  private readonly _mutex = new MultiProcessMutex("compiler-download");
-
-  constructor(
+  private constructor(
     private readonly _platform: CompilerPlatformBinary,
     private readonly _compilersDir: string,
   ) {}
@@ -74,9 +72,10 @@ export class CompilerDownloader {
     return isVersionHigherOrEqual(latestDownloadedVersion, version);
   }
 
-  public async getCompilerBinary(version?: string): Promise<CompilerInfo> {
-    if (!version) {
+  public async getCompilerBinary(version: string, isVersionStrict: boolean): Promise<CompilerInfo> {
+    if (!isVersionStrict) {
       version = await this._getLatestDownloadedCircomVersion();
+
       if (!version || version === "0.0.0") {
         throw new HardhatZKitError("No latest compiler found");
       }
@@ -96,11 +95,11 @@ export class CompilerDownloader {
     throw new HardhatZKitError(`Trying to get a Circom compiler v${version} before it was downloaded`);
   }
 
-  public async downloadCompiler(version?: string): Promise<void> {
+  public async downloadCompiler(version: string, isVersionStrict: boolean): Promise<void> {
     await this._mutex.use(async () => {
-      const versionToDownload = version || (await this._getLatestCircomVersion());
+      const versionToDownload = isVersionStrict ? version : await this._getLatestCircomVersion();
 
-      if (await this.isCompilerDownloaded(versionToDownload, version !== undefined)) {
+      if (await this.isCompilerDownloaded(versionToDownload, isVersionStrict)) {
         return;
       }
 
@@ -129,7 +128,6 @@ export class CompilerDownloader {
           }
 
           const dirPath = path.join(this._compilersDir, entry.name);
-
           const files = await fs.promises.readdir(dirPath);
 
           return files.includes(this._platform) || files.includes("circom.wasm");
@@ -168,18 +166,24 @@ export class CompilerDownloader {
   }
 
   private async _downloadCompiler(version: string): Promise<string> {
-    const amdUrl = `${COMPILER_AMD_REPOSITORY_URL}/v${version}/${this._platform}`;
-    const armUrl = `${COMPILER_ARM_REPOSITORY_URL}/v${version}/${this._platform}`;
-    const wasmUrl = `${COMPILER_WASM_REPOSITORY_URL}/v${WASM_COMPILER_VERSIONING[version]}/circom.wasm`;
-
     const downloadPath = this._getCompilerDownloadPath(version);
 
     let url: string;
 
-    if (this._platform === CompilerPlatformBinary.WASM) {
-      url = wasmUrl;
-    } else {
-      url = os.arch() === "x64" ? amdUrl : armUrl;
+    switch (this._platform) {
+      case CompilerPlatformBinary.LINUX_AMD:
+      case CompilerPlatformBinary.WINDOWS_AMD:
+      case CompilerPlatformBinary.MACOS_AMD:
+        url = `${COMPILER_AMD_REPOSITORY_URL}/v${version}/${this._platform}`;
+        break;
+      case CompilerPlatformBinary.LINUX_ARM:
+      case CompilerPlatformBinary.WINDOWS_ARM:
+      case CompilerPlatformBinary.MACOS_ARM:
+      case CompilerPlatformBinary.WASM:
+        url = `${COMPILER_ARM_REPOSITORY_URL}/v${version}/${this._platform}`;
+        break;
+      default:
+        url = `${COMPILER_WASM_REPOSITORY_URL}/v${WASM_COMPILER_VERSIONING[version]}/circom.wasm`;
     }
 
     if (
@@ -216,6 +220,8 @@ export class CompilerDownloader {
     }
 
     if (this._platform !== CompilerPlatformBinary.WASM && !(await this._checkCompilerWork(downloadPath))) {
+      await fs.unlink(downloadPath);
+
       throw new HardhatZKitError("Downloaded compiler is not working");
     }
   }
