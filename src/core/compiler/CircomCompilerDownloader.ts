@@ -179,7 +179,6 @@ export class CircomCompilerDownloader {
       case CompilerPlatformBinary.LINUX_ARM:
       case CompilerPlatformBinary.WINDOWS_ARM:
       case CompilerPlatformBinary.MACOS_ARM:
-      case CompilerPlatformBinary.WASM:
         url = `${COMPILER_ARM_REPOSITORY_URL}/v${version}/${this._platform}`;
         break;
       default:

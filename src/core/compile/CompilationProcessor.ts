@@ -70,7 +70,7 @@ export class CompilationProcessor {
       }
 
       const compilerFactory = CircomCompilerFactory.getInstance();
-      const compiler = await compilerFactory.createBinaryCircomCompiler(version, isVersionStrict);
+      const compiler = await compilerFactory.createCircomCompiler(version, isVersionStrict);
 
       const compilationInfoArr: CompilationInfo[] = await this._getCompilationInfoArr(tempDir, filesInfoToCompile);
 

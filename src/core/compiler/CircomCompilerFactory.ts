@@ -31,81 +31,114 @@ export class CircomCompilerFactory {
     return CircomCompilerFactory.instance;
   }
 
-  public async createBinaryCircomCompiler(version: string, isVersionStrict: boolean): Promise<ICircomCompiler> {
+  public async createCircomCompiler(version: string, isVersionStrict: boolean): Promise<ICircomCompiler> {
     if (!isVersionHigherOrEqual(LATEST_SUPPORTED_CIRCOM_VERSION, version)) {
       throw new HardhatZKitError(`Unsupported Circom compiler version - ${version}. Please provide another version.`);
     }
 
-    try {
-      const nativeCompiler = await this._getNativeCompiler();
+    let compiler = await this._tryCreateNativeCompiler(version, isVersionStrict);
 
-      const isValidVersion = isVersionStrict
-        ? nativeCompiler.version === version
-        : isVersionHigherOrEqual(nativeCompiler.version, version);
-
-      if (isValidVersion) {
-        Reporter!.reportCompilerVersion(nativeCompiler.version);
-
-        return new BinaryCircomCompiler(nativeCompiler.binaryPath);
-      }
-    } catch (error: any) {
-      Reporter!.verboseLog("compiler-creation", `No native compiler compatible with version ${version} found`);
+    if (compiler) {
+      return compiler;
     }
 
-    let compilerPlatformBinary: CompilerPlatformBinary;
+    let compilerPlatformBinary = CircomCompilerDownloader.getCompilerPlatformBinary();
+
+    // Utilize binary translators like Rosetta (macOS) or Prism (Windows)
+    // to run x64 binaries on arm64 systems when no arm64 versions are available.
     if (
       isVersionStrict &&
       os.arch() === "arm64" &&
       !isVersionHigherOrEqual(version, OLDEST_SUPPORTED_ARM_CIRCOM_VERSION)
     ) {
       compilerPlatformBinary = CircomCompilerDownloader.getCompilerPlatformBinary("x64");
-    } else {
-      compilerPlatformBinary = CircomCompilerDownloader.getCompilerPlatformBinary();
     }
 
-    let compilerInfo: CompilerInfo;
-    try {
-      compilerInfo = await this._getCircomCompilerInfo(compilerPlatformBinary, version, isVersionStrict);
-    } catch (error: any) {
-      if (compilerPlatformBinary !== CompilerPlatformBinary.WASM) {
-        compilerInfo = await this._getCircomCompilerInfo(CompilerPlatformBinary.WASM, version, isVersionStrict);
-      } else {
-        throw new HardhatZKitError(error);
+    if (compilerPlatformBinary !== CompilerPlatformBinary.WASM) {
+      compiler = await this._tryCreateBinaryCompiler(compilerPlatformBinary, version, isVersionStrict);
+
+      if (compiler) {
+        return compiler;
       }
     }
 
-    if (compilerInfo.isWasm) {
-      return new WASMCircomCompiler(this._getCircomWasmCompiler(compilerInfo.binaryPath));
-    }
-
-    return new BinaryCircomCompiler(compilerInfo.binaryPath);
+    return this._createWasmCompiler(version, isVersionStrict);
   }
 
-  private async _getNativeCompiler(): Promise<NativeCompiler> {
-    const execP = promisify(exec);
+  private async _tryCreateNativeCompiler(
+    version: string,
+    isVersionStrict: boolean,
+  ): Promise<ICircomCompiler | undefined> {
+    const nativeCompiler = await this._getNativeCompiler();
 
-    const { stdout: circomLocation } = await execP("whereis circom");
-
-    const trimmedBinaryPath = circomLocation.trim().split(" ");
-
-    if (trimmedBinaryPath.length !== 2) {
-      throw new HardhatZKitError("Unable to find native Circom compiler");
+    if (!nativeCompiler) {
+      return undefined;
     }
 
-    const nativeCircomBinaryPath = trimmedBinaryPath[1];
+    const isValidVersion = isVersionStrict
+      ? nativeCompiler.version === version
+      : isVersionHigherOrEqual(nativeCompiler.version, version);
 
-    const { stdout: versionOutput } = await execP(`circom --version`);
+    if (isValidVersion) {
+      Reporter!.reportCompilerVersion(nativeCompiler.version);
 
-    const versionParts = versionOutput.trim().split(" ");
-    const version = versionParts[versionParts.length - 1];
-
-    return {
-      binaryPath: nativeCircomBinaryPath,
-      version,
-    };
+      return new BinaryCircomCompiler(nativeCompiler.binaryPath);
+    }
   }
 
-  private async _getCircomCompilerInfo(
+  private async _tryCreateBinaryCompiler(
+    platform: CompilerPlatformBinary,
+    version: string,
+    isVersionStrict: boolean,
+  ): Promise<ICircomCompiler | undefined> {
+    try {
+      const compilerInfo = await this._getBinaryCompiler(platform, version, isVersionStrict);
+
+      if (compilerInfo.isWasm) {
+        return new WASMCircomCompiler(this._getWasmCompiler(compilerInfo.binaryPath));
+      }
+
+      return new BinaryCircomCompiler(compilerInfo.binaryPath);
+    } catch (error: any) {
+      return undefined;
+    }
+  }
+
+  private async _createWasmCompiler(version: string, isVersionStrict: boolean): Promise<ICircomCompiler> {
+    const compilerInfo = await this._getBinaryCompiler(CompilerPlatformBinary.WASM, version, isVersionStrict);
+
+    return new WASMCircomCompiler(this._getWasmCompiler(compilerInfo.binaryPath));
+  }
+
+  private async _getNativeCompiler(): Promise<NativeCompiler | undefined> {
+    try {
+      const execP = promisify(exec);
+
+      const { stdout: circomLocation } = await execP("whereis circom");
+
+      const trimmedBinaryPath = circomLocation.trim().split(" ");
+
+      if (trimmedBinaryPath.length !== 2) {
+        return undefined;
+      }
+
+      const nativeCircomBinaryPath = trimmedBinaryPath[1];
+
+      const { stdout: versionOutput } = await execP(`circom --version`);
+
+      const versionParts = versionOutput.trim().split(" ");
+      const version = versionParts[versionParts.length - 1];
+
+      return {
+        binaryPath: nativeCircomBinaryPath,
+        version,
+      };
+    } catch (error: any) {
+      return undefined;
+    }
+  }
+
+  private async _getBinaryCompiler(
     platform: CompilerPlatformBinary,
     version: string,
     isVersionStrict: boolean,
@@ -124,7 +157,7 @@ export class CircomCompilerFactory {
     return compilerBinaryInfo;
   }
 
-  private _getCircomWasmCompiler(compilerPath: string): typeof Context {
+  private _getWasmCompiler(compilerPath: string): typeof Context {
     return fs.readFileSync(require.resolve(compilerPath));
   }
 
