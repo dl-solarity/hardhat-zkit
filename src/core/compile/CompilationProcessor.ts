@@ -6,10 +6,12 @@ import { v4 as uuid } from "uuid";
 
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
-import { CircomCompilerFactory } from "../compiler/CircomCompilerFactory";
+import { CircomCompilerFactory } from "../compiler";
 import { HardhatZKitError } from "../../errors";
 import { CIRCUIT_ARTIFACT_VERSION, NODE_MODULES } from "../../constants";
 import { Reporter } from "../../reporter";
+
+import { getHighestVersion, isVersionValid, isVersionHigherOrEqual } from "../compiler/versioning";
 import { getNormalizedFullPath, renameFilesRecursively, readDirRecursively } from "../../utils/path-utils";
 
 import { ZKitConfig } from "../../types/zkit-config";
@@ -51,9 +53,24 @@ export class CompilationProcessor {
       Reporter!.verboseLog("compilation-processor", "Compilation temp directory: %s", [tempDir]);
       Reporter!.reportCompilationProcessHeader();
 
-      const compiler: ICircomCompiler = this._zkitConfig.nativeCompiler
-        ? await CircomCompilerFactory.createNativeCircomCompiler(this._config.compilerVersion)
-        : CircomCompilerFactory.createWASMCircomCompiler(this._config.compilerVersion);
+      const highestCircomVersion = getHighestVersion(filesInfoToCompile);
+
+      let isVersionStrict = false;
+      let version = highestCircomVersion;
+
+      if (this._zkitConfig.compilerVersion && isVersionValid(this._zkitConfig.compilerVersion)) {
+        if (!isVersionHigherOrEqual(this._zkitConfig.compilerVersion, highestCircomVersion)) {
+          throw new HardhatZKitError(
+            `Unable to compile a circuit with Circom version ${highestCircomVersion} using compiler version ${this._zkitConfig.compilerVersion} specified in the config`,
+          );
+        }
+
+        isVersionStrict = true;
+        version = this._zkitConfig.compilerVersion;
+      }
+
+      const compilerFactory = CircomCompilerFactory.getInstance();
+      const compiler = await compilerFactory.createCircomCompiler(version, isVersionStrict);
 
       const compilationInfoArr: CompilationInfo[] = await this._getCompilationInfoArr(tempDir, filesInfoToCompile);
 

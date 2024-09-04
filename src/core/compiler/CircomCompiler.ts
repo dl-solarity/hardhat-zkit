@@ -3,7 +3,7 @@ import fs from "fs";
 import { HardhatZKitError } from "../../errors";
 import { execCall } from "../../utils/utils";
 
-import { ICircomCompiler, IWASMCircomCompiler, CompileConfig, BaseCompileConfig } from "../../types/core";
+import { ICircomCompiler, CompileConfig, BaseCompileConfig } from "../../types/core";
 import { MAGIC_DESCRIPTOR } from "../../constants";
 
 // eslint-disable-next-line
@@ -33,19 +33,23 @@ abstract class BaseCircomCompiler implements ICircomCompiler {
   }
 }
 
-export class NativeCircomCompiler extends BaseCircomCompiler {
+export class BinaryCircomCompiler extends BaseCircomCompiler {
+  constructor(private readonly _compiler: string) {
+    super();
+  }
+
   public async compile(config: CompileConfig) {
     const compilationArgs: string[] = this.getCompilationArgs(config);
 
     try {
-      await execCall("circom", compilationArgs);
+      await execCall(this._compiler, compilationArgs);
     } catch (err) {
       throw new HardhatZKitError(`Compilation failed.\n${err}`);
     }
   }
 }
 
-export class WASMCircomCompiler extends BaseCircomCompiler implements IWASMCircomCompiler {
+export class WASMCircomCompiler extends BaseCircomCompiler {
   constructor(private readonly _compiler: typeof Context) {
     super();
   }
@@ -62,28 +66,6 @@ export class WASMCircomCompiler extends BaseCircomCompiler implements IWASMCirco
     } finally {
       fs.closeSync(errorFileDescriptor);
     }
-  }
-
-  public async generateAST(config: BaseCompileConfig) {
-    const errorFileDescriptor: number = fs.openSync(config.errorFileFullPath, "w");
-    const generationArgs: string[] = this.getASTGenerationArgs(config);
-    const circomRunner: typeof CircomRunner = this._getCircomRunner(generationArgs, config.quiet, errorFileDescriptor);
-
-    try {
-      await circomRunner.execute(this._compiler);
-    } catch (err) {
-      throw new HardhatZKitError(`AST generation failed.\n${err}`);
-    } finally {
-      fs.closeSync(errorFileDescriptor);
-    }
-  }
-
-  public getASTGenerationArgs(config: BaseCompileConfig): string[] {
-    const args: string[] = this._getBaseCompilationArgs(config);
-
-    args.push("--save_ast", config.artifactsFullPath, "--dry_run");
-
-    return args;
   }
 
   private _getCircomRunner(callArgs: string[], quiet: boolean, errDescriptor: number): typeof CircomRunner {

@@ -69,7 +69,7 @@ module.exports = {
     verifiersDir: "contracts/verifiers",
     typesDir: "generated-types/zkit",
     verifiersType: "sol",
-    nativeCompiler: false,
+    compilerVersion: "2.1.8",
     quiet: false,
   },
 };
@@ -95,7 +95,7 @@ Where:
 - `verifiersDir` - The directory where to generate the Solidity verifiers.
 - `typesDir` - The directory where to save the generated typed circuits wrappers.
 - `verifiersType` - The option (`sol` or `vy`) to indicate which language to use for verifiers generation.
-- `nativeCompiler` - The flag indicating whether to use the natively installed compiler.
+- `compilerVersion` - The optional value to indicate which Circom compiler to use.
 - `quiet` - The flag indicating whether to suppress the output.
 
 ### Tasks

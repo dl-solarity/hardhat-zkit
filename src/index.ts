@@ -32,17 +32,19 @@ import {
   createCircuitsSetupCache,
 } from "./cache";
 import {
-  CircomCompilerFactory,
   CompilationProcessor,
   CompilationFilesResolver,
   TypeGenerationProcessor,
   SetupProcessor,
   SetupFilesResolver,
 } from "./core";
+
+import { HardhatZKitError } from "./errors";
 import { Reporter, createReporter } from "./reporter";
 import { CircuitArtifacts } from "./artifacts/CircuitArtifacts";
-import { CIRCUITS_COMPILE_CACHE_FILENAME, CIRCUITS_SETUP_CACHE_FILENAME, COMPILER_VERSION } from "./constants";
+import { CIRCUITS_COMPILE_CACHE_FILENAME, CIRCUITS_SETUP_CACHE_FILENAME } from "./constants";
 import { getNormalizedFullPath } from "./utils/path-utils";
+import { isVersionValid } from "./core/compiler/versioning";
 
 import {
   MakeTaskConfig,
@@ -82,10 +84,6 @@ const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfi
   createReporter(taskArgs.quiet || env.config.zkit.quiet);
   await createCircuitsCompileCache(circuitsCompileCacheFullPath);
 
-  if (env.config.zkit.nativeCompiler) {
-    await CircomCompilerFactory.checkNativeCompilerExistence();
-  }
-
   const compilationFileResolver: CompilationFilesResolver = new CompilationFilesResolver(
     (absolutePath: string) => env.run(TASK_READ_FILE, { absolutePath }),
     env.zkit.circuitArtifacts,
@@ -100,7 +98,6 @@ const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfi
     c: taskArgs.c || env.config.zkit.compilationSettings.c,
   };
 
-  Reporter!.reportCompilerVersion(COMPILER_VERSION);
   Reporter!.verboseLog("index", "Compile flags: %O", [compileFlags]);
 
   const resolvedFilesInfo: CircomResolvedFileInfo[] = await compilationFileResolver.getResolvedFilesToCompile(
@@ -108,10 +105,15 @@ const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfi
     taskArgs.force,
   );
 
+  const configCompilerVersion = env.config.zkit.compilerVersion;
+
+  if (configCompilerVersion && !isVersionValid(configCompilerVersion)) {
+    throw new HardhatZKitError(`Invalid Circom compiler version ${configCompilerVersion} specified in the config`);
+  }
+
   if (resolvedFilesInfo.length > 0) {
     const compilationProcessor: CompilationProcessor = new CompilationProcessor(
       {
-        compilerVersion: COMPILER_VERSION,
         compileFlags,
         quiet: taskArgs.quiet || env.config.zkit.quiet,
       },
