@@ -3,7 +3,7 @@ import path from "path";
 
 import { HardhatZKitError } from "../../errors";
 import { MAX_PTAU_ID } from "../../constants";
-import { Reporter } from "../../reporter/Reporter";
+import { Reporter } from "../../reporter";
 import { downloadFile } from "../../utils/utils";
 
 export class PtauDownloader {

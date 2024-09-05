@@ -1,3 +1,3 @@
-export * from "./Reporter";
+export * from "./ReporterFacade";
 export * from "./ProgressBarProcessor";
 export * from "./SpinnerProcessor";

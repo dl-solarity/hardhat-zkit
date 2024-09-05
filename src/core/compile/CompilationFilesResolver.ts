@@ -4,7 +4,7 @@ import { localPathToSourceName } from "hardhat/utils/source-names";
 
 import { DependencyGraph, CircomFilesParser, CircomFilesResolver, CircomResolvedFile } from "../dependencies";
 import { CircuitsCompileCache } from "../../cache";
-import { Reporter } from "../../reporter/Reporter";
+import { Reporter } from "../../reporter";
 import { filterCircuitFiles, getNormalizedFullPath } from "../../utils/path-utils";
 
 import { ZKitConfig } from "../../types/zkit-config";
