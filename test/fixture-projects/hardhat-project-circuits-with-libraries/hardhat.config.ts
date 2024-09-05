@@ -14,7 +14,9 @@ const defaultConfig: HardhatUserConfig = {
       ptauDownload: true,
     },
     quiet: true,
-    verifiersDir: "contracts/verifiers",
+    verifiersSettings: {
+      verifiersDir: "contracts/verifiers",
+    },
   },
 };
 

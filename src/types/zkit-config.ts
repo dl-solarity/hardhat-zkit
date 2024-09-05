@@ -6,9 +6,8 @@ export type ZKitConfig = {
   compilationSettings: CompilationSettings;
   setupSettings: SetupSettings;
   circuitsDir: string;
-  verifiersDir: string;
+  verifiersSettings: VerifiersSettings;
   typesDir: string;
-  verifiersType: VerifierLanguageType;
   compilerVersion?: string;
   quiet: boolean;
 };
@@ -28,4 +27,9 @@ export type SetupSettings = FileFilterSettings & {
 export type FileFilterSettings = {
   onlyFiles: string[];
   skipFiles: string[];
+};
+
+export type VerifiersSettings = {
+  verifiersDir: string;
+  verifiersType: VerifierLanguageType;
 };

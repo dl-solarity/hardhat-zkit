@@ -16,7 +16,7 @@ const defaultConfig: ZKitConfig = {
   },
   setupSettings: {
     contributionSettings: {
-      contributionTemplate: "groth16",
+      provingSystem: "groth16",
       contributions: 1,
     },
     ptauDir: undefined,
@@ -24,9 +24,11 @@ const defaultConfig: ZKitConfig = {
     onlyFiles: [],
     skipFiles: [],
   },
-  verifiersDir: "contracts/verifiers",
+  verifiersSettings: {
+    verifiersDir: "contracts/verifiers",
+    verifiersType: "sol",
+  },
   typesDir: "generated-types/zkit",
-  verifiersType: "sol",
   quiet: false,
 };
 

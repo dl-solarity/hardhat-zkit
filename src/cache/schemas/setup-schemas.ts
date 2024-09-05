@@ -1,9 +1,9 @@
 import { z } from "zod";
 
-export const ContributionTemplateTypeSchema = z.literal("groth16");
+export const ProvingSystemTypeSchema = z.literal("groth16");
 
 export const ContributionSettingsSchema = z.object({
-  contributionTemplate: ContributionTemplateTypeSchema,
+  provingSystem: ProvingSystemTypeSchema,
   contributions: z.number(),
 });
 

@@ -18,19 +18,7 @@ import { CompilerInfo, CompilerPlatformBinary, ICircomCompiler, NativeCompiler }
 // eslint-disable-next-line
 const { Context } = require("@distributedlab/circom2");
 
-export class CircomCompilerFactory {
-  private static instance: CircomCompilerFactory;
-
-  private constructor() {}
-
-  public static getInstance(): CircomCompilerFactory {
-    if (!CircomCompilerFactory.instance) {
-      CircomCompilerFactory.instance = new CircomCompilerFactory();
-    }
-
-    return CircomCompilerFactory.instance;
-  }
-
+export class BaseCircomCompilerFactory {
   public async createCircomCompiler(version: string, isVersionStrict: boolean): Promise<ICircomCompiler> {
     if (!isVersionHigherOrEqual(LATEST_SUPPORTED_CIRCOM_VERSION, version)) {
       throw new HardhatZKitError(`Unsupported Circom compiler version - ${version}. Please provide another version.`);
@@ -168,4 +156,21 @@ export class CircomCompilerFactory {
 
     return compilersDir;
   }
+}
+
+export let CircomCompilerFactory: BaseCircomCompilerFactory | null = null;
+
+export function createCircomCompilerFactory() {
+  if (CircomCompilerFactory) {
+    return;
+  }
+
+  CircomCompilerFactory = new BaseCircomCompilerFactory();
+}
+
+/**
+ * Used only in test environments to ensure test atomicity
+ */
+export function resetCircomCompilerFactory() {
+  CircomCompilerFactory = null;
 }

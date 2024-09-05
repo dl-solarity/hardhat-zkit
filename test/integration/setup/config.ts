@@ -30,7 +30,7 @@ describe("config", () => {
         },
         setupSettings: {
           contributionSettings: {
-            contributionTemplate: "groth16",
+            provingSystem: "groth16",
             contributions: 1,
           },
           ptauDir: "zkit/ptau",
@@ -38,9 +38,11 @@ describe("config", () => {
           onlyFiles: [],
           skipFiles: [],
         },
-        verifiersDir: "contracts/verifiers",
+        verifiersSettings: {
+          verifiersDir: "contracts/verifiers",
+          verifiersType: "vy",
+        },
         typesDir: "generated-types/zkit",
-        verifiersType: "vy",
         compilerVersion: "2.1.8",
         quiet: true,
       };
@@ -71,7 +73,7 @@ describe("config", () => {
         },
         setupSettings: {
           contributionSettings: {
-            contributionTemplate: "groth16",
+            provingSystem: "groth16",
             contributions: 1,
           },
           ptauDir: undefined,
@@ -79,9 +81,11 @@ describe("config", () => {
           onlyFiles: [],
           skipFiles: [],
         },
-        verifiersDir: "contracts/verifiers",
+        verifiersSettings: {
+          verifiersDir: "contracts/verifiers",
+          verifiersType: "sol",
+        },
         typesDir: "generated-types/zkit",
-        verifiersType: "sol",
         quiet: false,
       };
 

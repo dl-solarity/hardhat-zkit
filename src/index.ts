@@ -218,9 +218,9 @@ const generateVerifiers: ActionType<GenerateVerifiersTaskConfig> = async (
 
   const verifiersDirFullPath: string = getNormalizedFullPath(
     env.config.paths.root,
-    taskArgs.verifiersDir ?? env.config.zkit.verifiersDir,
+    taskArgs.verifiersDir ?? env.config.zkit.verifiersSettings.verifiersDir,
   );
-  const verifiersType: VerifierLanguageType = taskArgs.verifiersType ?? env.config.zkit.verifiersType;
+  const verifiersType: VerifierLanguageType = taskArgs.verifiersType ?? env.config.zkit.verifiersSettings.verifiersType;
 
   Reporter!.verboseLog("index", "Verifiers generation dir - %s", [verifiersDirFullPath]);
 
@@ -283,7 +283,7 @@ const getCircuitZKit: ActionType<GetCircuitZKitConfig> = async (
 
   const verifiersDirFullPath: string = getNormalizedFullPath(
     env.config.paths.root,
-    taskArgs.verifiersDir ?? env.config.zkit.verifiersDir,
+    taskArgs.verifiersDir ?? env.config.zkit.verifiersSettings.verifiersDir,
   );
   const circuitArtifactsDirPath: string = getNormalizedFullPath(
     env.zkit.circuitArtifacts.getCircuitArtifactsDirFullPath(),

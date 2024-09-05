@@ -1,6 +1,6 @@
-export type ContributionTemplateType = "groth16";
+export type ProvingSystemType = "groth16";
 
 export type ContributionSettings = {
-  contributionTemplate: ContributionTemplateType;
+  provingSystem: ProvingSystemType;
   contributions: number;
 };
