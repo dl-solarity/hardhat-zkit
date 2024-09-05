@@ -1,3 +1,5 @@
+import debug from "debug";
+
 import { VerifierLanguageType } from "@solarity/zkit";
 
 import { CircuitArtifact } from "../types/artifacts/circuit-artifacts";
@@ -12,7 +14,7 @@ import {
   VerifiersGenerationReporter,
   VKeyFilesGenerationReporter,
   ZKeyFilesGenerationReporter,
-} from "./modules";
+} from "./reporters";
 
 class ReporterFacade {
   private _setupReporter!: SetupReporter;
@@ -196,7 +198,7 @@ class ReporterFacade {
   }
 
   public verboseLog(namespace: string, formatterStr: string, logArgs: any[] = []) {
-    this._progressReporter.verboseLog(namespace, formatterStr, logArgs);
+    debug(`hardhat-zkit:${namespace}`)(formatterStr, ...logArgs);
   }
 }
 

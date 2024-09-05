@@ -1,9 +1,12 @@
 /* eslint-disable no-console */
+import fs from "fs";
 import chalk from "chalk";
 
 import { BaseReporter } from "./BaseReporter";
 import { CircuitSetupInfo } from "../../types/core";
 import { CircuitArtifact } from "../../types/artifacts/circuit-artifacts";
+import { HardhatZKitError } from "../../errors";
+import { BYTES_IN_MB } from "../../constants";
 
 export class SetupReporter extends BaseReporter {
   public reportCircuitList(allCircuitsSetupInfo: CircuitSetupInfo[], filteredCircuitsSetupInfo: CircuitSetupInfo[]) {
@@ -66,5 +69,15 @@ export class SetupReporter extends BaseReporter {
     output += `\n${table.toString()}\n`;
 
     console.log(output);
+  }
+
+  private _getFileSizeInMB(filePath: string | undefined): string {
+    if (!filePath) {
+      throw new HardhatZKitError("File path is undefined. Unable to get file size.");
+    }
+
+    const fileSize: number = fs.statSync(filePath).size;
+
+    return (fileSize / BYTES_IN_MB).toFixed(3);
   }
 }

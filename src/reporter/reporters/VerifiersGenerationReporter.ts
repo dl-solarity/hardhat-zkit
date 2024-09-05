@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 import chalk from "chalk";
 import { BaseReporter } from "./BaseReporter";
+import { HardhatZKitError } from "../../errors";
 import { VerifierLanguageType } from "@solarity/zkit";
 
 export class VerifiersGenerationReporter extends BaseReporter {
@@ -43,5 +44,16 @@ export class VerifiersGenerationReporter extends BaseReporter {
     output += `\n${chalk.bold(`Successfully generated ${verifiersCount} ${this._getVerifierLanguageMessage(verifiersType)} verifier contracts.`)}\n`;
 
     console.log(output);
+  }
+
+  private _getVerifierLanguageMessage(verifiersType: VerifierLanguageType): string {
+    switch (verifiersType) {
+      case "sol":
+        return "Solidity";
+      case "vy":
+        return "Vyper";
+      default:
+        throw new HardhatZKitError(`Invalid verifiers type - ${verifiersType}`);
+    }
   }
 }
