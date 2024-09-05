@@ -19,7 +19,7 @@ This hardhat plugin is a zero-config, one-stop Circom development environment th
 - Automatic downloads of phase-1 `ptau` files.
 - Convenient phase-2 contributions to `zkey` files.
 - Available `witness` testing via chai assertions.
-- Invisible `wasm`-based Circom compiler management.
+- Invisible platform-specific and fallback `wasm`-based Circom compiler management.
 - Simplified `node_modules` libraries resolution.
 - Rich plugin configuration.
 - And much more!
@@ -39,7 +39,7 @@ require("@solarity/hardhat-zkit"); // JavaScript
 ```
 
 > [!TIP]
-> There is no need to download the Circom compiler separately. The plugin works with the WASM-based version under the hood.
+> There is no need to download the Circom compiler separately. The plugin automatically installs missing compilers under the hood.
 
 ## Usage
 
@@ -58,7 +58,7 @@ module.exports = {
     },
     setupSettings: {
       contributionSettings: {
-        contributionTemplate: "groth16",
+        provingSystem: "groth16",
         contributions: 1,
       },
       onlyFiles: [],
@@ -66,9 +66,11 @@ module.exports = {
       ptauDir: undefined,
       ptauDownload: true,
     },
-    verifiersDir: "contracts/verifiers",
+    verifiersSettings: {
+      verifiersDir: "contracts/verifiers",
+      verifiersType: "sol",  
+    },
     typesDir: "generated-types/zkit",
-    verifiersType: "sol",
     compilerVersion: "2.1.8",
     quiet: false,
   },
@@ -86,15 +88,16 @@ Where:
   - `json` - The flag to output the constraints in json format.
 - `setupSettings`
   - `contributionSettings`
-    - `contributionTemplate` - The option to indicate which proving system to use.
+    - `provingSystem` - The option to indicate which proving system to use.
     - `contributions` - The number of phase-2 `zkey` contributions to make if `groth16` is chosen.
   - `onlyFiles` - The list of directories (or files) to be considered for the setup phase.
   - `skipFiles` - The list of directories (or files) to be excluded from the setup phase.
   - `ptauDir` - The directory where to look for the `ptau` files. `$HOME/.zkit/ptau/` by default.
   - `ptauDownload` - The flag to allow automatic download of required `ptau` files.
-- `verifiersDir` - The directory where to generate the Solidity verifiers.
+- `verifiersSettings`
+    - `verifiersDir` - The directory where to generate the Solidity verifiers.
+    - `verifiersType` - The option (`sol` or `vy`) to indicate which language to use for verifiers generation.
 - `typesDir` - The directory where to save the generated typed circuits wrappers.
-- `verifiersType` - The option (`sol` or `vy`) to indicate which language to use for verifiers generation.
 - `compilerVersion` - The optional value to indicate which Circom compiler to use.
 - `quiet` - The flag indicating whether to suppress the output.
 
@@ -244,7 +247,5 @@ Where:
 
 ## Known limitations
 
-- Circuits typization will not work if an expression is used to indicate the size of a signal array. Consider extending circuit's parameters if you have expressions like this: `signal arr[n + 1]`.
 - Due to current `wasm` memory limitations (address space is 32-bit), the plugin may fail to compile especially large circuits.
-- At present the `wasm`-based Circom `2.1.8` is used to compile circuits.
 - Temporarily, the only supported proving system is `groth16`.

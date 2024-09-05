@@ -6,7 +6,7 @@ import { v4 as uuid } from "uuid";
 
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
-import { CircomCompilerFactory } from "../compiler";
+import { CircomCompilerFactory, createCircomCompilerFactory } from "../compiler";
 import { HardhatZKitError } from "../../errors";
 import { CIRCUIT_ARTIFACT_VERSION, NODE_MODULES } from "../../constants";
 import { Reporter } from "../../reporter";
@@ -69,8 +69,8 @@ export class CompilationProcessor {
         version = this._zkitConfig.compilerVersion;
       }
 
-      const compilerFactory = CircomCompilerFactory.getInstance();
-      const compiler = await compilerFactory.createCircomCompiler(version, isVersionStrict);
+      createCircomCompilerFactory();
+      const compiler = await CircomCompilerFactory!.createCircomCompiler(version, isVersionStrict);
 
       const compilationInfoArr: CompilationInfo[] = await this._getCompilationInfoArr(tempDir, filesInfoToCompile);
 

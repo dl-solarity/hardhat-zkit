@@ -15,7 +15,7 @@ import { CircuitArtifact } from "../../../src/types/artifacts/circuit-artifacts"
 
 describe("CircuitsSetupCache", () => {
   const defaultContributionSettings: ContributionSettings = {
-    contributionTemplate: "groth16",
+    provingSystem: "groth16",
     contributions: 1,
   };
 
