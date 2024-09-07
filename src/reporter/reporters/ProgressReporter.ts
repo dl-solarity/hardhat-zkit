@@ -13,6 +13,8 @@ export class ProgressReporter extends BaseReporter {
   public reportStartFileDownloadingWithProgressBar(totalValue: number, startValue: number) {
     if (this.isQuiet()) return;
 
+    console.log();
+
     this._progressBarProcessor.createAndStartProgressBar(
       {
         formatValue: this._progressBarProcessor.formatToMB,

@@ -1,6 +1,19 @@
+/* eslint-disable no-console */
+import chalk from "chalk";
+
 import { BaseReporter } from "./BaseReporter";
 
 export class CircuitFilesResolvingReporter extends BaseReporter {
+  public reportHeader() {
+    if (this.isQuiet()) return;
+
+    let output: string = "";
+
+    output += `\n${chalk.bold("Starting circuits preparation process:")}\n`;
+
+    console.log(output);
+  }
+
   public reportStartWithSpinner(): string | null {
     return this._startSpinner("circuits", "files-resolving", `Resolving and parsing circuits`);
   }

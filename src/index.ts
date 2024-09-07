@@ -98,6 +98,7 @@ const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfi
     c: taskArgs.c || env.config.zkit.compilationSettings.c,
   };
 
+  Reporter!.reportCircuitFilesResolvingProcessHeader();
   Reporter!.verboseLog("index", "Compile flags: %O", [compileFlags]);
 
   const resolvedFilesInfo: CircomResolvedFileInfo[] = await compilationFileResolver.getResolvedFilesToCompile(
@@ -194,6 +195,9 @@ const setup: ActionType<SetupTaskConfig> = async (taskArgs: SetupTaskConfig, env
 
 const make: ActionType<MakeTaskConfig> = async (taskArgs: MakeTaskConfig, env: HardhatRuntimeEnvironment) => {
   await env.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE }, taskArgs);
+
+  Reporter!.drawLine();
+
   await env.run(
     { scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_SETUP },
     { force: taskArgs.force, quiet: taskArgs.quiet },

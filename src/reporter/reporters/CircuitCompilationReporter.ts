@@ -5,6 +5,16 @@ import { CompilationInfo } from "../../types/core";
 import { BaseReporter } from "./BaseReporter";
 
 export class CircuitCompilationReporter extends BaseReporter {
+  public reportHeader() {
+    if (this.isQuiet()) return;
+
+    let output: string = "";
+
+    output += `\n${chalk.bold("Starting compilation process:")}`;
+
+    console.log(output);
+  }
+
   public reportCircuitListToCompile(filteredSourceNames: string[], filteredSourceNamesToCompile: string[]) {
     if (this.isQuiet()) return;
 
@@ -31,16 +41,6 @@ export class CircuitCompilationReporter extends BaseReporter {
 
       console.log(skippedFilesMessage);
     }
-  }
-
-  public reportHeader() {
-    if (this.isQuiet()) return;
-
-    let output: string = "";
-
-    output += `\n${chalk.bold("Starting compilation process:")}\n`;
-
-    console.log(output);
   }
 
   public reportStartWithSpinner(circuitName: string, circuitFileName: string): string | null {

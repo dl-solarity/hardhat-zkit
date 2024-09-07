@@ -28,22 +28,27 @@ export async function downloadFile(
   const fileStream = fs.createWriteStream(file);
 
   return new Promise((resolve, reject) => {
+    const delay = () => new Promise((resolve) => setTimeout(resolve, 1000));
+
     const handleRequest = (currentUrl: string) => {
       const request = https.get(currentUrl, (response) => {
         if (response.statusCode === 302 || response.statusCode === 301) {
           const redirectUrl = response.headers.location;
+
           if (redirectUrl) {
             handleRequest(redirectUrl);
           } else {
             onErrorReporter();
             fs.unlink(file, () => reject(new Error("Invalid redirect response")));
           }
+
           return;
         }
 
         if (response.statusCode !== 200) {
           onErrorReporter();
           fs.unlink(file, () => reject(new Error(`Failed to download file with status code: ${response.statusCode}`)));
+
           return;
         }
 
@@ -53,22 +58,23 @@ export async function downloadFile(
 
         response.pipe(fileStream);
 
-        response.on("data", (chunk) => {
-          Reporter!.updateProgressBarValue(chunk.length);
-        });
-
-        fileStream.on("finish", () => {
-          onFinishReporter();
-          resolve(true);
-        });
-
-        fileStream.on("error", (err) => {
-          onErrorReporter();
-          fs.unlink(file, () => reject(err));
-        });
+        response
+          .on("data", (chunk) => {
+            Reporter!.updateProgressBarValue(chunk.length);
+          })
+          .on("error", (err) => {
+            delay().then(() => {
+              onErrorReporter();
+              fs.unlink(file, () => reject(err));
+            });
+          })
+          .on("end", () => {
+            delay().then(() => {
+              onFinishReporter();
+              resolve(true);
+            });
+          });
       });
-
-      fileStream.on("finish", () => resolve(true));
 
       request.on("error", (err) => {
         fs.unlink(file, () => reject(err));

@@ -10,7 +10,7 @@ export class CircomCompilerReporter extends BaseReporter {
 
     let output: string = "";
 
-    output += `\n${chalk.bold("Compiler version:")} ${chalk.green(compilerVersion)}\n`;
+    output += `\nCircom version: ${chalk.green(compilerVersion)}\n`;
 
     console.log(output);
   }
@@ -20,10 +20,10 @@ export class CircomCompilerReporter extends BaseReporter {
 
     if (isWasm) {
       console.log(
-        `Failed to download proper platform compiler or OS platform is not supported, trying to download WASM Circom compiler v${version}`,
+        `\n> Failed to download proper platform compiler or OS platform is not supported, trying to download WASM Circom v${version}`,
       );
     } else {
-      console.log(`No proper compiler found, trying to download the latest available Circom compiler v${version}`);
+      console.log(`\n> No proper compiler found, trying to download Circom v${version}`);
     }
   }
 
@@ -32,7 +32,7 @@ export class CircomCompilerReporter extends BaseReporter {
 
     this._progressBarProcessor.stopProgressBar();
 
-    console.log(`\n${emoji("✅ ", `${chalk.green("✔ ")}`)}Circom compiler successfully downloaded`);
+    console.log(`\n\n${emoji("✅ ", `${chalk.green("✔ ")}`)}Circom compiler successfully downloaded`);
   }
 
   public reportDownloadingError() {
@@ -40,6 +40,6 @@ export class CircomCompilerReporter extends BaseReporter {
 
     this._progressBarProcessor.stopProgressBar();
 
-    console.log(`\n${emoji("❌ ", `${chalk.red("X ")}`)}Circom compiler downloading failed`);
+    console.log(`\n\n${emoji("❌ ", `${chalk.red("X ")}`)}Circom compiler downloading failed`);
   }
 }

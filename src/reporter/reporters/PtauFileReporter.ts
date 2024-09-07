@@ -32,7 +32,7 @@ export class PtauFileReporter extends BaseReporter {
 
     output += `\nPtau downloading info:\n`;
     output += `\n> Ptau file path - ${chalk.underline(ptauFilePath)}`;
-    output += `\n> Download URL - ${chalk.underline(downloadUrl)}\n`;
+    output += `\n> Download URL - ${chalk.underline(downloadUrl)}`;
 
     console.log(output);
   }
@@ -42,7 +42,7 @@ export class PtauFileReporter extends BaseReporter {
 
     this._progressBarProcessor.stopProgressBar();
 
-    console.log(`\n${emoji("✅ ", `${chalk.green("✔ ")}`)}Ptau file successfully downloaded`);
+    console.log(`\n\n${emoji("✅ ", `${chalk.green("✔ ")}`)}Ptau file successfully downloaded`);
   }
 
   public reportDownloadingError() {
@@ -50,6 +50,6 @@ export class PtauFileReporter extends BaseReporter {
 
     this._progressBarProcessor.stopProgressBar();
 
-    console.log(`\n${emoji("❌ ", `${chalk.red("X ")}`)}Ptau file downloading failed`);
+    console.log(`\n\n${emoji("❌ ", `${chalk.red("X ")}`)}Ptau file downloading failed`);
   }
 }

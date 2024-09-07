@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import debug from "debug";
 
 import { VerifierLanguageType } from "@solarity/zkit";
@@ -45,6 +46,10 @@ class ReporterFacade {
 
   public setQuiet(newValue: boolean) {
     this._initReporters(newValue);
+  }
+
+  public reportCircuitFilesResolvingProcessHeader() {
+    this._circuitFilesResolvingReporter.reportHeader();
   }
 
   public reportCircuitFilesResolvingStartWithSpinner(): string | null {
@@ -195,6 +200,12 @@ class ReporterFacade {
 
   public updateProgressBarValue(valueToAdd: number) {
     this._progressReporter.updateProgressBarValue(valueToAdd);
+  }
+
+  public drawLine(length: number = 69) {
+    const line = "─".repeat(length);
+
+    console.log(line);
   }
 
   public verboseLog(namespace: string, formatterStr: string, logArgs: any[] = []) {

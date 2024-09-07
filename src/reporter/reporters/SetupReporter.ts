@@ -9,6 +9,16 @@ import { HardhatZKitError } from "../../errors";
 import { BYTES_IN_MB } from "../../constants";
 
 export class SetupReporter extends BaseReporter {
+  public reportHeader() {
+    if (this.isQuiet()) return;
+
+    let output: string = "";
+
+    output += `\n${chalk.bold("Starting keys setup process:")}`;
+
+    console.log(output);
+  }
+
   public reportCircuitList(allCircuitsSetupInfo: CircuitSetupInfo[], filteredCircuitsSetupInfo: CircuitSetupInfo[]) {
     if (this.isQuiet()) return;
 
@@ -35,16 +45,6 @@ export class SetupReporter extends BaseReporter {
 
       console.log(skippedFilesMessage);
     }
-  }
-
-  public reportHeader() {
-    if (this.isQuiet()) return;
-
-    let output: string = "";
-
-    output += `\n${chalk.bold("Starting keys setup process:")}`;
-
-    console.log(output);
   }
 
   public reportResult(circuitArtifacts: CircuitArtifact[]) {
