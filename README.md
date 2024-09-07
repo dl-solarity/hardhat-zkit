@@ -48,6 +48,7 @@ The `hardhat-zkit` is a zero-config plugin, however, you may add the following t
 ```ts
 module.exports = {
   zkit: {
+    compilerVersion: "2.1.8",
     circuitsDir: "circuits",
     compilationSettings: {
       artifactsDir: "zkit/artifacts",
@@ -71,7 +72,6 @@ module.exports = {
       verifiersType: "sol",  
     },
     typesDir: "generated-types/zkit",
-    compilerVersion: "2.1.8",
     quiet: false,
   },
 };
@@ -79,6 +79,7 @@ module.exports = {
 
 Where:
 
+- `compilerVersion` - The value to indicate which Circom compiler to use (latest by default).
 - `circuitsDir` - The directory where to look for the circuits.
 - `compilationSettings`
   - `artifactsDir` - The directory where to save the circuits artifacts (r1cs, zkey, etc).
@@ -98,7 +99,6 @@ Where:
     - `verifiersDir` - The directory where to generate the Solidity verifiers.
     - `verifiersType` - The option (`sol` or `vy`) to indicate which language to use for verifiers generation.
 - `typesDir` - The directory where to save the generated typed circuits wrappers.
-- `compilerVersion` - The optional value to indicate which Circom compiler to use.
 - `quiet` - The flag indicating whether to suppress the output.
 
 ### Tasks
@@ -203,7 +203,7 @@ async function main() {
   // proof testing
   const proof = await circuit.generateProof({ in1: "4", in2: "2" });
 
-  expect(await circuit.verifyProof(proof)).to.be.true;
+  await expect(circuit).to.verifyProof(proof);
 }
 
 main()
