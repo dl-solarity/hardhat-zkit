@@ -3,12 +3,12 @@ import { VerifierLanguageType } from "@solarity/zkit";
 import { ContributionSettings } from "./core";
 
 export type ZKitConfig = {
+  compilerVersion?: string;
+  circuitsDir: string;
   compilationSettings: CompilationSettings;
   setupSettings: SetupSettings;
-  circuitsDir: string;
   verifiersSettings: VerifiersSettings;
   typesDir: string;
-  compilerVersion?: string;
   quiet: boolean;
 };
 

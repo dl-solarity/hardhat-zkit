@@ -6,6 +6,7 @@ import { ZKitConfig } from "../types/zkit-config";
 import { RecursivePartial } from "../types/utils";
 
 const defaultConfig: ZKitConfig = {
+  compilerVersion: undefined,
   circuitsDir: "circuits",
   compilationSettings: {
     artifactsDir: "zkit/artifacts",

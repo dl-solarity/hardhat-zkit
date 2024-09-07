@@ -3,6 +3,7 @@
 [![npm](https://img.shields.io/npm/v/@solarity/hardhat-zkit.svg)](https://www.npmjs.com/package/@solarity/hardhat-zkit)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![tests](https://github.com/dl-solarity/hardhat-zkit/actions/workflows/tests.yml/badge.svg?branch=master)](./.github/workflows/tests.yml)
+[![GitPOAP Badge](https://public-api.gitpoap.io/v1/repo/dl-solarity/hardhat-zkit/badge)](https://www.gitpoap.io/gh/dl-solarity/hardhat-zkit)
 [![hardhat](https://hardhat.org/buidler-plugin-badge.svg?1)](https://hardhat.org)
 
 # Hardhat ZKit
@@ -114,7 +115,7 @@ There are several hardhat tasks in the `zkit` scope that the plugin provides:
 To view the available options, run the help command:
 
 ```bash
-npx hardhat help zkit <zkit scope task name>
+npx hardhat help zkit <zkit task name>
 ```
 
 ### Typization
