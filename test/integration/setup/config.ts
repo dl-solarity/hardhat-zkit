@@ -20,6 +20,7 @@ describe("config", () => {
 
     it("should apply user defined config", async () => {
       const userDefinedConfig: ZKitConfig = {
+        compilerVersion: "2.1.8",
         circuitsDir: "circuits",
         compilationSettings: {
           artifactsDir: "zkit/artifacts",
@@ -43,7 +44,6 @@ describe("config", () => {
           verifiersType: "vy",
         },
         typesDir: "generated-types/zkit",
-        compilerVersion: "2.1.8",
         quiet: true,
       };
 
@@ -63,6 +63,7 @@ describe("config", () => {
 
     it("the zkit field should be present", async () => {
       const defaultConfig: ZKitConfig = {
+        compilerVersion: undefined,
         circuitsDir: "circuits",
         compilationSettings: {
           artifactsDir: "zkit/artifacts",
