@@ -77,6 +77,7 @@ export class CircomFilesResolver {
    */
   public async resolveSourceName(sourceName: string): Promise<CircomResolvedFile> {
     const cached = this._cache.get(sourceName);
+
     if (cached !== undefined) {
       return cached;
     }
@@ -86,12 +87,13 @@ export class CircomFilesResolver {
     let resolvedFile: CircomResolvedFile;
 
     if (await isLocalSourceName(this._projectRoot, sourceName)) {
-      resolvedFile = await this._resolveLocalSourceName(sourceName, sourceName);
+      resolvedFile = await this._resolveLocalSourceName(sourceName);
     } else {
-      resolvedFile = await this._resolveLibrarySourceName(sourceName, sourceName);
+      resolvedFile = await this._resolveLibrarySourceName(sourceName);
     }
 
     this._cache.set(sourceName, resolvedFile);
+
     return resolvedFile;
   }
 
@@ -102,10 +104,11 @@ export class CircomFilesResolver {
    */
   public async resolveImport(from: CircomResolvedFile, importName: string): Promise<CircomResolvedFile> {
     const scheme = this._getUriScheme(importName);
+
     if (scheme !== undefined) {
       throw new HardhatError(ERRORS.RESOLVER.INVALID_IMPORT_PROTOCOL, {
         from: from.sourceName,
-        importName,
+        imported: importName,
         protocol: scheme,
       });
     }
@@ -113,14 +116,14 @@ export class CircomFilesResolver {
     if (replaceBackslashes(importName) !== importName) {
       throw new HardhatError(ERRORS.RESOLVER.INVALID_IMPORT_BACKSLASH, {
         from: from.sourceName,
-        importName,
+        imported: importName,
       });
     }
 
     if (isAbsolutePathSourceName(importName)) {
       throw new HardhatError(ERRORS.RESOLVER.INVALID_IMPORT_ABSOLUTE_PATH, {
         from: from.sourceName,
-        importName,
+        imported: importName,
       });
     }
 
@@ -129,7 +132,7 @@ export class CircomFilesResolver {
     if (await includesOwnPackageName(importName)) {
       throw new HardhatError(ERRORS.RESOLVER.INCLUDES_OWN_PACKAGE_NAME, {
         from: from.sourceName,
-        importName,
+        imported: importName,
       });
     }
 
@@ -145,6 +148,7 @@ export class CircomFilesResolver {
       }
 
       const cached = this._cache.get(sourceName);
+
       if (cached !== undefined) {
         return cached;
       }
@@ -155,12 +159,13 @@ export class CircomFilesResolver {
       // imports can be treated as library imports. For example if
       // `circuits/c.circom` imports `../non-existent/a.circom`
       if (from.library === undefined && isRelativeImport && !this._isRelativeImportToLibrary(from, importName)) {
-        resolvedFile = await this._resolveLocalSourceName(sourceName, sourceName);
+        resolvedFile = await this._resolveLocalSourceName(sourceName);
       } else {
         resolvedFile = await this.resolveSourceName(sourceName);
       }
 
       this._cache.set(sourceName, resolvedFile);
+
       return resolvedFile;
     } catch (error) {
       if (
@@ -170,7 +175,7 @@ export class CircomFilesResolver {
         throw new HardhatError(
           ERRORS.RESOLVER.IMPORTED_FILE_NOT_FOUND,
           {
-            importName,
+            imported: importName,
             from: from.sourceName,
           },
           error,
@@ -181,7 +186,7 @@ export class CircomFilesResolver {
         throw new HardhatError(
           ERRORS.RESOLVER.INVALID_IMPORT_WRONG_CASING,
           {
-            importName,
+            imported: importName,
             from: from.sourceName,
           },
           error,
@@ -203,7 +208,7 @@ export class CircomFilesResolver {
         throw new HardhatError(
           ERRORS.RESOLVER.INVALID_IMPORT_OF_DIRECTORY,
           {
-            importName,
+            imported: importName,
             from: from.sourceName,
           },
           error,
@@ -272,18 +277,19 @@ export class CircomFilesResolver {
     }
   }
 
-  private async _resolveLocalSourceName(sourceName: string, remappedSourceName: string): Promise<CircomResolvedFile> {
-    await this._validateSourceNameExistenceAndCasing(this._projectRoot, remappedSourceName, false);
+  private async _resolveLocalSourceName(sourceName: string): Promise<CircomResolvedFile> {
+    await this._validateSourceNameExistenceAndCasing(this._projectRoot, sourceName, false);
 
-    const absolutePath = path.join(this._projectRoot, remappedSourceName);
+    const absolutePath = path.join(this._projectRoot, sourceName);
     return this._resolveFile(sourceName, absolutePath);
   }
 
-  private async _resolveLibrarySourceName(sourceName: string, remappedSourceName: string): Promise<CircomResolvedFile> {
-    const normalizedSourceName = remappedSourceName.replace(NODE_MODULES_REG_EXP, "");
+  private async _resolveLibrarySourceName(sourceName: string): Promise<CircomResolvedFile> {
+    const normalizedSourceName = sourceName.replace(NODE_MODULES_REG_EXP, "");
     const libraryName = this._getLibraryName(normalizedSourceName);
 
     let packageJsonPath;
+
     try {
       packageJsonPath = this._resolveNodeModulesFileFromProjectRoot(path.join(libraryName, "package.json"));
     } catch (error) {
@@ -297,11 +303,13 @@ export class CircomFilesResolver {
     }
 
     let nodeModulesPath = path.dirname(path.dirname(packageJsonPath));
+
     if (this._isScopedPackage(normalizedSourceName)) {
       nodeModulesPath = path.dirname(nodeModulesPath);
     }
 
     let absolutePath: string;
+
     if (path.basename(nodeModulesPath) !== NODE_MODULES) {
       // this can happen in monorepos that use PnP, in those
       // cases we handle resolution differently
@@ -326,6 +334,7 @@ export class CircomFilesResolver {
       name: string;
       version: string;
     } = await fsExtra.readJson(packageJsonPath);
+
     const libraryVersion = packageInfo.version;
 
     return this._resolveFile(
