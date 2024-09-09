@@ -3,6 +3,7 @@ import chalk from "chalk";
 
 import { CompilationInfo } from "../../types/core";
 import { BaseReporter } from "./BaseReporter";
+import { SpinnerProcessor } from "../SpinnerProcessor";
 
 export class CircuitCompilationReporter extends BaseReporter {
   public reportHeader() {
@@ -54,10 +55,10 @@ export class CircuitCompilationReporter extends BaseReporter {
 
     const fileNameMessage: string = circuitName === circuitFileName ? "" : chalk.grey(` (${circuitFileName}.circom)`);
     const compilationTimeMessage: string = this._getSpinnerWorkingTimeMessage(
-      this._spinnerProcessor.getWorkingTime(spinnerId),
+      SpinnerProcessor!.getWorkingTime(spinnerId),
     );
 
-    this._spinnerProcessor.succeedSpinner(
+    SpinnerProcessor!.succeedSpinner(
       spinnerId,
       `Compiled ${chalk.italic(circuitName)}${fileNameMessage} ${compilationTimeMessage}`,
     );
@@ -68,10 +69,10 @@ export class CircuitCompilationReporter extends BaseReporter {
 
     const fileNameMessage: string = circuitName === circuitFileName ? "" : chalk.grey(` (${circuitFileName}.circom)`);
     const compilationTimeMessage: string = this._getSpinnerWorkingTimeMessage(
-      this._spinnerProcessor.getWorkingTime(spinnerId),
+      SpinnerProcessor!.getWorkingTime(spinnerId),
     );
 
-    this._spinnerProcessor.failSpinner(
+    SpinnerProcessor!.failSpinner(
       spinnerId,
       `Failed to compile ${chalk.italic(circuitName)}${fileNameMessage} ${compilationTimeMessage}\n`,
     );

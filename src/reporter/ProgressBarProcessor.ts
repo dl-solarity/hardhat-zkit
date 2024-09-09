@@ -2,7 +2,7 @@ import { Bar, Options, Preset, Presets, ValueType } from "cli-progress";
 
 import { BYTES_IN_MB } from "../constants";
 
-export class ProgressBarProcessor {
+export class BaseProgressBarProcessor {
   private _progressBar: Bar | null = null;
 
   public createAndStartProgressBar(
@@ -46,4 +46,14 @@ export class ProgressBarProcessor {
         return v.toString();
     }
   }
+}
+
+export let ProgressBarProcessor: BaseProgressBarProcessor | null = null;
+
+export function createProgressBarProcessor() {
+  if (ProgressBarProcessor) {
+    return;
+  }
+
+  ProgressBarProcessor = new BaseProgressBarProcessor();
 }

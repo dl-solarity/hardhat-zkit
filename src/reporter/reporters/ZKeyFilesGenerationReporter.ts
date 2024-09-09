@@ -3,6 +3,7 @@ import chalk from "chalk";
 import { pluralize } from "hardhat/internal/util/strings";
 
 import { BaseReporter } from "./BaseReporter";
+import { SpinnerProcessor } from "../SpinnerProcessor";
 
 export class ZKeyFilesGenerationReporter extends BaseReporter {
   public reportHeader(contributions: number) {
@@ -30,12 +31,12 @@ export class ZKeyFilesGenerationReporter extends BaseReporter {
     if (this.isQuiet() || !spinnerId) return;
 
     const generationTimeMessage: string | undefined = this._getSpinnerWorkingTimeMessage(
-      this._spinnerProcessor.getWorkingTime(spinnerId),
+      SpinnerProcessor!.getWorkingTime(spinnerId),
     );
     const contributionMessage: string =
       contributionsNumber !== 0 ? `with ${contributionsNumber} ${pluralize(contributionsNumber, "contribution")} ` : "";
 
-    this._spinnerProcessor.succeedSpinner(
+    SpinnerProcessor!.succeedSpinner(
       spinnerId,
       `Generated ZKey file for ${chalk.italic(circuitName)} circuit ${contributionMessage}${generationTimeMessage}`,
     );

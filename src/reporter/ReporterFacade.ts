@@ -17,6 +17,9 @@ import {
   ZKeyFilesGenerationReporter,
 } from "./reporters";
 
+import { createProgressBarProcessor } from "./ProgressBarProcessor";
+import { createSpinnerProcessor } from "./SpinnerProcessor";
+
 class ReporterFacade {
   private _setupReporter!: SetupReporter;
   private _progressReporter!: ProgressReporter;
@@ -29,6 +32,9 @@ class ReporterFacade {
   private _circuitFilesResolvingReporter!: CircuitFilesResolvingReporter;
 
   constructor(quiet: boolean) {
+    createProgressBarProcessor();
+    createSpinnerProcessor();
+
     this._initReporters(quiet);
   }
 

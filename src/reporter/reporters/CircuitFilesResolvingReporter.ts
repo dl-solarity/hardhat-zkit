@@ -2,6 +2,7 @@
 import chalk from "chalk";
 
 import { BaseReporter } from "./BaseReporter";
+import { SpinnerProcessor } from "../SpinnerProcessor";
 
 export class CircuitFilesResolvingReporter extends BaseReporter {
   public reportHeader() {
@@ -22,19 +23,19 @@ export class CircuitFilesResolvingReporter extends BaseReporter {
     if (this.isQuiet() || !spinnerId) return;
 
     const resolvingTimeMessage: string = this._getSpinnerWorkingTimeMessage(
-      this._spinnerProcessor.getWorkingTime(spinnerId),
+      SpinnerProcessor!.getWorkingTime(spinnerId),
     );
 
-    this._spinnerProcessor.succeedSpinner(spinnerId, `Circuits are ready for the compilation ${resolvingTimeMessage}`);
+    SpinnerProcessor!.succeedSpinner(spinnerId, `Circuits are ready for the compilation ${resolvingTimeMessage}`);
   }
 
   public reportFail(spinnerId: string | null) {
     if (this.isQuiet() || !spinnerId) return;
 
     const resolvingTimeMessage: string = this._getSpinnerWorkingTimeMessage(
-      this._spinnerProcessor.getWorkingTime(spinnerId),
+      SpinnerProcessor!.getWorkingTime(spinnerId),
     );
 
-    this._spinnerProcessor.failSpinner(spinnerId, `Failed to resolve circuit files ${resolvingTimeMessage}\n`);
+    SpinnerProcessor!.failSpinner(spinnerId, `Failed to resolve circuit files ${resolvingTimeMessage}\n`);
   }
 }

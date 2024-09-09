@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 import chalk from "chalk";
 import { BaseReporter } from "./BaseReporter";
+import { SpinnerProcessor } from "../SpinnerProcessor";
 import { HardhatZKitError } from "../../errors";
 import { VerifierLanguageType } from "@solarity/zkit";
 
@@ -27,10 +28,10 @@ export class VerifiersGenerationReporter extends BaseReporter {
     if (this.isQuiet() || !spinnerId) return;
 
     const generationTimeMessage: string = this._getSpinnerWorkingTimeMessage(
-      this._spinnerProcessor.getWorkingTime(spinnerId),
+      SpinnerProcessor!.getWorkingTime(spinnerId),
     );
 
-    this._spinnerProcessor.succeedSpinner(
+    SpinnerProcessor!.succeedSpinner(
       spinnerId,
       `Generated ${this._getVerifierLanguageMessage(verifiersType)} verifier contract for ${chalk.italic(circuitName)} circuit ${generationTimeMessage}`,
     );

@@ -28,8 +28,6 @@ export async function downloadFile(
   const fileStream = fs.createWriteStream(file);
 
   return new Promise((resolve, reject) => {
-    const delay = () => new Promise((resolve) => setTimeout(resolve, 1000));
-
     const handleRequest = (currentUrl: string) => {
       const request = https.get(currentUrl, (response) => {
         if (response.statusCode === 302 || response.statusCode === 301) {
@@ -63,16 +61,12 @@ export async function downloadFile(
             Reporter!.updateProgressBarValue(chunk.length);
           })
           .on("error", (err) => {
-            delay().then(() => {
-              onErrorReporter();
-              fs.unlink(file, () => reject(err));
-            });
+            onErrorReporter();
+            fs.unlink(file, () => reject(err));
           })
           .on("end", () => {
-            delay().then(() => {
-              onFinishReporter();
-              resolve(true);
-            });
+            onFinishReporter();
+            resolve(true);
           });
       });
 
