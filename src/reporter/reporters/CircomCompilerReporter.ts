@@ -33,7 +33,7 @@ export class CircomCompilerReporter extends BaseReporter {
 
     ProgressBarProcessor!.stopProgressBar();
 
-    console.log(`\n\n${emoji("✅ ", `${chalk.green("✔ ")}`)}Circom compiler successfully downloaded`);
+    console.log(`\n${emoji("✅ ", `${chalk.green("✔ ")}`)}Circom compiler successfully downloaded`);
   }
 
   public reportDownloadingError() {
@@ -41,6 +41,6 @@ export class CircomCompilerReporter extends BaseReporter {
 
     ProgressBarProcessor!.stopProgressBar();
 
-    console.log(`\n\n${emoji("❌ ", `${chalk.red("X ")}`)}Circom compiler downloading failed`);
+    console.log(`\n${emoji("❌ ", `${chalk.red("X ")}`)}Circom compiler downloading failed`);
   }
 }

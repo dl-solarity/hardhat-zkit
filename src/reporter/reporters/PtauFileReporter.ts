@@ -43,7 +43,7 @@ export class PtauFileReporter extends BaseReporter {
 
     ProgressBarProcessor!.stopProgressBar();
 
-    console.log(`\n\n${emoji("✅ ", `${chalk.green("✔ ")}`)}Ptau file successfully downloaded`);
+    console.log(`\n${emoji("✅ ", `${chalk.green("✔ ")}`)}Ptau file successfully downloaded`);
   }
 
   public reportDownloadingError() {
@@ -51,6 +51,6 @@ export class PtauFileReporter extends BaseReporter {
 
     ProgressBarProcessor!.stopProgressBar();
 
-    console.log(`\n\n${emoji("❌ ", `${chalk.red("X ")}`)}Ptau file downloading failed`);
+    console.log(`\n${emoji("❌ ", `${chalk.red("X ")}`)}Ptau file downloading failed`);
   }
 }
