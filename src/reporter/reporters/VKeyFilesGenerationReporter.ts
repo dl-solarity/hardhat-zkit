@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 import chalk from "chalk";
 import { BaseReporter } from "./BaseReporter";
+import { SpinnerProcessor } from "../SpinnerProcessor";
 
 export class VKeyFilesGenerationReporter extends BaseReporter {
   public reportHeader() {
@@ -23,10 +24,10 @@ export class VKeyFilesGenerationReporter extends BaseReporter {
     if (this.isQuiet() || !spinnerId) return;
 
     const generationTimeMessage: string = this._getSpinnerWorkingTimeMessage(
-      this._spinnerProcessor.getWorkingTime(spinnerId),
+      SpinnerProcessor!.getWorkingTime(spinnerId),
     );
 
-    this._spinnerProcessor.succeedSpinner(
+    SpinnerProcessor!.succeedSpinner(
       spinnerId,
       `Generated VKey file for ${chalk.italic(circuitName)} circuit ${generationTimeMessage}`,
     );

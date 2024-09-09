@@ -2,16 +2,9 @@ import chalk from "chalk";
 import CliTable3 from "cli-table3";
 
 import { SpinnerProcessor } from "../SpinnerProcessor";
-import { ProgressBarProcessor } from "../ProgressBarProcessor";
 
 export abstract class BaseReporter {
-  protected _spinnerProcessor: SpinnerProcessor;
-  protected _progressBarProcessor: ProgressBarProcessor;
-
-  constructor(private _quiet: boolean) {
-    this._spinnerProcessor = new SpinnerProcessor();
-    this._progressBarProcessor = new ProgressBarProcessor();
-  }
+  constructor(private _quiet: boolean) {}
 
   public isQuiet(): boolean {
     return this._quiet;
@@ -48,7 +41,7 @@ export abstract class BaseReporter {
 
     const spinnerId: string = `${spinnerIdName}-${spinnerIdSuffix}`;
 
-    this._spinnerProcessor.createSpinner(spinnerId, { text: spinnerText });
+    SpinnerProcessor!.createSpinner(spinnerId, { text: spinnerText });
 
     return spinnerId;
   }

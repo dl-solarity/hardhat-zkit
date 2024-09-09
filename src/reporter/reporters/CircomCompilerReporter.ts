@@ -3,6 +3,7 @@ import chalk from "chalk";
 import { emoji } from "hardhat/internal/cli/emoji";
 
 import { BaseReporter } from "./BaseReporter";
+import { ProgressBarProcessor } from "../ProgressBarProcessor";
 
 export class CircomCompilerReporter extends BaseReporter {
   public reportVersion(compilerVersion: string) {
@@ -30,16 +31,16 @@ export class CircomCompilerReporter extends BaseReporter {
   public reportDownloadingFinish() {
     if (this.isQuiet()) return;
 
-    this._progressBarProcessor.stopProgressBar();
+    ProgressBarProcessor!.stopProgressBar();
 
-    console.log(`\n\n${emoji("✅ ", `${chalk.green("✔ ")}`)}Circom compiler successfully downloaded`);
+    console.log(`\n${emoji("✅ ", `${chalk.green("✔ ")}`)}Circom compiler successfully downloaded`);
   }
 
   public reportDownloadingError() {
     if (this.isQuiet()) return;
 
-    this._progressBarProcessor.stopProgressBar();
+    ProgressBarProcessor!.stopProgressBar();
 
-    console.log(`\n\n${emoji("❌ ", `${chalk.red("X ")}`)}Circom compiler downloading failed`);
+    console.log(`\n${emoji("❌ ", `${chalk.red("X ")}`)}Circom compiler downloading failed`);
   }
 }

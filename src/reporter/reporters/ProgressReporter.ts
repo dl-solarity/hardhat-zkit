@@ -2,6 +2,7 @@
 import chalk from "chalk";
 
 import { BaseReporter } from "./BaseReporter";
+import { ProgressBarProcessor } from "../ProgressBarProcessor";
 
 export class ProgressReporter extends BaseReporter {
   public reportNothingTo(action: string) {
@@ -15,9 +16,9 @@ export class ProgressReporter extends BaseReporter {
 
     console.log();
 
-    this._progressBarProcessor.createAndStartProgressBar(
+    ProgressBarProcessor!.createAndStartProgressBar(
       {
-        formatValue: this._progressBarProcessor.formatToMB,
+        formatValue: ProgressBarProcessor!.formatToMB,
         format: "Downloading [{bar}] {percentage}% | {value}/{total} MB | Time elapsed: {duration}s",
         hideCursor: true,
       },
@@ -27,6 +28,6 @@ export class ProgressReporter extends BaseReporter {
   }
 
   public updateProgressBarValue(valueToAdd: number) {
-    this._progressBarProcessor.updateProgressBar(valueToAdd);
+    ProgressBarProcessor!.updateProgressBar(valueToAdd);
   }
 }
