@@ -3,7 +3,7 @@ import path from "path";
 
 import { HardhatZKitError } from "../../errors";
 import { MAX_PTAU_ID } from "../../constants";
-import { Reporter } from "../../reporter/Reporter";
+import { Reporter } from "../../reporter";
 import { downloadFile } from "../../utils/utils";
 
 export class PtauDownloader {
@@ -23,7 +23,14 @@ export class PtauDownloader {
 
     Reporter!.reportPtauFileDownloadingInfo(ptauFilePath, url);
 
-    if (!(await downloadFile(ptauFilePath, url))) {
+    if (
+      !(await downloadFile(
+        ptauFilePath,
+        url,
+        () => Reporter!.reportPtauFileDownloadingFinish(),
+        () => Reporter!.reportPtauFileDownloadingError(),
+      ))
+    ) {
       throw new HardhatZKitError(`Failed to download a Ptau file. Please try again or download manually.`);
     }
 

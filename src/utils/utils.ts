@@ -1,4 +1,4 @@
-import fs from "fs";
+import fs from "fs-extra";
 import https from "https";
 import { exec } from "child_process";
 
@@ -13,46 +13,69 @@ import { ExecCallResult } from "../types/utils";
  *
  * @param {string} file - The path to save the file to.
  * @param {string} url - The URL to download the file from.
+ * @param {Function} onFinishReporter - The Reporter callback function for when the download finishes.
+ * @param {Function} onErrorReporter - The Reporter callback function for when an error occurs during the download.
  * @returns {Promise<boolean>} Whether the file was downloaded successfully.
  */
-export async function downloadFile(file: string, url: string): Promise<boolean> {
+export async function downloadFile(
+  file: string,
+  url: string,
+  onFinishReporter: () => void,
+  onErrorReporter: () => void,
+): Promise<boolean> {
+  await fs.ensureFile(file);
+
   const fileStream = fs.createWriteStream(file);
 
   return new Promise((resolve, reject) => {
-    const request = https.get(url, (response) => {
-      if (response.statusCode !== 200) {
-        console.error(`Unable to download file. Status code: ${response.statusCode}.`);
-        return;
-      }
+    const handleRequest = (currentUrl: string) => {
+      const request = https.get(currentUrl, (response) => {
+        if (response.statusCode === 302 || response.statusCode === 301) {
+          const redirectUrl = response.headers.location;
 
-      const totalSize = parseInt(response.headers["content-length"] || "0", 10);
+          if (redirectUrl) {
+            handleRequest(redirectUrl);
+          } else {
+            onErrorReporter();
+            fs.unlink(file, () => reject(new Error("Invalid redirect response")));
+          }
 
-      Reporter!.reportStartFileDownloadingWithProgressBar(totalSize, 0);
+          return;
+        }
 
-      response.pipe(fileStream);
+        if (response.statusCode !== 200) {
+          onErrorReporter();
+          fs.unlink(file, () => reject(new Error(`Failed to download file with status code: ${response.statusCode}`)));
 
-      response.on("data", (chunk) => {
-        Reporter!.updateProgressBarValue(chunk.length);
+          return;
+        }
+
+        const totalSize = parseInt(response.headers["content-length"] || "0", 10);
+
+        Reporter!.reportStartFileDownloadingWithProgressBar(totalSize, 0);
+
+        response.pipe(fileStream);
+
+        response
+          .on("data", (chunk) => {
+            Reporter!.updateProgressBarValue(chunk.length);
+          })
+          .on("error", (err) => {
+            onErrorReporter();
+            fs.unlink(file, () => reject(err));
+          })
+          .on("end", () => {
+            onFinishReporter();
+            resolve(true);
+          });
       });
 
-      fileStream.on("finish", () => {
-        Reporter!.reportPtauFileDownloadingFinish();
-        resolve(true);
-      });
-
-      fileStream.on("error", (err) => {
-        Reporter!.reportPtauFileDownloadingError();
+      request.on("error", (err) => {
         fs.unlink(file, () => reject(err));
       });
-    });
+    };
 
-    fileStream.on("finish", () => resolve(true));
-
-    request.on("error", (err) => {
-      fs.unlink(file, () => reject(err));
-    });
-
-    request.end();
+    handleRequest(url);
   });
 }
 

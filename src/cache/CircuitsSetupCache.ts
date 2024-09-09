@@ -1,30 +1,11 @@
 import fsExtra from "fs-extra";
-import * as t from "io-ts";
 import { isEqual } from "lodash";
 
+import { SetupCacheSchema } from "./schemas";
 import { CIRCUIT_SETUP_CACHE_VERSION } from "../constants";
 
 import { SetupCache, SetupCacheEntry } from "../types/cache";
 import { ContributionSettings } from "../types/core";
-
-const ContributionTemplateTypeCodec = t.literal("groth16");
-
-const ContributionSettingsCodec = t.type({
-  contributionTemplate: ContributionTemplateTypeCodec,
-  contributions: t.number,
-});
-
-const SetupCacheEntryCodec = t.type({
-  circuitSourceName: t.string,
-  r1csContentHash: t.string,
-  r1csSourcePath: t.string,
-  contributionSettings: ContributionSettingsCodec,
-});
-
-const SetupCacheCodec = t.type({
-  _format: t.string,
-  files: t.record(t.string, SetupCacheEntryCodec),
-});
 
 class BaseCircuitsSetupCache {
   public static createEmpty(): BaseCircuitsSetupCache {
@@ -44,10 +25,10 @@ class BaseCircuitsSetupCache {
       cacheRaw = await fsExtra.readJson(circuitsSetupCachePath);
     }
 
-    const result = SetupCacheCodec.decode(cacheRaw);
+    const result = SetupCacheSchema.safeParse(cacheRaw);
 
-    if (result.isRight()) {
-      const circuitsSetupCache = new BaseCircuitsSetupCache(result.value);
+    if (result.success) {
+      const circuitsSetupCache = new BaseCircuitsSetupCache(result.data);
       await circuitsSetupCache.removeNonExistingFiles();
 
       return circuitsSetupCache;

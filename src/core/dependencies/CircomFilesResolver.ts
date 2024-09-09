@@ -2,7 +2,7 @@ import fsExtra from "fs-extra";
 import path from "path";
 import resolve from "resolve";
 
-import { FileContent, LibraryInfo, ResolvedFile as IResolvedFile } from "hardhat/types/builtin-tasks";
+import { LibraryInfo } from "hardhat/types/builtin-tasks";
 import {
   includesOwnPackageName,
   isAbsolutePathSourceName,
@@ -18,18 +18,27 @@ import { ERRORS } from "hardhat/internal/core/errors-list";
 import { getRealPath } from "hardhat/internal/util/fs-utils";
 import { createNonCryptographicHashBasedIdentifier } from "hardhat/internal/util/hash";
 
-import { Parser } from "./Parser";
+import { CircomFilesParser } from "./parser/CircomFilesParser";
 import { CIRCOM_FILE_REG_EXP, NODE_MODULES, NODE_MODULES_REG_EXP, URI_SCHEME_REG_EXP } from "../../constants";
+import { HardhatZKitError } from "../../errors";
 
-export class ResolvedFile implements IResolvedFile {
+import {
+  CircomResolvedFile as ICircomResolvedFile,
+  ResolvedMainComponentData,
+  ResolvedFileData,
+  SignalType,
+  VisibilityType,
+} from "../../types/core";
+
+export class CircomResolvedFile implements ICircomResolvedFile {
   public readonly library?: LibraryInfo;
 
   constructor(
     public readonly sourceName: string,
     public readonly absolutePath: string,
-    public readonly content: FileContent,
     public readonly contentHash: string,
     public readonly lastModificationDate: Date,
+    public fileData: ResolvedFileData,
     libraryName?: string,
     libraryVersion?: string,
   ) {
@@ -52,37 +61,39 @@ export class ResolvedFile implements IResolvedFile {
   }
 }
 
-export class Resolver {
-  private readonly _cache: Map<string, ResolvedFile> = new Map();
+export class CircomFilesResolver {
+  private readonly _cache: Map<string, CircomResolvedFile> = new Map();
 
   constructor(
     private readonly _projectRoot: string,
-    private readonly _parser: Parser,
+    private readonly _parser: CircomFilesParser,
     private readonly _readFile: (absolutePath: string) => Promise<string>,
   ) {}
 
   /**
-   * Resolves a source name into a ResolvedFile.
+   * Resolves a source name into a CircomResolvedFile.
    *
    * @param sourceName The circuit source name.
    */
-  public async resolveSourceName(sourceName: string): Promise<ResolvedFile> {
+  public async resolveSourceName(sourceName: string): Promise<CircomResolvedFile> {
     const cached = this._cache.get(sourceName);
+
     if (cached !== undefined) {
       return cached;
     }
 
     validateSourceNameFormat(sourceName);
 
-    let resolvedFile: ResolvedFile;
+    let resolvedFile: CircomResolvedFile;
 
     if (await isLocalSourceName(this._projectRoot, sourceName)) {
-      resolvedFile = await this._resolveLocalSourceName(sourceName, sourceName);
+      resolvedFile = await this._resolveLocalSourceName(sourceName);
     } else {
-      resolvedFile = await this._resolveLibrarySourceName(sourceName, sourceName);
+      resolvedFile = await this._resolveLibrarySourceName(sourceName);
     }
 
     this._cache.set(sourceName, resolvedFile);
+
     return resolvedFile;
   }
 
@@ -91,12 +102,13 @@ export class Resolver {
    * @param from The file were the import statement is present.
    * @param importName The path in the import statement.
    */
-  public async resolveImport(from: ResolvedFile, importName: string): Promise<ResolvedFile> {
+  public async resolveImport(from: CircomResolvedFile, importName: string): Promise<CircomResolvedFile> {
     const scheme = this._getUriScheme(importName);
+
     if (scheme !== undefined) {
       throw new HardhatError(ERRORS.RESOLVER.INVALID_IMPORT_PROTOCOL, {
         from: from.sourceName,
-        importName,
+        imported: importName,
         protocol: scheme,
       });
     }
@@ -104,14 +116,14 @@ export class Resolver {
     if (replaceBackslashes(importName) !== importName) {
       throw new HardhatError(ERRORS.RESOLVER.INVALID_IMPORT_BACKSLASH, {
         from: from.sourceName,
-        importName,
+        imported: importName,
       });
     }
 
     if (isAbsolutePathSourceName(importName)) {
       throw new HardhatError(ERRORS.RESOLVER.INVALID_IMPORT_ABSOLUTE_PATH, {
         from: from.sourceName,
-        importName,
+        imported: importName,
       });
     }
 
@@ -120,7 +132,7 @@ export class Resolver {
     if (await includesOwnPackageName(importName)) {
       throw new HardhatError(ERRORS.RESOLVER.INCLUDES_OWN_PACKAGE_NAME, {
         from: from.sourceName,
-        importName,
+        imported: importName,
       });
     }
 
@@ -136,22 +148,24 @@ export class Resolver {
       }
 
       const cached = this._cache.get(sourceName);
+
       if (cached !== undefined) {
         return cached;
       }
 
-      let resolvedFile: ResolvedFile;
+      let resolvedFile: CircomResolvedFile;
 
       // We have this special case here, because otherwise local relative
       // imports can be treated as library imports. For example if
       // `circuits/c.circom` imports `../non-existent/a.circom`
       if (from.library === undefined && isRelativeImport && !this._isRelativeImportToLibrary(from, importName)) {
-        resolvedFile = await this._resolveLocalSourceName(sourceName, sourceName);
+        resolvedFile = await this._resolveLocalSourceName(sourceName);
       } else {
         resolvedFile = await this.resolveSourceName(sourceName);
       }
 
       this._cache.set(sourceName, resolvedFile);
+
       return resolvedFile;
     } catch (error) {
       if (
@@ -161,7 +175,7 @@ export class Resolver {
         throw new HardhatError(
           ERRORS.RESOLVER.IMPORTED_FILE_NOT_FOUND,
           {
-            importName,
+            imported: importName,
             from: from.sourceName,
           },
           error,
@@ -172,7 +186,7 @@ export class Resolver {
         throw new HardhatError(
           ERRORS.RESOLVER.INVALID_IMPORT_WRONG_CASING,
           {
-            importName,
+            imported: importName,
             from: from.sourceName,
           },
           error,
@@ -194,7 +208,7 @@ export class Resolver {
         throw new HardhatError(
           ERRORS.RESOLVER.INVALID_IMPORT_OF_DIRECTORY,
           {
-            importName,
+            imported: importName,
             from: from.sourceName,
           },
           error,
@@ -205,18 +219,77 @@ export class Resolver {
     }
   }
 
-  private async _resolveLocalSourceName(sourceName: string, remappedSourceName: string): Promise<ResolvedFile> {
-    await this._validateSourceNameExistenceAndCasing(this._projectRoot, remappedSourceName, false);
+  public async resolveMainComponentData(resolvedFile: CircomResolvedFile, dependencies: CircomResolvedFile[]) {
+    const templateName = resolvedFile.fileData.parsedFileData.mainComponentInfo.templateName;
 
-    const absolutePath = path.join(this._projectRoot, remappedSourceName);
+    if (!templateName) {
+      throw new HardhatZKitError(`Unable to resolve main component data for ${resolvedFile.sourceName} circuit`);
+    }
+
+    if (!resolvedFile.fileData.mainComponentData) {
+      const mainComponentData: ResolvedMainComponentData = {
+        parameters: {},
+        signals: [],
+      };
+
+      const fileWithTemplate: CircomResolvedFile | undefined = [resolvedFile, ...dependencies].find(
+        (file: CircomResolvedFile) => {
+          return !!file.fileData.parsedFileData.templates[templateName];
+        },
+      );
+
+      if (!fileWithTemplate) {
+        throw new HardhatZKitError(`Template not found for the main component with ${templateName} name`);
+      }
+
+      fileWithTemplate.fileData.parsedFileData.templates[templateName].parameters.forEach(
+        (param: string, index: number) => {
+          mainComponentData.parameters[param] =
+            resolvedFile.fileData.parsedFileData.mainComponentInfo.parameters[index];
+        },
+      );
+
+      const parsedInputs = this._parser.parseTemplateInputs(
+        fileWithTemplate.absolutePath,
+        templateName,
+        mainComponentData.parameters,
+      );
+
+      for (const key of Object.keys(parsedInputs)) {
+        const signalType: SignalType = this._getSignalType(parsedInputs[key].type);
+
+        if (signalType != "Intermediate") {
+          const visibilityType: VisibilityType =
+            signalType == "Output" || resolvedFile.fileData.parsedFileData.mainComponentInfo.publicInputs.includes(key)
+              ? "Public"
+              : "Private";
+
+          mainComponentData.signals.push({
+            name: key,
+            dimension: parsedInputs[key].dimension,
+            type: signalType,
+            visibility: visibilityType,
+          });
+        }
+      }
+
+      resolvedFile.fileData.mainComponentData = mainComponentData;
+    }
+  }
+
+  private async _resolveLocalSourceName(sourceName: string): Promise<CircomResolvedFile> {
+    await this._validateSourceNameExistenceAndCasing(this._projectRoot, sourceName, false);
+
+    const absolutePath = path.join(this._projectRoot, sourceName);
     return this._resolveFile(sourceName, absolutePath);
   }
 
-  private async _resolveLibrarySourceName(sourceName: string, remappedSourceName: string): Promise<ResolvedFile> {
-    const normalizedSourceName = remappedSourceName.replace(NODE_MODULES_REG_EXP, "");
+  private async _resolveLibrarySourceName(sourceName: string): Promise<CircomResolvedFile> {
+    const normalizedSourceName = sourceName.replace(NODE_MODULES_REG_EXP, "");
     const libraryName = this._getLibraryName(normalizedSourceName);
 
     let packageJsonPath;
+
     try {
       packageJsonPath = this._resolveNodeModulesFileFromProjectRoot(path.join(libraryName, "package.json"));
     } catch (error) {
@@ -230,11 +303,13 @@ export class Resolver {
     }
 
     let nodeModulesPath = path.dirname(path.dirname(packageJsonPath));
+
     if (this._isScopedPackage(normalizedSourceName)) {
       nodeModulesPath = path.dirname(nodeModulesPath);
     }
 
     let absolutePath: string;
+
     if (path.basename(nodeModulesPath) !== NODE_MODULES) {
       // this can happen in monorepos that use PnP, in those
       // cases we handle resolution differently
@@ -259,6 +334,7 @@ export class Resolver {
       name: string;
       version: string;
     } = await fsExtra.readJson(packageJsonPath);
+
     const libraryVersion = packageInfo.version;
 
     return this._resolveFile(
@@ -270,7 +346,7 @@ export class Resolver {
     );
   }
 
-  private async _relativeImportToSourceName(from: ResolvedFile, imported: string): Promise<string> {
+  private async _relativeImportToSourceName(from: CircomResolvedFile, imported: string): Promise<string> {
     // This is a special case, were we turn relative imports from local files
     // into library imports if necessary. The reason for this is that many
     // users just do `import "../node_modules/lib/a.circom";`.
@@ -303,32 +379,29 @@ export class Resolver {
     absolutePath: string,
     libraryName?: string,
     libraryVersion?: string,
-  ): Promise<ResolvedFile> {
+  ): Promise<CircomResolvedFile> {
     const rawContent = await this._readFile(absolutePath);
     const stats = await fsExtra.stat(absolutePath);
     const lastModificationDate = new Date(stats.ctime);
 
     const contentHash = createNonCryptographicHashBasedIdentifier(Buffer.from(rawContent)).toString("hex");
 
-    const parsedContent = this._parser.parse(rawContent, absolutePath, contentHash);
+    const fileData = this._parser.parse(rawContent, absolutePath, contentHash);
 
-    const content = {
-      rawContent,
-      ...parsedContent,
-    };
-
-    return new ResolvedFile(
+    const resolvedFile = new CircomResolvedFile(
       sourceName,
       absolutePath,
-      content,
       contentHash,
       lastModificationDate,
+      fileData,
       libraryName,
       libraryVersion,
     );
+
+    return resolvedFile;
   }
 
-  private _isRelativeImport(from: ResolvedFile, imported: string): boolean {
+  private _isRelativeImport(from: CircomResolvedFile, imported: string): boolean {
     return (
       imported.startsWith("./") ||
       imported.startsWith("../") ||
@@ -360,6 +433,19 @@ export class Resolver {
     return sourceName.slice(0, endIndex);
   }
 
+  private _getSignalType(type: string): SignalType {
+    switch (type) {
+      case "input":
+        return "Input";
+      case "output":
+        return "Output";
+      case "intermediate":
+        return "Intermediate";
+      default:
+        throw new HardhatZKitError(`Invalid signal type - ${type}`);
+    }
+  }
+
   private _getUriScheme(s: string): string | undefined {
     const match = URI_SCHEME_REG_EXP.exec(s);
     if (match === null) {
@@ -380,13 +466,13 @@ export class Resolver {
     return packageOrPackageFile.startsWith("@");
   }
 
-  private _isRelativeImportToLibrary(from: ResolvedFile, imported: string): boolean {
+  private _isRelativeImportToLibrary(from: CircomResolvedFile, imported: string): boolean {
     return (
       this._isRelativeImport(from, imported) && from.library === undefined && imported.includes(`${NODE_MODULES}/`)
     );
   }
 
-  private _relativeImportToLibraryToSourceName(from: ResolvedFile, imported: string): string {
+  private _relativeImportToLibraryToSourceName(from: CircomResolvedFile, imported: string): string {
     const sourceName = normalizeSourceName(path.join(path.dirname(from.sourceName), imported));
 
     const nmIndex = sourceName.indexOf(`${NODE_MODULES}/`);

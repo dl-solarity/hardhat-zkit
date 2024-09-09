@@ -3,19 +3,13 @@ import { VerifierLanguageType } from "@solarity/zkit";
 import { ContributionSettings } from "./core";
 
 export type ZKitConfig = {
+  compilerVersion?: string;
+  circuitsDir: string;
   compilationSettings: CompilationSettings;
   setupSettings: SetupSettings;
-  typesSettings: CircuitTypesSettings;
-  circuitsDir: string;
-  verifiersDir: string;
-  verifiersType: VerifierLanguageType;
-  nativeCompiler: boolean;
-  quiet: boolean;
-};
-
-export type CircuitTypesSettings = {
-  typesArtifactsDir: string;
+  verifiersSettings: VerifiersSettings;
   typesDir: string;
+  quiet: boolean;
 };
 
 export type CompilationSettings = FileFilterSettings & {
@@ -33,4 +27,9 @@ export type SetupSettings = FileFilterSettings & {
 export type FileFilterSettings = {
   onlyFiles: string[];
   skipFiles: string[];
+};
+
+export type VerifiersSettings = {
+  verifiersDir: string;
+  verifiersType: VerifierLanguageType;
 };

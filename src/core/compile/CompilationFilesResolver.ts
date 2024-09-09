@@ -1,18 +1,15 @@
 import { HardhatConfig } from "hardhat/types";
-import { ResolvedFile } from "hardhat/types/builtin-tasks";
 import { getAllFilesMatching } from "hardhat/internal/util/fs-utils";
 import { localPathToSourceName } from "hardhat/utils/source-names";
 
-import { DependencyGraph, Parser, Resolver } from "../dependencies";
-import { MAIN_COMPONENT_REG_EXP } from "../../constants";
-import { HardhatZKitError } from "../../errors";
+import { DependencyGraph, CircomFilesParser, CircomFilesResolver, CircomResolvedFile } from "../dependencies";
 import { CircuitsCompileCache } from "../../cache";
-import { Reporter } from "../../reporter/Reporter";
+import { Reporter } from "../../reporter";
 import { filterCircuitFiles, getNormalizedFullPath } from "../../utils/path-utils";
 
 import { ZKitConfig } from "../../types/zkit-config";
 import { ICircuitArtifacts } from "../../types/artifacts/circuit-artifacts";
-import { CompileFlags, ResolvedFileInfo } from "../../types/core";
+import { CircomResolvedFileInfo, CompileFlags } from "../../types/core";
 
 export class CompilationFilesResolver {
   private readonly _zkitConfig: ZKitConfig;
@@ -27,7 +24,12 @@ export class CompilationFilesResolver {
     this._projectRoot = hardhatConfig.paths.root;
   }
 
-  public async getResolvedFilesToCompile(compileFlags: CompileFlags, force: boolean): Promise<ResolvedFileInfo[]> {
+  public async getResolvedFilesToCompile(
+    compileFlags: CompileFlags,
+    force: boolean,
+  ): Promise<CircomResolvedFileInfo[]> {
+    const spinnerId: string | null = Reporter!.reportCircuitFilesResolvingStartWithSpinner();
+
     const circuitsSourcePaths: string[] = await getAllFilesMatching(this._getCircuitsDirFullPath(), (f) =>
       f.endsWith(".circom"),
     );
@@ -49,21 +51,34 @@ export class CompilationFilesResolver {
       allFilteredSourceNames,
     ]);
 
-    const dependencyGraph: DependencyGraph = await this._getDependencyGraph(allFilteredSourceNames);
+    let resolvedFilesInfoToCompile: CircomResolvedFileInfo[];
 
-    const resolvedFilesInfoToCompile: ResolvedFileInfo[] = this._filterResolvedFiles(
-      dependencyGraph.getResolvedFiles(),
-      allFilteredSourceNames,
-      dependencyGraph,
-    );
+    try {
+      const resolver = new CircomFilesResolver(this._projectRoot, new CircomFilesParser(), this._readFile);
+      const dependencyGraph: DependencyGraph = await this._getDependencyGraph(allFilteredSourceNames, resolver);
 
-    Reporter!.verboseLog("compilation-file-resolver", "All circuit source names to compile: %o", [
-      resolvedFilesInfoToCompile.map((fileInfo) => fileInfo.resolvedFile.sourceName),
-    ]);
+      resolvedFilesInfoToCompile = this._filterResolvedFiles(
+        dependencyGraph.getResolvedFiles(),
+        allFilteredSourceNames,
+        dependencyGraph,
+      );
 
-    this._invalidateCacheMissingArtifacts(resolvedFilesInfoToCompile);
+      Reporter!.verboseLog("compilation-file-resolver", "All circuit source names to compile: %o", [
+        resolvedFilesInfoToCompile.map((fileInfo) => fileInfo.resolvedFile.sourceName),
+      ]);
 
-    let filteredResolvedFilesInfo: ResolvedFileInfo[];
+      for (const fileInfo of resolvedFilesInfoToCompile) {
+        await resolver.resolveMainComponentData(fileInfo.resolvedFile, fileInfo.dependencies);
+      }
+
+      this._invalidateCacheMissingArtifacts(resolvedFilesInfoToCompile);
+    } catch (e) {
+      Reporter!.reportCircuitFilesResolvingFail(spinnerId);
+
+      throw e;
+    }
+
+    let filteredResolvedFilesInfo: CircomResolvedFileInfo[];
 
     if (!force) {
       Reporter!.verboseLog("compilation-file-resolver", "Force flag disabled. Start filtering...");
@@ -74,6 +89,8 @@ export class CompilationFilesResolver {
     } else {
       filteredResolvedFilesInfo = resolvedFilesInfoToCompile;
     }
+
+    Reporter!.reportCircuitFilesResolvingResult(spinnerId);
 
     const filteredSourceNamesToCompile: string[] = filteredResolvedFilesInfo.map(
       (file) => file.resolvedFile.sourceName,
@@ -95,29 +112,23 @@ export class CompilationFilesResolver {
   }
 
   protected _filterResolvedFiles(
-    resolvedFiles: ResolvedFile[],
+    circomResolvedFiles: CircomResolvedFile[],
     sourceNames: string[],
     dependencyGraph: DependencyGraph,
-  ): ResolvedFileInfo[] {
-    const resolvedFilesInfo: ResolvedFileInfo[] = [];
+  ): CircomResolvedFileInfo[] {
+    const resolvedFilesInfo: CircomResolvedFileInfo[] = [];
 
-    for (const file of resolvedFiles) {
-      const res = file.content.rawContent.matchAll(MAIN_COMPONENT_REG_EXP);
-      const matches: string[] = [];
-
-      for (const match of res) {
-        matches.push(match[1]);
-      }
-
-      if (matches.length == 1 && sourceNames.includes(file.sourceName)) {
+    for (const file of circomResolvedFiles) {
+      if (file.fileData.parsedFileData.mainComponentInfo.templateName && sourceNames.includes(file.sourceName)) {
         resolvedFilesInfo.push({
-          circuitName: matches[0],
-          circuitFullyQualifiedName: this._circuitArtifacts.getCircuitFullyQualifiedName(file.sourceName, matches[0]),
+          circuitName: file.fileData.parsedFileData.mainComponentInfo.templateName,
+          circuitFullyQualifiedName: this._circuitArtifacts.getCircuitFullyQualifiedName(
+            file.sourceName,
+            file.fileData.parsedFileData.mainComponentInfo.templateName,
+          ),
           resolvedFile: file,
           dependencies: dependencyGraph.getTransitiveDependencies(file).map((dep) => dep.dependency),
         });
-      } else if (matches.length > 1) {
-        throw new HardhatZKitError(`Multiple definition of 'main component' in the file ${file.sourceName}.`);
       }
     }
 
@@ -128,16 +139,13 @@ export class CompilationFilesResolver {
     return Promise.all(sourcePaths.map((p) => localPathToSourceName(this._projectRoot, p)));
   }
 
-  protected async _getDependencyGraph(sourceNames: string[]): Promise<DependencyGraph> {
-    const parser = new Parser();
-    const resolver = new Resolver(this._projectRoot, parser, this._readFile);
-
+  protected async _getDependencyGraph(sourceNames: string[], resolver: CircomFilesResolver): Promise<DependencyGraph> {
     const resolvedFiles = await Promise.all(sourceNames.map((sn) => resolver.resolveSourceName(sn)));
 
     return DependencyGraph.createFromResolvedFiles(resolver, resolvedFiles);
   }
 
-  protected async _invalidateCacheMissingArtifacts(resolvedFilesInfo: ResolvedFileInfo[]) {
+  protected async _invalidateCacheMissingArtifacts(resolvedFilesInfo: CircomResolvedFileInfo[]) {
     for (const fileInfo of resolvedFilesInfo) {
       const cacheEntry = CircuitsCompileCache!.getEntry(fileInfo.resolvedFile.absolutePath);
 
@@ -155,7 +163,7 @@ export class CompilationFilesResolver {
     }
   }
 
-  protected _needsCompilation(resolvedFileInfo: ResolvedFileInfo, compileFlags: CompileFlags): boolean {
+  protected _needsCompilation(resolvedFileInfo: CircomResolvedFileInfo, compileFlags: CompileFlags): boolean {
     for (const file of [resolvedFileInfo.resolvedFile, ...resolvedFileInfo.dependencies]) {
       const hasChanged = CircuitsCompileCache!.hasFileChanged(file.absolutePath, file.contentHash, compileFlags);
 

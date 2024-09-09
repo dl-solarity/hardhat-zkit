@@ -8,7 +8,6 @@ export const CIRCUIT_SETUP_CACHE_VERSION = "hh-zkit-setup-cache-1";
 export const CIRCUIT_ARTIFACT_VERSION = "hh-zkit-artifacts-1";
 
 export const NODE_MODULES = "node_modules";
-export const COMPILER_VERSION = "0.2.18";
 
 export const MAGIC_DESCRIPTOR = 1337;
 
@@ -17,13 +16,23 @@ export const BYTES_IN_MB = 1048576;
 export const MAX_PTAU_ID = 27;
 export const PTAU_FILE_REG_EXP = /^(?:.+-|)(\d{1,2}).ptau$/;
 
-export const INCLUDE_REG_EXP = /^\s*include\s+"([.\-/\w]+)";/gm;
-export const PRAGMA_VERSION_REG_EXP = /pragma\s+circom\s+(\d\.\d\.\d);/g;
 export const CIRCOM_FILE_REG_EXP = /\w+\.circom/;
 
 export const NODE_MODULES_REG_EXP = /^node_modules\//;
 export const URI_SCHEME_REG_EXP = /([a-zA-Z]+):\/\//;
 
-export const MAIN_COMPONENT_REG_EXP = /component\s+main.*=\s*([\w-]+)\s*\((?:.*\s*)*\)\s*;/gm;
-
 export const CIRCUIT_ARTIFACTS_SUFFIX = "_artifacts.json";
+
+export const COMPILER_AMD_REPOSITORY_URL = "https://github.com/iden3/circom/releases/download";
+export const COMPILER_ARM_REPOSITORY_URL = "https://github.com/distributed-lab/circom/releases/download";
+export const COMPILER_WASM_REPOSITORY_URL = "https://github.com/distributed-lab/circom-wasm/releases/download";
+
+export const LATEST_CIRCOM_COMPILER_URL = "https://github.com/iden3/circom/releases/latest/";
+
+export const WASM_COMPILER_VERSIONING: { [key: string]: string } = {
+  "2.1.8": "0.2.18-rc.3",
+  "2.1.9": "0.2.19-rc.0",
+};
+
+export const LATEST_SUPPORTED_CIRCOM_VERSION = "2.1.9";
+export const OLDEST_SUPPORTED_ARM_CIRCOM_VERSION = "2.1.8";

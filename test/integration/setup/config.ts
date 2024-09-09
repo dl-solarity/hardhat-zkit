@@ -20,6 +20,7 @@ describe("config", () => {
 
     it("should apply user defined config", async () => {
       const userDefinedConfig: ZKitConfig = {
+        compilerVersion: "2.1.8",
         circuitsDir: "circuits",
         compilationSettings: {
           artifactsDir: "zkit/artifacts",
@@ -30,7 +31,7 @@ describe("config", () => {
         },
         setupSettings: {
           contributionSettings: {
-            contributionTemplate: "groth16",
+            provingSystem: "groth16",
             contributions: 1,
           },
           ptauDir: "zkit/ptau",
@@ -38,13 +39,11 @@ describe("config", () => {
           onlyFiles: [],
           skipFiles: [],
         },
-        typesSettings: {
-          typesArtifactsDir: "zkit/abi",
-          typesDir: "generated-types/zkit",
+        verifiersSettings: {
+          verifiersDir: "contracts/verifiers",
+          verifiersType: "vy",
         },
-        verifiersDir: "contracts/verifiers",
-        verifiersType: "vy",
-        nativeCompiler: false,
+        typesDir: "generated-types/zkit",
         quiet: true,
       };
 
@@ -64,6 +63,7 @@ describe("config", () => {
 
     it("the zkit field should be present", async () => {
       const defaultConfig: ZKitConfig = {
+        compilerVersion: undefined,
         circuitsDir: "circuits",
         compilationSettings: {
           artifactsDir: "zkit/artifacts",
@@ -74,7 +74,7 @@ describe("config", () => {
         },
         setupSettings: {
           contributionSettings: {
-            contributionTemplate: "groth16",
+            provingSystem: "groth16",
             contributions: 1,
           },
           ptauDir: undefined,
@@ -82,13 +82,11 @@ describe("config", () => {
           onlyFiles: [],
           skipFiles: [],
         },
-        typesSettings: {
-          typesArtifactsDir: "zkit/abi",
-          typesDir: "generated-types/zkit",
+        verifiersSettings: {
+          verifiersDir: "contracts/verifiers",
+          verifiersType: "sol",
         },
-        verifiersDir: "contracts/verifiers",
-        verifiersType: "sol",
-        nativeCompiler: false,
+        typesDir: "generated-types/zkit",
         quiet: false,
       };
 

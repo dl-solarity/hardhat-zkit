@@ -12,7 +12,7 @@ import { Reporter } from "../../reporter";
 import { getNormalizedFullPath } from "../../utils/path-utils";
 
 import { CircuitArtifact, ICircuitArtifacts } from "../../types/artifacts/circuit-artifacts";
-import { ContributionSettings, ContributionTemplateType } from "../../types/core";
+import { ContributionSettings, ProvingSystemType } from "../../types/core";
 
 export class SetupProcessor {
   constructor(
@@ -51,7 +51,7 @@ export class SetupProcessor {
     ptauFilePath: string,
   ) {
     const contributions: number = contributionSettings.contributions;
-    const contributionTemplate: ContributionTemplateType = contributionSettings.contributionTemplate;
+    const provingSystem: ProvingSystemType = contributionSettings.provingSystem;
 
     Reporter!.reportZKeyFilesGenerationHeader(contributions);
 
@@ -72,7 +72,7 @@ export class SetupProcessor {
         circuitArtifact.circuitTemplateName,
       );
 
-      if (contributionTemplate === "groth16") {
+      if (provingSystem === "groth16") {
         await snarkjs.zKey.newZKey(r1csFilePath, ptauFilePath, zkeyFilePath);
 
         const zKeyFileNext = `${zkeyFilePath}.next.zkey`;
@@ -89,7 +89,7 @@ export class SetupProcessor {
           fs.renameSync(zKeyFileNext, zkeyFilePath);
         }
       } else {
-        throw new HardhatZKitError(`Unsupported contribution template - ${contributionTemplate}`);
+        throw new HardhatZKitError(`Unsupported proving system - ${provingSystem}`);
       }
 
       Reporter!.reportZKeyFileGenerationResult(spinnerId, circuitArtifact.circuitTemplateName, contributions);

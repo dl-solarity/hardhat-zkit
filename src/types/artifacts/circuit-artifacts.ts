@@ -1,3 +1,5 @@
+import { SignalInfo } from "../core";
+
 export interface ICircuitArtifacts {
   readCircuitArtifact(circuitNameOrFullyQualifiedName: string): Promise<CircuitArtifact>;
 
@@ -33,6 +35,7 @@ export type CircuitArtifact = {
 
 export type BaseCircuitInfo = {
   constraintsNumber: number;
+  signals: SignalInfo[];
 };
 
 export type CompilerOutputFileInfo = {
@@ -45,5 +48,5 @@ export type ArtifactsCache = {
   artifactNameToArtifactPathCache: Map<string, string>;
 };
 
-export const ArtifactsFileTypes = ["r1cs", "zkey", "vkey", "sym", "json", "wasm", "c", "ast"] as const;
+export const ArtifactsFileTypes = ["r1cs", "zkey", "vkey", "sym", "json", "wasm", "c"] as const;
 export type ArtifactsFileType = (typeof ArtifactsFileTypes)[number];

@@ -6,19 +6,19 @@ import { TASK_COMPILE_SOLIDITY_READ_FILE as TASK_READ_FILE } from "hardhat/built
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { getAllFilesMatching } from "hardhat/internal/util/fs-utils";
 
-import { CompilationFilesManagerMock } from "./CompilationFilesManagerMock";
+import { CompilationFilesResolverMock } from "./CompilationFilesResolverMock";
 import { useEnvironment } from "../../../helpers";
 import { CircuitsCompileCache } from "../../../../src/cache";
-import { TASK_CIRCUITS_COMPILE } from "../../../../src/task-names";
-import { DependencyGraph, ResolvedFile } from "../../../../src/core";
+import { TASK_CIRCUITS_COMPILE, ZKIT_SCOPE_NAME } from "../../../../src/task-names";
+import { DependencyGraph, CircomFilesResolver, CircomFilesParser } from "../../../../src/core";
 import { getNormalizedFullPath } from "../../../../src/utils/path-utils";
 import { CIRCUITS_COMPILE_CACHE_FILENAME } from "../../../../src/constants";
 
-import { ResolvedFileInfo } from "../../../../src/types/core";
+import { CircomResolvedFileInfo, CircomResolvedFile } from "../../../../src/types/core";
 
 describe("CompilationFilesResolver", () => {
-  function getCompilationFilesManagerMock(hre: HardhatRuntimeEnvironment): CompilationFilesManagerMock {
-    return new CompilationFilesManagerMock(
+  function getCompilationFilesManagerMock(hre: HardhatRuntimeEnvironment): CompilationFilesResolverMock {
+    return new CompilationFilesResolverMock(
       (absolutePath: string) => hre.run(TASK_READ_FILE, { absolutePath }),
       hre.zkit.circuitArtifacts,
       hre.config,
@@ -26,17 +26,23 @@ describe("CompilationFilesResolver", () => {
   }
 
   describe("filterResolvedFiles", () => {
-    let compilationFilesManager: CompilationFilesManagerMock;
-    let resolvedFiles: ResolvedFile[];
+    let compilationFilesManager: CompilationFilesResolverMock;
+    let resolvedFiles: CircomResolvedFile[];
     let dependencyGraph: DependencyGraph;
     let sourceNames: string[];
 
     useEnvironment("with-circuits");
 
     beforeEach("setup", async function () {
-      await this.hre.run(TASK_CIRCUITS_COMPILE);
+      await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
 
       compilationFilesManager = getCompilationFilesManagerMock(this.hre);
+
+      const resolver = new CircomFilesResolver(
+        this.hre.config.paths.root,
+        new CircomFilesParser(),
+        (absolutePath: string) => this.hre.run(TASK_READ_FILE, { absolutePath }),
+      );
 
       const sourcePaths: string[] = await getAllFilesMatching(compilationFilesManager.getCircuitsDirFullPath(), (f) =>
         f.endsWith(".circom"),
@@ -44,13 +50,13 @@ describe("CompilationFilesResolver", () => {
 
       sourceNames = await compilationFilesManager.getSourceNamesFromSourcePaths(sourcePaths);
 
-      dependencyGraph = await compilationFilesManager.getDependencyGraph(sourceNames);
+      dependencyGraph = await compilationFilesManager.getDependencyGraph(sourceNames, resolver);
 
       resolvedFiles = dependencyGraph.getResolvedFiles();
     });
 
     it("should correctly filter resolved files", async function () {
-      const filteredResolvedFilesInfo: ResolvedFileInfo[] = compilationFilesManager.filterResolvedFiles(
+      const filteredResolvedFilesInfo: CircomResolvedFileInfo[] = compilationFilesManager.filterResolvedFiles(
         resolvedFiles,
         sourceNames,
         dependencyGraph,
@@ -65,7 +71,7 @@ describe("CompilationFilesResolver", () => {
 
       expect(filteredResolvedFilesInfo.length).to.be.eq(expectedSourceNames.length);
 
-      filteredResolvedFilesInfo.forEach((fileInfo: ResolvedFileInfo, index: number) => {
+      filteredResolvedFilesInfo.forEach((fileInfo: CircomResolvedFileInfo, index: number) => {
         expect(fileInfo.circuitName).to.be.eq(expectedCircuitNames[index]);
         expect(fileInfo.resolvedFile.sourceName).to.be.eq(expectedSourceNames[index]);
       });
@@ -74,7 +80,7 @@ describe("CompilationFilesResolver", () => {
     it("should correctly filter resolved files by source names", async function () {
       const expectedSourceNames: string[] = ["circuits/main/Multiplier3Arr.circom", "circuits/main/mul2.circom"];
 
-      const filteredResolvedFilesInfo: ResolvedFileInfo[] = compilationFilesManager.filterResolvedFiles(
+      const filteredResolvedFilesInfo: CircomResolvedFileInfo[] = compilationFilesManager.filterResolvedFiles(
         resolvedFiles,
         expectedSourceNames,
         dependencyGraph,
@@ -82,14 +88,14 @@ describe("CompilationFilesResolver", () => {
 
       expect(filteredResolvedFilesInfo.length).to.be.eq(expectedSourceNames.length);
 
-      filteredResolvedFilesInfo.forEach((fileInfo: ResolvedFileInfo, index: number) => {
+      filteredResolvedFilesInfo.forEach((fileInfo: CircomResolvedFileInfo, index: number) => {
         expect(fileInfo.resolvedFile.sourceName).to.be.eq(expectedSourceNames[index]);
       });
     });
   });
 
   describe("getSourceNamesFromSourcePaths", () => {
-    let compilationFilesManager: CompilationFilesManagerMock;
+    let compilationFilesManager: CompilationFilesResolverMock;
 
     useEnvironment("with-circuits");
 
@@ -108,14 +114,14 @@ describe("CompilationFilesResolver", () => {
   });
 
   describe("invalidateCacheMissingArtifacts", () => {
-    let compilationFilesManager: CompilationFilesManagerMock;
-    let resolvedFilesInfo: ResolvedFileInfo[];
+    let compilationFilesManager: CompilationFilesResolverMock;
+    let resolvedFilesInfo: CircomResolvedFileInfo[];
     let sourceNames: string[];
 
     useEnvironment("with-circuits");
 
     beforeEach("setup", async function () {
-      await this.hre.run(TASK_CIRCUITS_COMPILE);
+      await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
 
       compilationFilesManager = getCompilationFilesManagerMock(this.hre);
 
@@ -125,7 +131,12 @@ describe("CompilationFilesResolver", () => {
 
       sourceNames = await compilationFilesManager.getSourceNamesFromSourcePaths(sourcePaths);
 
-      const dependencyGraph: DependencyGraph = await compilationFilesManager.getDependencyGraph(sourceNames);
+      const resolver = new CircomFilesResolver(
+        this.hre.config.paths.root,
+        new CircomFilesParser(),
+        (absolutePath: string) => this.hre.run(TASK_READ_FILE, { absolutePath }),
+      );
+      const dependencyGraph: DependencyGraph = await compilationFilesManager.getDependencyGraph(sourceNames, resolver);
 
       resolvedFilesInfo = compilationFilesManager.filterResolvedFiles(
         dependencyGraph.getResolvedFiles(),

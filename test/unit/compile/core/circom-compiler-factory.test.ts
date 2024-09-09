@@ -3,7 +3,7 @@ import fsExtra from "fs-extra";
 import { expect } from "chai";
 
 import { useEnvironment } from "../../../helpers";
-import { CircomCompilerFactory } from "../../../../src/core";
+import { CircomCompilerFactory, createCircomCompilerFactory } from "../../../../src/core";
 import { getNormalizedFullPath } from "../../../../src/utils/path-utils";
 
 import { CompileFlags, ICircomCompiler } from "../../../../src/types/core";
@@ -21,7 +21,8 @@ describe("CircomCompilerFactory", () => {
     useEnvironment("with-circuits");
 
     it("should correctly create circom compiler instance", async function () {
-      const compiler: ICircomCompiler = CircomCompilerFactory.createWASMCircomCompiler("0.2.18");
+      createCircomCompilerFactory();
+      const compiler: ICircomCompiler = await CircomCompilerFactory!.createCircomCompiler("0.2.18", false);
 
       const circuitFullPath: string = getNormalizedFullPath(this.hre.config.paths.root, "circuits/main/mul2.circom");
       const artifactsFullPath: string = getNormalizedFullPath(
@@ -51,13 +52,12 @@ describe("CircomCompilerFactory", () => {
     });
 
     it("should correctly throw error if pass invalid version", async function () {
-      const invalidVersion = "2.0.0";
+      const invalidVersion = "2.1.10";
 
       const reason = `Unsupported Circom compiler version - ${invalidVersion}. Please provide another version.`;
 
-      expect(function () {
-        CircomCompilerFactory.createWASMCircomCompiler(invalidVersion as any);
-      }).to.throw(reason);
+      createCircomCompilerFactory();
+      await expect(CircomCompilerFactory!.createCircomCompiler(invalidVersion, false)).to.be.rejectedWith(reason);
     });
   });
 });

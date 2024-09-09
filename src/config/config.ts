@@ -6,6 +6,7 @@ import { ZKitConfig } from "../types/zkit-config";
 import { RecursivePartial } from "../types/utils";
 
 const defaultConfig: ZKitConfig = {
+  compilerVersion: undefined,
   circuitsDir: "circuits",
   compilationSettings: {
     artifactsDir: "zkit/artifacts",
@@ -16,7 +17,7 @@ const defaultConfig: ZKitConfig = {
   },
   setupSettings: {
     contributionSettings: {
-      contributionTemplate: "groth16",
+      provingSystem: "groth16",
       contributions: 1,
     },
     ptauDir: undefined,
@@ -24,13 +25,11 @@ const defaultConfig: ZKitConfig = {
     onlyFiles: [],
     skipFiles: [],
   },
-  typesSettings: {
-    typesArtifactsDir: "zkit/abi",
-    typesDir: "generated-types/zkit",
+  verifiersSettings: {
+    verifiersDir: "contracts/verifiers",
+    verifiersType: "sol",
   },
-  verifiersDir: "contracts/verifiers",
-  verifiersType: "sol",
-  nativeCompiler: false,
+  typesDir: "generated-types/zkit",
   quiet: false,
 };
 

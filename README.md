@@ -20,7 +20,7 @@ This hardhat plugin is a zero-config, one-stop Circom development environment th
 - Automatic downloads of phase-1 `ptau` files.
 - Convenient phase-2 contributions to `zkey` files.
 - Available `witness` testing via chai assertions.
-- Invisible `wasm`-based Circom compiler management.
+- Invisible platform-specific and fallback `wasm`-based Circom compiler management.
 - Simplified `node_modules` libraries resolution.
 - Rich plugin configuration.
 - And much more!
@@ -40,7 +40,7 @@ require("@solarity/hardhat-zkit"); // JavaScript
 ```
 
 > [!TIP]
-> There is no need to download the Circom compiler separately. The plugin works with the WASM-based version under the hood.
+> There is no need to download the Circom compiler separately. The plugin automatically installs missing compilers under the hood.
 
 ## Usage
 
@@ -49,6 +49,7 @@ The `hardhat-zkit` is a zero-config plugin, however, you may add the following t
 ```ts
 module.exports = {
   zkit: {
+    compilerVersion: "2.1.8",
     circuitsDir: "circuits",
     compilationSettings: {
       artifactsDir: "zkit/artifacts",
@@ -59,7 +60,7 @@ module.exports = {
     },
     setupSettings: {
       contributionSettings: {
-        contributionTemplate: "groth16",
+        provingSystem: "groth16",
         contributions: 1,
       },
       onlyFiles: [],
@@ -67,13 +68,11 @@ module.exports = {
       ptauDir: undefined,
       ptauDownload: true,
     },
-    typesSettings: {
-      typesArtifactsDir: "zkit/abi",
-      typesDir: "generated-types/zkit",
+    verifiersSettings: {
+      verifiersDir: "contracts/verifiers",
+      verifiersType: "sol",  
     },
-    verifiersDir: "contracts/verifiers",
-    verifiersType: "sol",
-    nativeCompiler: false,
+    typesDir: "generated-types/zkit",
     quiet: false,
   },
 };
@@ -81,6 +80,7 @@ module.exports = {
 
 Where:
 
+- `compilerVersion` - The value to indicate which Circom compiler to use (latest by default).
 - `circuitsDir` - The directory where to look for the circuits.
 - `compilationSettings`
   - `artifactsDir` - The directory where to save the circuits artifacts (r1cs, zkey, etc).
@@ -90,34 +90,32 @@ Where:
   - `json` - The flag to output the constraints in json format.
 - `setupSettings`
   - `contributionSettings`
-    - `contributionTemplate` - The option to indicate which proving system to use.
+    - `provingSystem` - The option to indicate which proving system to use.
     - `contributions` - The number of phase-2 `zkey` contributions to make if `groth16` is chosen.
   - `onlyFiles` - The list of directories (or files) to be considered for the setup phase.
   - `skipFiles` - The list of directories (or files) to be excluded from the setup phase.
   - `ptauDir` - The directory where to look for the `ptau` files. `$HOME/.zkit/ptau/` by default.
   - `ptauDownload` - The flag to allow automatic download of required `ptau` files.
-- `typesSettings`
-  - `typesArtifactsDir` - The directory where to save the generated circuits ABI.
-  - `typesDir` - The directory where to save the generated typed circuits wrappers.
-- `verifiersDir` - The directory where to generate the verifiers.
-- `verifiersType` - The option (`sol` or `vy`) to indicate which language to use for verifiers generation.
-- `nativeCompiler` - The flag indicating whether to use the natively installed compiler.
+- `verifiersSettings`
+    - `verifiersDir` - The directory where to generate the Solidity verifiers.
+    - `verifiersType` - The option (`sol` or `vy`) to indicate which language to use for verifiers generation.
+- `typesDir` - The directory where to save the generated typed circuits wrappers.
 - `quiet` - The flag indicating whether to suppress the output.
 
 ### Tasks
 
-There are several hardhat tasks that the plugin provides:
+There are several hardhat tasks in the `zkit` scope that the plugin provides:
 
-- `zkit:compile` task that compiles or recompiles the modified circuits with the main component.
-- `zkit:setup` task that generates or regenerates `zkey` and `vkey` for the previously compiled circuits.
-- `zkit:make` task that executes both `zkit:compile` and `zkit:setup` for convenience.
-- `zkit:verifiers` task that generates Solidity | Vyper verifiers for all the previously setup circuits.
-- `zkit:clean` task that cleans up the generated artifacts, types, etc.
+- `compile` task that compiles or recompiles the modified circuits with the main component.
+- `setup` task that generates or regenerates `zkey` and `vkey` for the previously compiled circuits.
+- `make` task that executes both `compile` and `setup` for convenience.
+- `verifiers` task that generates Solidity | Vyper verifiers for all the previously setup circuits.
+- `clean` task that cleans up the generated artifacts, types, etc.
 
 To view the available options, run the help command:
 
 ```bash
-npx hardhat help <zkit task name>
+npx hardhat help zkit <zkit task name>
 ```
 
 ### Typization
@@ -155,7 +153,7 @@ require("@solarity/chai-zkit"); // JavaScript
 The package extends `expect` chai assertion to recognize typed `zktype` objects for frictionless testing experience.
 
 > [!NOTE]
-> Please note that for witness testing purposes it is sufficient to compile the circuit just with `zkit:compile` task, without generating the keys.
+> Please note that for witness testing purposes it is sufficient to compile the circuit just with `zkit compile` task, without generating the keys.
 
 ### Example
 
@@ -206,7 +204,7 @@ async function main() {
   // proof testing
   const proof = await circuit.generateProof({ in1: "4", in2: "2" });
 
-  expect(await circuit.verifyProof(proof)).to.be.true;
+  await expect(circuit).to.verifyProof(proof);
 }
 
 main()
@@ -221,7 +219,7 @@ main()
 To see the plugin in action, place the `Multiplier` circuit in the `circuits` directory and execute:
 
 ```bash
-npx hardhat zkit:make
+npx hardhat zkit make
 ```
 
 This command will compile the circuit leveraging `wasm`-based Circom compiler, download the necessary `ptau` file regarding the number of circuit's constraints, build the required `zkey` and `vkey` files, and generate TypeScript object wrappers to enable full typization of signals and ZK proofs.
@@ -236,7 +234,7 @@ Afterward, you may run the provided hardhat script.
 
 The method accepts the name of the `main` component of the circuit and returns the instantiated zkit object pointing to that circuit.
 
-The method works regardless of how the circuit was compiled, however, if `zkit:compile` task was used, the zkit methods that utilize proof generation or proof verification would throw an error by design.
+The method works regardless of how the circuit was compiled, however, if `zkit compile` task was used, the zkit methods that utilize proof generation or proof verification would throw an error by design.
 
 In case there are conflicts between circuit file names and `main` component names, you should use the `fullCircuitName`, which has the following form: `circuitSourceName:circuitName`.
 
@@ -250,7 +248,5 @@ Where:
 
 ## Known limitations
 
-- Circuits typization will not work if an expression is used to indicate the size of a signal array. Consider extending circuit's parameters if you have expressions like this: `signal arr[n + 1]`.
 - Due to current `wasm` memory limitations (address space is 32-bit), the plugin may fail to compile especially large circuits.
-- At present the `wasm`-based Circom `2.1.8` is used to compile circuits.
 - Temporarily, the only supported proving system is `groth16`.

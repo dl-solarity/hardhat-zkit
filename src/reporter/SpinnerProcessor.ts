@@ -2,7 +2,7 @@ import ora, { Options, Ora } from "ora";
 
 import { SpinnerData } from "../types/reporter/spinner-processor";
 
-export class SpinnerProcessor {
+export class BaseSpinnerProcessor {
   private _idToSpinnerData: Map<string, SpinnerData> = new Map();
 
   public createSpinner(spinnerId: string, options?: string | Options) {
@@ -40,4 +40,14 @@ export class SpinnerProcessor {
       return undefined;
     }
   }
+}
+
+export let SpinnerProcessor: BaseSpinnerProcessor | null = null;
+
+export function createSpinnerProcessor() {
+  if (SpinnerProcessor) {
+    return;
+  }
+
+  SpinnerProcessor = new BaseSpinnerProcessor();
 }

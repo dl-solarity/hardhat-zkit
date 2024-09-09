@@ -1,3 +1,3 @@
 export * from "./DependencyGraph";
-export * from "./Parser";
-export * from "./Resolver";
+export * from "./CircomFilesResolver";
+export * from "./parser";

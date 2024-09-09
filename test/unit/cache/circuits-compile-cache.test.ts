@@ -6,11 +6,12 @@ import { useEnvironment } from "../../helpers";
 import { CircuitsCompileCache, createCircuitsCompileCache, resetCircuitsCompileCache } from "../../../src/cache";
 import { getNormalizedFullPath } from "../../../src/utils/path-utils";
 import { CIRCUITS_COMPILE_CACHE_FILENAME, CIRCUIT_COMPILE_CACHE_VERSION } from "../../../src/constants";
-import { TASK_CIRCUITS_COMPILE } from "../../../src/task-names";
+import { TASK_CIRCUITS_COMPILE, ZKIT_SCOPE_NAME } from "../../../src/task-names";
 import { getFileHash } from "../../../src/utils/utils";
 
-import { CompileFlags } from "../../../src/types/core";
+import { CompileFlags, ResolvedFileData } from "../../../src/types/core";
 import { CompileCacheEntry } from "../../../src/types/cache";
+import { CircomFilesParser } from "../../../src/core";
 
 describe("CircuitsCompileCache", () => {
   const defaultCompileFlags: CompileFlags = {
@@ -24,9 +25,7 @@ describe("CircuitsCompileCache", () => {
   async function getCacheEntry(
     projectRoot: string,
     sourceName: string,
-    imports: string[],
     compileFlags: CompileFlags = defaultCompileFlags,
-    versionPragmas: string[] = ["2.0.0"],
     contentHash?: string,
   ): Promise<CompileCacheEntry> {
     const circuitPath = getNormalizedFullPath(projectRoot, sourceName);
@@ -34,6 +33,13 @@ describe("CircuitsCompileCache", () => {
     if (!contentHash) {
       contentHash = getFileHash(circuitPath);
     }
+
+    const parser: CircomFilesParser = new CircomFilesParser();
+    const fileData: ResolvedFileData = parser.parse(
+      fsExtra.readFileSync(circuitPath, "utf-8"),
+      circuitPath,
+      contentHash,
+    );
 
     const stats = await fsExtra.stat(circuitPath);
     const lastModificationDate: Date = new Date(stats.ctime);
@@ -43,8 +49,7 @@ describe("CircuitsCompileCache", () => {
       contentHash,
       lastModificationDate: lastModificationDate.valueOf(),
       compileFlags,
-      versionPragmas,
-      imports,
+      fileData,
     };
   }
 
@@ -64,12 +69,12 @@ describe("CircuitsCompileCache", () => {
 
     it("should correctly create CircuitsCompileCache instance from file", async function () {
       CircuitsCompileCache!.getEntries().forEach(async (entry: CompileCacheEntry) => {
-        expect(entry).to.be.deep.eq(await getCacheEntry(this.hre.config.paths.root, entry.sourceName, entry.imports));
+        expect(entry).to.be.deep.eq(await getCacheEntry(this.hre.config.paths.root, entry.sourceName));
       });
     });
 
     it("should correctly create CircuitsCompileCache instance and remove non existing files", async function () {
-      await this.hre.run(TASK_CIRCUITS_COMPILE);
+      await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
 
       const circuitsCacheFullPath: string = getNormalizedFullPath(
         this.hre.config.paths.cache,
@@ -122,7 +127,7 @@ describe("CircuitsCompileCache", () => {
     useEnvironment("with-circuits");
 
     it("should return correct results", async function () {
-      await this.hre.run(TASK_CIRCUITS_COMPILE);
+      await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
 
       expect(CircuitsCompileCache!.hasFileChanged("invalid-path", "", defaultCompileFlags)).to.be.true;
 
