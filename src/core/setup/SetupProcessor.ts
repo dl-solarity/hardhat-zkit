@@ -1,5 +1,5 @@
 import path from "path";
-import fs from "fs";
+import fsExtra from "fs-extra";
 import os from "os";
 import { randomBytes } from "crypto";
 import { v4 as uuid } from "uuid";
@@ -24,7 +24,7 @@ export class SetupProcessor {
     const tempDir: string = path.join(os.tmpdir(), ".zkit", uuid());
 
     try {
-      fs.mkdirSync(tempDir, { recursive: true });
+      fsExtra.mkdirSync(tempDir, { recursive: true });
 
       Reporter!.reportSetupProcessHeader();
 
@@ -41,7 +41,7 @@ export class SetupProcessor {
 
       Reporter!.reportSetupResult(circuitArtifacts);
     } finally {
-      fs.rmSync(tempDir, { recursive: true, force: true });
+      fsExtra.rmSync(tempDir, { recursive: true, force: true });
     }
   }
 
@@ -85,8 +85,8 @@ export class SetupProcessor {
             randomBytes(32).toString("hex"),
           );
 
-          fs.rmSync(zkeyFilePath);
-          fs.renameSync(zKeyFileNext, zkeyFilePath);
+          fsExtra.rmSync(zkeyFilePath);
+          fsExtra.renameSync(zKeyFileNext, zkeyFilePath);
         }
       } else {
         throw new HardhatZKitError(`Unsupported proving system - ${provingSystem}`);
@@ -116,7 +116,7 @@ export class SetupProcessor {
 
       const vKeyData = await snarkjs.zKey.exportVerificationKey(zkeyFilePath);
 
-      fs.writeFileSync(vkeyFilePath, JSON.stringify(vKeyData));
+      fsExtra.outputFileSync(vkeyFilePath, JSON.stringify(vKeyData));
 
       Reporter!.reportVKeyFileGenerationResult(spinnerId, circuitArtifact.circuitTemplateName);
     }
@@ -132,10 +132,10 @@ export class SetupProcessor {
     const maxConstraintsNumber = Math.max(...circuitsConstraintsNumber);
     const ptauId = Math.max(Math.ceil(Math.log2(maxConstraintsNumber)), 8);
 
-    let entries: fs.Dirent[] = [];
+    let entries: fsExtra.Dirent[] = [];
 
-    if (fs.existsSync(this._ptauDirFullPath)) {
-      entries = fs.readdirSync(this._ptauDirFullPath, { withFileTypes: true });
+    if (fsExtra.existsSync(this._ptauDirFullPath)) {
+      entries = fsExtra.readdirSync(this._ptauDirFullPath, { withFileTypes: true });
     }
 
     Reporter!.verboseLog("setup-processor", "Found entries in ptau directory: %o", [
