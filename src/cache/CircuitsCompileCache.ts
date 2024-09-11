@@ -64,7 +64,7 @@ class BaseCircuitsCompileCache {
   }
 
   public async writeToFile(circuitsCompileCachePath: string) {
-    fsExtra.writeFileSync(
+    fsExtra.outputFileSync(
       circuitsCompileCachePath,
       JSON.stringify(this._compileCache, (_key, value) => {
         if (typeof value === "bigint") {
