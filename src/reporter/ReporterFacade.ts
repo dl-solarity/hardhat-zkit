@@ -98,6 +98,10 @@ class ReporterFacade {
     this._circuitCompilationReporter.reportFinalResult(compilationInfoArr);
   }
 
+  public reportCompilationBottomLine() {
+    this._circuitCompilationReporter.reportBottomLine();
+  }
+
   public reportPtauFileInfo(maxConstraintsNumber: number, ptauId: number, ptauFileFullPath?: string) {
     this._ptauFileReporter.reportInfo(maxConstraintsNumber, ptauId, ptauFileFullPath);
   }
@@ -206,12 +210,6 @@ class ReporterFacade {
 
   public updateProgressBarValue(valueToAdd: number) {
     this._progressReporter.updateProgressBarValue(valueToAdd);
-  }
-
-  public drawLine(length: number = 69) {
-    const line = "─".repeat(length);
-
-    console.log(line);
   }
 
   public verboseLog(namespace: string, formatterStr: string, logArgs: any[] = []) {

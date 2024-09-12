@@ -99,4 +99,12 @@ export class CircuitCompilationReporter extends BaseReporter {
 
     console.log(output);
   }
+
+  public reportBottomLine(length: number = 69) {
+    if (this.isQuiet()) return;
+
+    const line = "─".repeat(length);
+
+    console.log(line);
+  }
 }
