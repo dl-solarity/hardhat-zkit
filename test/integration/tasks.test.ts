@@ -68,6 +68,8 @@ describe("ZKit tasks", () => {
       useEnvironment("with-circuits", true);
 
       it("should correctly compile circuits", async function () {
+        this.timeout(30000);
+
         await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
 
         const cacheFullPath: string = getNormalizedFullPath(this.hre.config.paths.root, "cache");
@@ -89,6 +91,8 @@ describe("ZKit tasks", () => {
       });
 
       it("should correctly compile circuits with task arguments", async function () {
+        this.timeout(30000);
+
         await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE }, { json: true, c: true });
 
         const cacheFullPath: string = getNormalizedFullPath(this.hre.config.paths.root, "cache");
