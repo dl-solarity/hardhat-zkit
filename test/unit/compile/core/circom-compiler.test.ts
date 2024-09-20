@@ -123,7 +123,7 @@ describe("WASMCircomCompiler", () => {
       );
     });
 
-    it("should correctly compile circuit with library inclue", async function () {
+    it("should correctly compile circuit with library include", async function () {
       const circuitFullPath: string = getNormalizedFullPath(this.hre.config.paths.root, "circuits/hash2.circom");
       const artifactsFullPath: string = getNormalizedFullPath(
         this.hre.config.paths.root,

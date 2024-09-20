@@ -3,56 +3,18 @@ import fsExtra from "fs-extra";
 import { expect } from "chai";
 
 import { useEnvironment } from "../../helpers";
-import { CircuitsCompileCache, createCircuitsCompileCache, resetCircuitsCompileCache } from "../../../src/cache";
-import { getNormalizedFullPath } from "../../../src/utils/path-utils";
-import { CIRCUITS_COMPILE_CACHE_FILENAME, CIRCUIT_COMPILE_CACHE_VERSION } from "../../../src/constants";
-import { TASK_CIRCUITS_COMPILE, ZKIT_SCOPE_NAME } from "../../../src/task-names";
+import { getCompileCacheEntry } from "../../utils";
 import { getFileHash } from "../../../src/utils/utils";
+import { getNormalizedFullPath } from "../../../src/utils/path-utils";
 
-import { CompileFlags, ResolvedFileData } from "../../../src/types/core";
+import { defaultCompileFlags } from "../../constants";
 import { CompileCacheEntry } from "../../../src/types/cache";
-import { CircomFilesParser } from "../../../src/core";
+import { TASK_CIRCUITS_COMPILE, ZKIT_SCOPE_NAME } from "../../../src/task-names";
+import { CIRCUITS_COMPILE_CACHE_FILENAME, CIRCUIT_COMPILE_CACHE_VERSION } from "../../../src/constants";
+
+import { CircuitsCompileCache, createCircuitsCompileCache, resetCircuitsCompileCache } from "../../../src/cache";
 
 describe("CircuitsCompileCache", () => {
-  const defaultCompileFlags: CompileFlags = {
-    r1cs: true,
-    wasm: true,
-    sym: true,
-    c: false,
-    json: false,
-  };
-
-  async function getCacheEntry(
-    projectRoot: string,
-    sourceName: string,
-    compileFlags: CompileFlags = defaultCompileFlags,
-    contentHash?: string,
-  ): Promise<CompileCacheEntry> {
-    const circuitPath = getNormalizedFullPath(projectRoot, sourceName);
-
-    if (!contentHash) {
-      contentHash = getFileHash(circuitPath);
-    }
-
-    const parser: CircomFilesParser = new CircomFilesParser();
-    const fileData: ResolvedFileData = parser.parse(
-      fsExtra.readFileSync(circuitPath, "utf-8"),
-      circuitPath,
-      contentHash,
-    );
-
-    const stats = await fsExtra.stat(circuitPath);
-    const lastModificationDate: Date = new Date(stats.ctime);
-
-    return {
-      sourceName,
-      contentHash,
-      lastModificationDate: lastModificationDate.valueOf(),
-      compileFlags,
-      fileData,
-    };
-  }
-
   describe("createEmpty", () => {
     it("should correctly create empty CircuitsCompileCache instance", async () => {
       resetCircuitsCompileCache();
@@ -69,7 +31,7 @@ describe("CircuitsCompileCache", () => {
 
     it("should correctly create CircuitsCompileCache instance from file", async function () {
       CircuitsCompileCache!.getEntries().forEach(async (entry: CompileCacheEntry) => {
-        expect(entry).to.be.deep.eq(await getCacheEntry(this.hre.config.paths.root, entry.sourceName));
+        expect(entry).to.be.deep.eq(await getCompileCacheEntry(this.hre.config.paths.root, entry.sourceName));
       });
     });
 

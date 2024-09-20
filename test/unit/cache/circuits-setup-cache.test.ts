@@ -2,41 +2,20 @@ import fsExtra from "fs-extra";
 
 import { expect } from "chai";
 
-import { TASK_CIRCUITS_MAKE, ZKIT_SCOPE_NAME } from "../../../src/task-names";
 import { useEnvironment } from "../../helpers";
-import { CircuitsSetupCache, createCircuitsSetupCache, resetCircuitsSetupCache } from "../../../src/cache";
-import { getNormalizedFullPath } from "../../../src/utils/path-utils";
-import { CIRCUITS_SETUP_CACHE_FILENAME, CIRCUIT_SETUP_CACHE_VERSION } from "../../../src/constants";
+import { getSetupCacheEntry } from "../../utils";
 import { getFileHash } from "../../../src/utils/utils";
+import { getNormalizedFullPath } from "../../../src/utils/path-utils";
 
-import { ContributionSettings } from "../../../src/types/core";
+import { defaultContributionSettings } from "../../constants";
 import { SetupCacheEntry } from "../../../src/types/cache";
 import { CircuitArtifact } from "../../../src/types/artifacts/circuit-artifacts";
+import { TASK_CIRCUITS_MAKE, ZKIT_SCOPE_NAME } from "../../../src/task-names";
+import { CIRCUITS_SETUP_CACHE_FILENAME, CIRCUIT_SETUP_CACHE_VERSION } from "../../../src/constants";
+
+import { CircuitsSetupCache, createCircuitsSetupCache, resetCircuitsSetupCache } from "../../../src/cache";
 
 describe("CircuitsSetupCache", () => {
-  const defaultContributionSettings: ContributionSettings = {
-    provingSystem: "groth16",
-    contributions: 1,
-  };
-
-  async function getCacheEntry(
-    sourceName: string,
-    r1csSourcePath: string,
-    contributionSettings: ContributionSettings = defaultContributionSettings,
-    r1csContentHash?: string,
-  ): Promise<SetupCacheEntry> {
-    if (!r1csContentHash) {
-      r1csContentHash = getFileHash(r1csSourcePath);
-    }
-
-    return {
-      circuitSourceName: sourceName,
-      r1csSourcePath,
-      r1csContentHash,
-      contributionSettings,
-    };
-  }
-
   describe("createEmpty", () => {
     it("should correctly create empty CircuitsSetupCache instance", async () => {
       resetCircuitsSetupCache();
@@ -53,7 +32,7 @@ describe("CircuitsSetupCache", () => {
 
     it("should correctly create CircuitsSetupCache instance from file", async function () {
       CircuitsSetupCache!.getEntries().forEach(async (entry: SetupCacheEntry) => {
-        expect(entry).to.be.deep.eq(await getCacheEntry(entry.circuitSourceName, entry.r1csSourcePath));
+        expect(entry).to.be.deep.eq(await getSetupCacheEntry(entry.circuitSourceName, entry.r1csSourcePath));
       });
     });
 
