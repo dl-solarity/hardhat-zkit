@@ -3,15 +3,15 @@ import { expect } from "chai";
 
 import { createNonCryptographicHashBasedIdentifier } from "hardhat/internal/util/hash";
 
-import { useEnvironment } from "../../../helpers";
-import { TASK_CIRCUITS_COMPILE, ZKIT_SCOPE_NAME } from "../../../../src/task-names";
-import { CircomFilesParser } from "../../../../src/core/dependencies";
-import { getNormalizedFullPath } from "../../../../src/utils/path-utils";
-import { CIRCUITS_COMPILE_CACHE_FILENAME } from "../../../../src/constants";
-import { createCircuitsCompileCache } from "../../../../src/cache";
-import { createReporter } from "../../../../src/reporter";
+import { useEnvironment } from "../../../../helpers";
+import { CircomFilesParser } from "../../../../../src/core";
+import { TASK_CIRCUITS_COMPILE, ZKIT_SCOPE_NAME } from "../../../../../src/task-names";
+import { getNormalizedFullPath } from "../../../../../src/utils/path-utils";
+import { CIRCUITS_COMPILE_CACHE_FILENAME } from "../../../../../src/constants";
+import { createCircuitsCompileCache } from "../../../../../src/cache";
+import { createReporter } from "../../../../../src/reporter";
 
-import { ResolvedFileData } from "../../../../src/types/core";
+import { ResolvedFileData } from "../../../../../src/types/core";
 
 describe("CircomFilesParser", () => {
   describe("parse", () => {

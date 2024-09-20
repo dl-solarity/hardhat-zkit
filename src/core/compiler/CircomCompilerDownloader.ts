@@ -84,12 +84,12 @@ export class CircomCompilerDownloader {
     const compilerBinaryPath = this._getCompilerDownloadPath(version);
     const wasmCompilerBinaryPath = this._getWasmCompilerDownloadPath(version);
 
-    if (await fs.pathExists(compilerBinaryPath)) {
-      return { binaryPath: compilerBinaryPath, version: version, isWasm: false };
-    }
-
     if (await fs.pathExists(wasmCompilerBinaryPath)) {
       return { binaryPath: wasmCompilerBinaryPath, version: version, isWasm: true };
+    }
+
+    if (await fs.pathExists(compilerBinaryPath)) {
+      return { binaryPath: compilerBinaryPath, version: version, isWasm: false };
     }
 
     throw new HardhatZKitError(`Trying to get a Circom compiler v${version} before it was downloaded`);
@@ -110,7 +110,7 @@ export class CircomCompilerDownloader {
       try {
         downloadPath = await this._downloadCompiler(versionToDownload);
       } catch (error: any) {
-        throw new HardhatZKitError(error);
+        throw new HardhatZKitError(error.message);
       }
 
       await this._postProcessCompilerDownload(downloadPath);

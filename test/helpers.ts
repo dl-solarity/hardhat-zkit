@@ -40,9 +40,14 @@ export function cleanUp(rootPath: string) {
   resetCircuitsCompileCache();
   resetCircuitsSetupCache();
 
-  const directoriesToRemove = ["generated-types/zkit", "cache", "zkit", "artifacts", "contracts/verifiers"].map((dir) =>
-    getNormalizedFullPath(rootPath, dir),
-  );
+  const directoriesToRemove = [
+    "generated-types/zkit",
+    "cache",
+    "zkit",
+    "artifacts",
+    "contracts/verifiers",
+    "compilers",
+  ].map((dir) => getNormalizedFullPath(rootPath, dir));
 
   directoriesToRemove.forEach((dir) => {
     fsExtra.rmSync(dir, { recursive: true, force: true });

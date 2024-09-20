@@ -20,7 +20,7 @@ export function isVersionHigherOrEqual(version1: string, version2: string): bool
     return false;
   }
 
-  if (!version2 || (!version1 && !version2)) {
+  if (!version2) {
     return true;
   }
 

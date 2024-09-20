@@ -7,14 +7,14 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { getAllFilesMatching } from "hardhat/internal/util/fs-utils";
 
 import { CompilationFilesResolverMock } from "./CompilationFilesResolverMock";
-import { useEnvironment } from "../../../helpers";
-import { CircuitsCompileCache } from "../../../../src/cache";
-import { TASK_CIRCUITS_COMPILE, ZKIT_SCOPE_NAME } from "../../../../src/task-names";
-import { DependencyGraph, CircomFilesResolver, CircomFilesParser } from "../../../../src/core";
-import { getNormalizedFullPath } from "../../../../src/utils/path-utils";
-import { CIRCUITS_COMPILE_CACHE_FILENAME } from "../../../../src/constants";
+import { useEnvironment } from "../../../../helpers";
+import { CircuitsCompileCache } from "../../../../../src/cache";
+import { TASK_CIRCUITS_COMPILE, ZKIT_SCOPE_NAME } from "../../../../../src/task-names";
+import { DependencyGraph, CircomFilesResolver, CircomFilesParser } from "../../../../../src/core";
+import { getNormalizedFullPath } from "../../../../../src/utils/path-utils";
+import { CIRCUITS_COMPILE_CACHE_FILENAME } from "../../../../../src/constants";
 
-import { CircomResolvedFileInfo, CircomResolvedFile } from "../../../../src/types/core";
+import { CircomResolvedFileInfo, CircomResolvedFile } from "../../../../../src/types/core";
 
 describe("CompilationFilesResolver", () => {
   function getCompilationFilesManagerMock(hre: HardhatRuntimeEnvironment): CompilationFilesResolverMock {

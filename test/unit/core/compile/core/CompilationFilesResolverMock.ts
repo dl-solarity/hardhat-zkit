@@ -1,5 +1,5 @@
-import { CircomFilesResolver, CompilationFilesResolver, DependencyGraph } from "../../../../src/core";
-import { CompileFlags, CircomResolvedFileInfo, CircomResolvedFile } from "../../../../src/types/core";
+import { CircomFilesResolver, CompilationFilesResolver, DependencyGraph } from "../../../../../src/core";
+import { CompileFlags, CircomResolvedFileInfo, CircomResolvedFile } from "../../../../../src/types/core";
 
 export class CompilationFilesResolverMock extends CompilationFilesResolver {
   public filterResolvedFiles(
