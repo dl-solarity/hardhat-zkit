@@ -216,9 +216,6 @@ export class CircomCompilerDownloader {
       this._platform !== CompilerPlatformBinary.WASM
     ) {
       await fs.chmod(downloadPath, 0o755);
-
-      // Ensure file system releases the file after chmod before execution
-      await new Promise((resolve) => setTimeout(resolve, 100));
     }
 
     if (this._platform !== CompilerPlatformBinary.WASM && !(await this._checkCompilerWork(downloadPath))) {

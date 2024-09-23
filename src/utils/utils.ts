@@ -63,8 +63,10 @@ export async function downloadFile(
 
           fileStream
             .on("finish", () => {
-              onFinishReporter();
-              resolve(true);
+              fileStream.close(() => {
+                onFinishReporter();
+                resolve(true);
+              });
             })
             .on("error", () => {
               onErrorReporter();
