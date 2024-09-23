@@ -20,7 +20,6 @@ import { getNormalizedFullPath } from "../../src/utils/path-utils";
 import { getCompileCacheEntry, getSetupCacheEntry } from "../utils";
 
 import { CircomCompilerDownloader } from "../../src/core/compiler/CircomCompilerDownloader";
-import { createReporter } from "../../src/reporter";
 
 describe("ZKit tasks", () => {
   const circuitNames = ["Multiplier2", "Multiplier3Arr"];
@@ -66,8 +65,6 @@ describe("ZKit tasks", () => {
 
   describe("compile", () => {
     describe("no config compiler version", () => {
-      createReporter(false);
-
       useEnvironment("with-circuits", true);
 
       it("should correctly compile circuits", async function () {
