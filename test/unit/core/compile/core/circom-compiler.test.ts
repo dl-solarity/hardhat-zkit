@@ -4,7 +4,7 @@ import { expect } from "chai";
 
 import { getProjectRootPath, useEnvironment } from "../../../../helpers";
 import { getNormalizedFullPath } from "../../../../../src/utils/path-utils";
-import { WASMCircomCompiler } from "../../../../../src/core";
+import { CircomCompilerFactory, createCircomCompilerFactory, WASMCircomCompiler } from "../../../../../src/core";
 import { NODE_MODULES } from "../../../../../src/constants";
 
 import { CompileFlags } from "../../../../../src/types/core";
@@ -68,18 +68,33 @@ describe("WASMCircomCompiler", () => {
       );
       const errorFileFullPath: string = getNormalizedFullPath(artifactsFullPath, "errors.log");
 
+      const compilationArgs = {
+        circuitFullPath,
+        artifactsFullPath,
+        errorFileFullPath,
+        linkLibraries: [],
+        compileFlags: defaultCompileFlags,
+        quiet: true,
+      };
+
       const reason: string = "Compilation failed.\nHardhatZKitError: Error during compiler execution. Exit code: 1.";
 
-      await expect(
-        circomCompiler.compile({
-          circuitFullPath,
-          artifactsFullPath,
-          errorFileFullPath,
-          linkLibraries: [],
-          compileFlags: defaultCompileFlags,
-          quiet: true,
-        }),
-      ).to.be.rejectedWith(reason);
+      await expect(circomCompiler.compile(compilationArgs)).to.be.rejectedWith(reason);
+
+      createCircomCompilerFactory();
+      const platformCompiler = await CircomCompilerFactory!.createCircomCompiler("2.0.0", false);
+
+      await expect(platformCompiler.compile(compilationArgs)).to.be.rejected;
+
+      try {
+        await platformCompiler.compile(compilationArgs);
+      } catch (error: any) {
+        const message = error.message;
+
+        expect(message).to.include("Compilation failed.");
+        expect(message).to.include("Command failed");
+        expect(message).to.include("No main specified in the project structure");
+      }
     });
 
     it("should correctly throw error with quiet=false", async function () {

@@ -32,7 +32,7 @@ describe("CircomCompilerDownloader", () => {
 
       expect(await circomCompilerDownloader.isCompilerDownloaded("2.1.1", false)).to.be.false;
 
-      await circomCompilerDownloader.downloadCompiler("2.1.1", false);
+      await circomCompilerDownloader.downloadCompiler("2.1.1", false, true);
 
       expect(await circomCompilerDownloader.isCompilerDownloaded("2.1.1", false)).to.be.true;
     });
@@ -50,7 +50,7 @@ describe("CircomCompilerDownloader", () => {
 
       expect(await circomCompilerDownloader.isCompilerDownloaded("2.1.8", true)).to.be.false;
 
-      await circomCompilerDownloader.downloadCompiler("2.1.8", true);
+      await circomCompilerDownloader.downloadCompiler("2.1.8", true, true);
 
       expect(await circomCompilerDownloader.isCompilerDownloaded("2.1.8", true)).to.be.true;
     });
@@ -131,7 +131,7 @@ describe("CircomCompilerDownloader", () => {
 
       const circomCompilerDownloader = CircomCompilerDownloader.getCircomCompilerDownloader(platform, compilersDir);
 
-      await circomCompilerDownloader.downloadCompiler("2.0.0", false);
+      await circomCompilerDownloader.downloadCompiler("2.0.0", false, true);
 
       expect(fsExtra.readdirSync(`${compilersDir}/${LATEST_SUPPORTED_CIRCOM_VERSION}`)).to.be.deep.equal([platform]);
       expect(await circomCompilerDownloader.isCompilerDownloaded(LATEST_SUPPORTED_CIRCOM_VERSION, true)).to.be.true;
@@ -145,7 +145,7 @@ describe("CircomCompilerDownloader", () => {
 
       const circomCompilerDownloader = CircomCompilerDownloader.getCircomCompilerDownloader(platform, compilersDir);
 
-      await circomCompilerDownloader.downloadCompiler("2.1.8", true);
+      await circomCompilerDownloader.downloadCompiler("2.1.8", true, true);
 
       expect(fsExtra.readdirSync(`${compilersDir}/2.1.8`)).to.be.deep.equal([platform]);
       expect(await circomCompilerDownloader.isCompilerDownloaded("2.1.8", true)).to.be.true;
@@ -159,11 +159,11 @@ describe("CircomCompilerDownloader", () => {
         CircomCompilerDownloader.getCompilerPlatformBinary(),
         compilersDir,
       );
-      await circomCompilerDownloader.downloadCompiler("2.1.9", true);
+      await circomCompilerDownloader.downloadCompiler("2.1.9", true, true);
 
       const reporterSpy = spy(Reporter!, "reportCircomCompilerDownloadingInfo");
 
-      await circomCompilerDownloader.downloadCompiler("2.1.9", true);
+      await circomCompilerDownloader.downloadCompiler("2.1.9", true, true);
 
       expect(reporterSpy.called).to.be.false;
     });
@@ -180,7 +180,7 @@ describe("CircomCompilerDownloader", () => {
         compilersDir,
       );
 
-      await expect(circomCompilerDownloader.downloadCompiler("2.0.0", false)).to.be.rejectedWith(
+      await expect(circomCompilerDownloader.downloadCompiler("2.0.0", false, true)).to.be.rejectedWith(
         "Downloaded compiler is not working",
       );
     });
@@ -194,7 +194,7 @@ describe("CircomCompilerDownloader", () => {
         compilersDir,
       );
 
-      await expect(circomCompilerDownloader.downloadCompiler("2.1.8", true)).to.be.rejectedWith(
+      await expect(circomCompilerDownloader.downloadCompiler("2.1.8", true, true)).to.be.rejectedWith(
         "Failed to download Circom compiler v2.1.8. Please try again or download manually.",
       );
     });

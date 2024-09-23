@@ -19,7 +19,11 @@ import { CompilerInfo, CompilerPlatformBinary, ICircomCompiler, NativeCompiler }
 const { Context } = require("@distributedlab/circom2");
 
 export class BaseCircomCompilerFactory {
-  public async createCircomCompiler(version: string, isVersionStrict: boolean): Promise<ICircomCompiler> {
+  public async createCircomCompiler(
+    version: string,
+    isVersionStrict: boolean,
+    verifyCompiler: boolean = true,
+  ): Promise<ICircomCompiler> {
     if (!isVersionHigherOrEqual(LATEST_SUPPORTED_CIRCOM_VERSION, version)) {
       throw new HardhatZKitError(`Unsupported Circom compiler version - ${version}. Please provide another version.`);
     }
@@ -43,14 +47,14 @@ export class BaseCircomCompilerFactory {
     }
 
     if (compilerPlatformBinary !== CompilerPlatformBinary.WASM) {
-      compiler = await this._tryCreateBinaryCompiler(compilerPlatformBinary, version, isVersionStrict);
+      compiler = await this._tryCreateBinaryCompiler(compilerPlatformBinary, version, isVersionStrict, verifyCompiler);
 
       if (compiler) {
         return compiler;
       }
     }
 
-    return this._createWasmCompiler(version, isVersionStrict);
+    return this._createWasmCompiler(version, isVersionStrict, verifyCompiler);
   }
 
   private async _tryCreateNativeCompiler(
@@ -78,10 +82,10 @@ export class BaseCircomCompilerFactory {
     platform: CompilerPlatformBinary,
     version: string,
     isVersionStrict: boolean,
+    verifyCompiler: boolean,
   ): Promise<ICircomCompiler | undefined> {
     try {
-      const compilerInfo = await this._getBinaryCompiler(platform, version, isVersionStrict);
-
+      const compilerInfo = await this._getBinaryCompiler(platform, version, isVersionStrict, verifyCompiler);
       if (compilerInfo.isWasm) {
         return new WASMCircomCompiler(this._getWasmCompiler(compilerInfo.binaryPath));
       }
@@ -92,8 +96,17 @@ export class BaseCircomCompilerFactory {
     }
   }
 
-  private async _createWasmCompiler(version: string, isVersionStrict: boolean): Promise<ICircomCompiler> {
-    const compilerInfo = await this._getBinaryCompiler(CompilerPlatformBinary.WASM, version, isVersionStrict);
+  private async _createWasmCompiler(
+    version: string,
+    isVersionStrict: boolean,
+    verifyCompiler: boolean,
+  ): Promise<ICircomCompiler> {
+    const compilerInfo = await this._getBinaryCompiler(
+      CompilerPlatformBinary.WASM,
+      version,
+      isVersionStrict,
+      verifyCompiler,
+    );
 
     return new WASMCircomCompiler(this._getWasmCompiler(compilerInfo.binaryPath));
   }
@@ -130,12 +143,13 @@ export class BaseCircomCompilerFactory {
     platform: CompilerPlatformBinary,
     version: string,
     isVersionStrict: boolean,
+    verifyCompiler: boolean,
   ): Promise<CompilerInfo> {
     const compilersDir = await this._getCompilersDir();
     const downloader = CircomCompilerDownloader.getCircomCompilerDownloader(platform, compilersDir);
 
     if (!(await downloader.isCompilerDownloaded(version, isVersionStrict))) {
-      await downloader.downloadCompiler(version, isVersionStrict);
+      await downloader.downloadCompiler(version, isVersionStrict, verifyCompiler);
     }
 
     const compilerBinaryInfo = await downloader.getCompilerBinary(version, isVersionStrict);
