@@ -1,5 +1,5 @@
 {
-  "name": "hardhat-project-circuits-with-libraries",
+  "name": "hardhat-project-invalid-circuits",
   "version": "1.0.0",
   "scripts": {
     "compile": "hardhat compile --force",
