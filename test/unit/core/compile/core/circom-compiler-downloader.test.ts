@@ -1,3 +1,4 @@
+import os from "os";
 import fsExtra from "fs-extra";
 
 import { spy } from "sinon";
@@ -174,9 +175,11 @@ describe("CircomCompilerDownloader", () => {
       const compilersDir = getNormalizedFullPath(this.hre.config.paths.root, "compilers");
       await fsExtra.ensureDir(compilersDir);
 
-      // this test will fail if ran on Windows
+      const targetPlatform =
+        os.platform() === "win32" ? CompilerPlatformBinary.MACOS_ARM : CompilerPlatformBinary.WINDOWS_ARM;
+
       const circomCompilerDownloader = CircomCompilerDownloader.getCircomCompilerDownloader(
-        CompilerPlatformBinary.WINDOWS_ARM,
+        targetPlatform,
         compilersDir,
       );
 

@@ -160,10 +160,8 @@ describe("CircomCompilerFactory", () => {
         return "arm64";
       });
 
-      // this test will fail if ran on Windows
-      const platformStub = stub(os, "platform").callsFake(() => {
-        return "win32";
-      });
+      const mockPlatform = os.platform() === "win32" ? "darwin" : "win32";
+      const platformStub = stub(os, "platform").callsFake(() => mockPlatform);
 
       const compilerDir = path.join(os.homedir(), ".zkit", "compilers", LATEST_SUPPORTED_CIRCOM_VERSION);
       fsExtra.rmSync(compilerDir, { recursive: true, force: true });

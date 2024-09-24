@@ -70,6 +70,7 @@
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-ethers": "3.0.5",
+    "@solarity/chai-zkit": "^0.2.5",
     "@typechain/ethers-v6": "^0.5.1",
     "@typechain/hardhat": "^9.1.0",
     "@types/chai": "^4.3.12",
