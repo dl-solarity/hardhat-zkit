@@ -2,13 +2,15 @@ import os from "os";
 import path from "path";
 import fsExtra from "fs-extra";
 
-import { stub } from "sinon";
 import { expect } from "chai";
+import { before } from "mocha";
+import { stub, SinonStub } from "sinon";
 
 import { useEnvironment } from "../../../../helpers";
 import { getNormalizedFullPath } from "../../../../../src/utils/path-utils";
-import { CompileFlags, CompilerPlatformBinary, ICircomCompiler } from "../../../../../src/types/core";
+import { CompilerPlatformBinary, ICircomCompiler } from "../../../../../src/types/core";
 import {
+  BaseCircomCompilerFactory,
   BinaryCircomCompiler,
   CircomCompilerFactory,
   createCircomCompilerFactory,
@@ -17,16 +19,23 @@ import {
 
 import { CircomCompilerDownloader } from "../../../../../src/core/compiler/CircomCompilerDownloader";
 
+import { defaultCompileFlags } from "../../../../constants";
 import { LATEST_SUPPORTED_CIRCOM_VERSION } from "../../../../../src/constants";
 
 describe("CircomCompilerFactory", () => {
-  const defaultCompileFlags: CompileFlags = {
-    r1cs: true,
-    wasm: true,
-    c: false,
-    json: false,
-    sym: false,
-  };
+  let nativeCompilerStub: SinonStub;
+
+  before(() => {
+    nativeCompilerStub = stub(BaseCircomCompilerFactory.prototype, "_tryCreateNativeCompiler" as any).callsFake(
+      async () => {
+        return undefined;
+      },
+    );
+  });
+
+  after(() => {
+    nativeCompilerStub.restore();
+  });
 
   async function checkPlatformSpecificCompiler(osType: NodeJS.Platform) {
     const compilerDir = path.join(os.homedir(), ".zkit", "compilers", LATEST_SUPPORTED_CIRCOM_VERSION);
@@ -96,8 +105,6 @@ describe("CircomCompilerFactory", () => {
     });
 
     it("should create compiler for each platform properly", async function () {
-      this.timeout(50000);
-
       let archStub = stub(os, "arch").callsFake(() => {
         return "x64";
       });
@@ -129,8 +136,6 @@ describe("CircomCompilerFactory", () => {
     });
 
     it("should create amd compiler if arm compiler with specific version is unavailable", async function () {
-      this.timeout(30000);
-
       const archStub = stub(os, "arch").callsFake(() => {
         return "arm64";
       });
@@ -154,8 +159,6 @@ describe("CircomCompilerFactory", () => {
     });
 
     it("should create wasm compiler if the downloaded platform compiler is not working", async function () {
-      this.timeout(30000);
-
       const archStub = stub(os, "arch").callsFake(() => {
         return "arm64";
       });
@@ -178,7 +181,6 @@ describe("CircomCompilerFactory", () => {
     });
 
     it("should not download a platform compiler if there already is a wasm one", async function () {
-      this.timeout(30000);
       createCircomCompilerFactory();
 
       const compilerDir = path.join(os.homedir(), ".zkit", "compilers");

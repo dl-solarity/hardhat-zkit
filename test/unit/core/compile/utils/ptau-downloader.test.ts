@@ -9,8 +9,6 @@ describe("PtauDownloader", () => {
     useEnvironment("with-circuits", true);
 
     it("should download ptau file correctly", async function () {
-      this.timeout(30000);
-
       const ptauPath = this.hre.config.zkit.setupSettings.ptauDir;
       await PtauDownloader.downloadPtau(ptauPath, 16);
 

@@ -19,8 +19,6 @@ describe("CircomCompilerDownloader", () => {
     useEnvironment("with-circuits");
 
     it("should correctly identify whether the latest compatible compiler is downloaded", async function () {
-      this.timeout(30000);
-
       cleanUp(this.hre.config.paths.root);
 
       const compilersDir = getNormalizedFullPath(this.hre.config.paths.root, "compilers");
@@ -39,8 +37,6 @@ describe("CircomCompilerDownloader", () => {
     });
 
     it("should correctly identify whether the specific compiler version is downloaded", async function () {
-      this.timeout(30000);
-
       const compilersDir = getNormalizedFullPath(this.hre.config.paths.root, "compilers");
       await fsExtra.ensureDir(compilersDir);
 
@@ -170,8 +166,6 @@ describe("CircomCompilerDownloader", () => {
     });
 
     it("should throw an error if the downloaded compiler is not working", async function () {
-      this.timeout(30000);
-
       const compilersDir = getNormalizedFullPath(this.hre.config.paths.root, "compilers");
       await fsExtra.ensureDir(compilersDir);
 

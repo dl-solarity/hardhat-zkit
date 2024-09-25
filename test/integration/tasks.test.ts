@@ -5,6 +5,8 @@ import { execSync } from "child_process";
 
 import "@solarity/chai-zkit";
 import { expect } from "chai";
+import { before } from "mocha";
+import { stub, SinonStub } from "sinon";
 
 import { HardhatUserConfig } from "hardhat/config";
 
@@ -24,11 +26,26 @@ import { getNormalizedFullPath } from "../../src/utils/path-utils";
 import { getCompileCacheEntry, getSetupCacheEntry } from "../utils";
 
 import { HardhatZKit } from "../../src/types/hardhat-zkit";
+import { BaseCircomCompilerFactory } from "../../src/core";
 import { CircomCompilerDownloader } from "../../src/core/compiler/CircomCompilerDownloader";
 
 describe("ZKit tasks", async function () {
   const circuitNames = ["Multiplier2", "Multiplier3Arr"];
   const sourceNames = ["circuits/main/mul2.circom", "circuits/main/Multiplier3Arr.circom"];
+
+  let nativeCompilerStub: SinonStub;
+
+  before(() => {
+    nativeCompilerStub = stub(BaseCircomCompilerFactory.prototype, "_tryCreateNativeCompiler" as any).callsFake(
+      async () => {
+        return undefined;
+      },
+    );
+  });
+
+  after(() => {
+    nativeCompilerStub.restore();
+  });
 
   function getZkitCircuitFullPaths(config: HardhatUserConfig): string[] {
     const circuitFullPaths: string[] = [];
@@ -88,8 +105,6 @@ describe("ZKit tasks", async function () {
       useEnvironment("with-circuits", true);
 
       it("should correctly compile circuits", async function () {
-        this.timeout(30000);
-
         await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
 
         const cacheFullPath: string = getNormalizedFullPath(this.hre.config.paths.root, "cache");
@@ -111,8 +126,6 @@ describe("ZKit tasks", async function () {
       });
 
       it("should correctly compile circuits with task arguments", async function () {
-        this.timeout(30000);
-
         await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE }, { json: true, c: true });
 
         const cacheFullPath: string = getNormalizedFullPath(this.hre.config.paths.root, "cache");

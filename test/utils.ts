@@ -1,9 +1,11 @@
-import { CompileFlags, ContributionSettings, ResolvedFileData } from "../src/types/core";
-import { CompileCacheEntry, SetupCacheEntry } from "../src/types/cache";
-import { getNormalizedFullPath } from "../src/utils/path-utils";
-import { getFileHash } from "../src/utils/utils";
-import { CircomFilesParser } from "../src/core";
 import fsExtra from "fs-extra";
+
+import { CircomFilesParser } from "../src/core";
+import { getFileHash } from "../src/utils/utils";
+import { getNormalizedFullPath } from "../src/utils/path-utils";
+
+import { CompileCacheEntry, SetupCacheEntry } from "../src/types/cache";
+import { CompileFlags, ContributionSettings, ResolvedFileData } from "../src/types/core";
 import { defaultCompileFlags, defaultContributionSettings } from "./constants";
 
 export async function getCompileCacheEntry(
