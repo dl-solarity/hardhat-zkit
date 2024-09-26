@@ -1,5 +1,6 @@
 /cache
 /artifacts
 
+compilers
 contracts/verifiers
 zkit

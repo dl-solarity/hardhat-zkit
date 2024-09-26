@@ -1,6 +1,7 @@
 import path from "path";
 import os from "os";
 import fs from "fs";
+import semver from "semver";
 import fsExtra from "fs-extra";
 import { v4 as uuid } from "uuid";
 
@@ -11,7 +12,7 @@ import { HardhatZKitError } from "../../errors";
 import { CIRCUIT_ARTIFACT_VERSION, NODE_MODULES } from "../../constants";
 import { Reporter } from "../../reporter";
 
-import { getHighestVersion, isVersionValid, isVersionHigherOrEqual } from "../compiler/versioning";
+import { getHighestVersion, isVersionValid } from "../compiler/versioning";
 import { getNormalizedFullPath, renameFilesRecursively, readDirRecursively } from "../../utils/path-utils";
 
 import { ZKitConfig } from "../../types/zkit-config";
@@ -59,7 +60,7 @@ export class CompilationProcessor {
       let version = highestCircomVersion;
 
       if (this._zkitConfig.compilerVersion && isVersionValid(this._zkitConfig.compilerVersion)) {
-        if (!isVersionHigherOrEqual(this._zkitConfig.compilerVersion, highestCircomVersion)) {
+        if (!semver.gte(this._zkitConfig.compilerVersion, highestCircomVersion)) {
           throw new HardhatZKitError(
             `Unable to compile a circuit with Circom version ${highestCircomVersion} using compiler version ${this._zkitConfig.compilerVersion} specified in the config`,
           );

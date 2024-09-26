@@ -2,12 +2,12 @@ import fsExtra from "fs-extra";
 
 import { expect } from "chai";
 
-import { getProjectRootPath, useEnvironment } from "../../../helpers";
-import { getNormalizedFullPath } from "../../../../src/utils/path-utils";
-import { WASMCircomCompiler } from "../../../../src/core";
-import { NODE_MODULES } from "../../../../src/constants";
+import { getProjectRootPath, useEnvironment } from "@test-helpers";
+import { getNormalizedFullPath } from "@src/utils/path-utils";
+import { CircomCompilerFactory, createCircomCompilerFactory, WASMCircomCompiler } from "@src/core";
 
-import { CompileFlags } from "../../../../src/types/core";
+import { NODE_MODULES } from "@src/constants";
+import { CompileFlags } from "@src/types/core";
 
 describe("WASMCircomCompiler", () => {
   const defaultCompileFlags: CompileFlags = {
@@ -68,18 +68,33 @@ describe("WASMCircomCompiler", () => {
       );
       const errorFileFullPath: string = getNormalizedFullPath(artifactsFullPath, "errors.log");
 
+      const compilationArgs = {
+        circuitFullPath,
+        artifactsFullPath,
+        errorFileFullPath,
+        linkLibraries: [],
+        compileFlags: defaultCompileFlags,
+        quiet: true,
+      };
+
       const reason: string = "Compilation failed.\nHardhatZKitError: Error during compiler execution. Exit code: 1.";
 
-      await expect(
-        circomCompiler.compile({
-          circuitFullPath,
-          artifactsFullPath,
-          errorFileFullPath,
-          linkLibraries: [],
-          compileFlags: defaultCompileFlags,
-          quiet: true,
-        }),
-      ).to.be.rejectedWith(reason);
+      await expect(circomCompiler.compile(compilationArgs)).to.be.rejectedWith(reason);
+
+      createCircomCompilerFactory();
+      const platformCompiler = await CircomCompilerFactory!.createCircomCompiler("2.0.0", false);
+
+      await expect(platformCompiler.compile(compilationArgs)).to.be.rejected;
+
+      try {
+        await platformCompiler.compile(compilationArgs);
+      } catch (error: any) {
+        const message = error.message;
+
+        expect(message).to.include("Compilation failed.");
+        expect(message).to.include("Command failed");
+        expect(message).to.include("No main specified in the project structure");
+      }
     });
 
     it("should correctly throw error with quiet=false", async function () {
@@ -123,7 +138,7 @@ describe("WASMCircomCompiler", () => {
       );
     });
 
-    it("should correctly compile circuit with library inclue", async function () {
+    it("should correctly compile circuit with library include", async function () {
       const circuitFullPath: string = getNormalizedFullPath(this.hre.config.paths.root, "circuits/hash2.circom");
       const artifactsFullPath: string = getNormalizedFullPath(
         this.hre.config.paths.root,

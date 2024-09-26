@@ -1,4 +1,4 @@
-pragma circom 2.0.0;
+pragma circom 2.1.9;
 
 template Multiplier2(){
    signal input in1;

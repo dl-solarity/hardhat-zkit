@@ -1,6 +1,6 @@
 pragma circom 2.0.0;
 
-include "circomlib/circuits/poseidon.circom";
+include "/absolute/path/to/circuit.circom";
 
 template Hash2(){
    signal input in1;

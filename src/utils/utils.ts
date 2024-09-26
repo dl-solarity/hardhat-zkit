@@ -23,60 +23,67 @@ export async function downloadFile(
   onFinishReporter: () => void,
   onErrorReporter: () => void,
 ): Promise<boolean> {
-  await fs.ensureFile(file);
+  try {
+    await fs.ensureFile(file);
+    const fileStream = fs.createWriteStream(file);
 
-  const fileStream = fs.createWriteStream(file);
-
-  return new Promise((resolve, reject) => {
-    const handleRequest = (currentUrl: string) => {
-      const request = https.get(currentUrl, (response) => {
-        if (response.statusCode === 302 || response.statusCode === 301) {
-          const redirectUrl = response.headers.location;
-
-          if (redirectUrl) {
-            handleRequest(redirectUrl);
-          } else {
-            onErrorReporter();
-            fs.unlink(file, () => reject(new Error("Invalid redirect response")));
+    return new Promise((resolve) => {
+      const handleRequest = (currentUrl: string) => {
+        const request = https.get(currentUrl, (response) => {
+          if (response.statusCode === 302 || response.statusCode === 301) {
+            const redirectUrl = response.headers.location;
+            if (redirectUrl) {
+              handleRequest(redirectUrl);
+            } else {
+              onErrorReporter();
+              fs.unlink(file, () => resolve(false));
+            }
+            return;
           }
 
-          return;
-        }
-
-        if (response.statusCode !== 200) {
-          onErrorReporter();
-          fs.unlink(file, () => reject(new Error(`Failed to download file with status code: ${response.statusCode}`)));
-
-          return;
-        }
-
-        const totalSize = parseInt(response.headers["content-length"] || "0", 10);
-
-        Reporter!.reportStartFileDownloadingWithProgressBar(totalSize, 0);
-
-        response.pipe(fileStream);
-
-        response
-          .on("data", (chunk) => {
-            Reporter!.updateProgressBarValue(chunk.length);
-          })
-          .on("error", (err) => {
+          if (response.statusCode !== 200) {
             onErrorReporter();
-            fs.unlink(file, () => reject(err));
-          })
-          .on("end", () => {
-            onFinishReporter();
-            resolve(true);
-          });
-      });
+            fs.unlink(file, () => resolve(false));
+            return;
+          }
 
-      request.on("error", (err) => {
-        fs.unlink(file, () => reject(err));
-      });
-    };
+          const totalSize = parseInt(response.headers["content-length"] || "0", 10);
+          Reporter!.reportStartFileDownloadingWithProgressBar(totalSize, 0);
 
-    handleRequest(url);
-  });
+          response.pipe(fileStream);
+
+          response
+            .on("data", (chunk) => {
+              Reporter!.updateProgressBarValue(chunk.length);
+            })
+            .on("error", () => {
+              onErrorReporter();
+              fs.unlink(file, () => resolve(false));
+            });
+
+          fileStream
+            .on("finish", () => {
+              fileStream.close(() => {
+                onFinishReporter();
+                resolve(true);
+              });
+            })
+            .on("error", () => {
+              onErrorReporter();
+              fs.unlink(file, () => resolve(false));
+            });
+        });
+
+        request.on("error", () => {
+          fs.unlink(file, () => resolve(false));
+        });
+      };
+
+      handleRequest(url);
+    });
+  } catch (error: any) {
+    return false;
+  }
 }
 
 export async function execCall(execFile: string, callArgs: string[]): Promise<ExecCallResult> {

@@ -2,6 +2,7 @@ import os from "os";
 import path from "path";
 import fs from "fs-extra";
 import https from "https";
+import semver from "semver";
 import { promisify } from "util";
 import { execFile } from "child_process";
 
@@ -18,7 +19,7 @@ import { HardhatZKitError } from "../../errors";
 import { CompilerInfo, CompilerPlatformBinary } from "../../types/core";
 
 import { downloadFile } from "../../utils/utils";
-import { getHighestVersion, isVersionHigherOrEqual } from "./versioning";
+import { getHighestVersion } from "./versioning";
 
 import { MultiProcessMutex } from "hardhat/internal/util/multi-process-mutex";
 
@@ -67,14 +68,14 @@ export class CircomCompilerDownloader {
       return (await fs.pathExists(downloadPath)) || fs.pathExists(downloadPathWasm);
     }
 
-    const latestDownloadedVersion = await this._getLatestDownloadedCircomVersion();
+    const latestDownloadedVersion = this._getLatestDownloadedCircomVersion();
 
-    return isVersionHigherOrEqual(latestDownloadedVersion, version);
+    return semver.gte(latestDownloadedVersion, version);
   }
 
   public async getCompilerBinary(version: string, isVersionStrict: boolean): Promise<CompilerInfo> {
     if (!isVersionStrict) {
-      version = await this._getLatestDownloadedCircomVersion();
+      version = this._getLatestDownloadedCircomVersion();
 
       if (!version || version === "0.0.0") {
         throw new HardhatZKitError("No latest compiler found");
@@ -84,18 +85,18 @@ export class CircomCompilerDownloader {
     const compilerBinaryPath = this._getCompilerDownloadPath(version);
     const wasmCompilerBinaryPath = this._getWasmCompilerDownloadPath(version);
 
-    if (await fs.pathExists(compilerBinaryPath)) {
-      return { binaryPath: compilerBinaryPath, version: version, isWasm: false };
-    }
-
     if (await fs.pathExists(wasmCompilerBinaryPath)) {
       return { binaryPath: wasmCompilerBinaryPath, version: version, isWasm: true };
+    }
+
+    if (await fs.pathExists(compilerBinaryPath)) {
+      return { binaryPath: compilerBinaryPath, version: version, isWasm: false };
     }
 
     throw new HardhatZKitError(`Trying to get a Circom compiler v${version} before it was downloaded`);
   }
 
-  public async downloadCompiler(version: string, isVersionStrict: boolean): Promise<void> {
+  public async downloadCompiler(version: string, isVersionStrict: boolean, verifyCompiler: boolean): Promise<void> {
     await this._mutex.use(async () => {
       const versionToDownload = isVersionStrict ? version : await this._getLatestCircomVersion();
 
@@ -110,25 +111,27 @@ export class CircomCompilerDownloader {
       try {
         downloadPath = await this._downloadCompiler(versionToDownload);
       } catch (error: any) {
-        throw new HardhatZKitError(error);
+        throw new HardhatZKitError(error.message);
       }
 
-      await this._postProcessCompilerDownload(downloadPath);
+      if (verifyCompiler) {
+        await this._postProcessCompilerDownload(downloadPath);
+      }
     });
   }
 
-  private async _getLatestDownloadedCircomVersion(): Promise<string> {
+  private _getLatestDownloadedCircomVersion(): string {
     try {
-      const entries = await fs.promises.readdir(this._compilersDir, { withFileTypes: true });
+      const entries = fs.readdirSync(this._compilersDir, { withFileTypes: true });
 
       const versions = entries
-        .filter(async (entry) => {
+        .filter((entry) => {
           if (!entry.isDirectory()) {
             return false;
           }
 
           const dirPath = path.join(this._compilersDir, entry.name);
-          const files = await fs.promises.readdir(dirPath);
+          const files = fs.readdirSync(dirPath);
 
           return files.includes(this._platform) || files.includes("circom.wasm");
         })
