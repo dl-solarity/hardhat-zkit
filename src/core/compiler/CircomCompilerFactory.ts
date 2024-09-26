@@ -1,6 +1,7 @@
 import os from "os";
 import path from "path";
 import fs from "fs-extra";
+import semver from "semver";
 import { promisify } from "util";
 import { exec } from "child_process";
 
@@ -10,8 +11,6 @@ import { LATEST_SUPPORTED_CIRCOM_VERSION, OLDEST_SUPPORTED_ARM_CIRCOM_VERSION } 
 
 import { BinaryCircomCompiler, WASMCircomCompiler } from "./CircomCompiler";
 import { CircomCompilerDownloader } from "./CircomCompilerDownloader";
-
-import { isVersionHigherOrEqual } from "./versioning";
 
 import { CompilerInfo, CompilerPlatformBinary, ICircomCompiler, NativeCompiler } from "../../types/core";
 
@@ -24,7 +23,7 @@ export class BaseCircomCompilerFactory {
     isVersionStrict: boolean,
     verifyCompiler: boolean = true,
   ): Promise<ICircomCompiler> {
-    if (!isVersionHigherOrEqual(LATEST_SUPPORTED_CIRCOM_VERSION, version)) {
+    if (!semver.gte(LATEST_SUPPORTED_CIRCOM_VERSION, version)) {
       throw new HardhatZKitError(`Unsupported Circom compiler version - ${version}. Please provide another version.`);
     }
 
@@ -38,11 +37,7 @@ export class BaseCircomCompilerFactory {
 
     // Utilize binary translators like Rosetta (macOS) or Prism (Windows)
     // to run x64 binaries on arm64 systems when no arm64 versions are available.
-    if (
-      isVersionStrict &&
-      os.arch() === "arm64" &&
-      !isVersionHigherOrEqual(version, OLDEST_SUPPORTED_ARM_CIRCOM_VERSION)
-    ) {
+    if (isVersionStrict && os.arch() === "arm64" && !semver.gte(version, OLDEST_SUPPORTED_ARM_CIRCOM_VERSION)) {
       compilerPlatformBinary = CircomCompilerDownloader.getCompilerPlatformBinary("x64");
     }
 
@@ -69,7 +64,7 @@ export class BaseCircomCompilerFactory {
 
     const isValidVersion = isVersionStrict
       ? nativeCompiler.version === version
-      : isVersionHigherOrEqual(nativeCompiler.version, version);
+      : semver.gte(nativeCompiler.version, version);
 
     if (isValidVersion) {
       Reporter!.reportCompilerVersion(nativeCompiler.version);
@@ -86,6 +81,7 @@ export class BaseCircomCompilerFactory {
   ): Promise<ICircomCompiler | undefined> {
     try {
       const compilerInfo = await this._getBinaryCompiler(platform, version, isVersionStrict, verifyCompiler);
+
       if (compilerInfo.isWasm) {
         return new WASMCircomCompiler(this._getWasmCompiler(compilerInfo.binaryPath));
       }

@@ -47,7 +47,13 @@ module.exports = {
       },
     ],
     "no-multiple-empty-lines": [2, { max: 1, maxEOF: 0, maxBOF: 0 }],
+    "import/no-named-as-default-member": "off",
     "@typescript-eslint/no-non-null-assertion": "off",
     "@typescript-eslint/no-explicit-any": "off",
+  },
+  settings: {
+    "import/resolver": {
+        "typescript": {},
+    },
   },
 };

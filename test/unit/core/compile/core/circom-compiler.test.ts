@@ -2,12 +2,12 @@ import fsExtra from "fs-extra";
 
 import { expect } from "chai";
 
-import { getProjectRootPath, useEnvironment } from "../../../../helpers";
-import { getNormalizedFullPath } from "../../../../../src/utils/path-utils";
-import { CircomCompilerFactory, createCircomCompilerFactory, WASMCircomCompiler } from "../../../../../src/core";
-import { NODE_MODULES } from "../../../../../src/constants";
+import { getProjectRootPath, useEnvironment } from "@test-helpers";
+import { getNormalizedFullPath } from "@src/utils/path-utils";
+import { CircomCompilerFactory, createCircomCompilerFactory, WASMCircomCompiler } from "@src/core";
 
-import { CompileFlags } from "../../../../../src/types/core";
+import { NODE_MODULES } from "@src/constants";
+import { CompileFlags } from "@src/types/core";
 
 describe("WASMCircomCompiler", () => {
   const defaultCompileFlags: CompileFlags = {

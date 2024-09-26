@@ -4,9 +4,9 @@ import { extendConfig } from "hardhat/config";
 
 import { useEnvironment } from "../../helpers";
 
-import { zkitConfigExtender } from "../../../src/config/config";
+import { zkitConfigExtender } from "@src/config/config";
 
-import { ZKitConfig } from "../../../src/types/zkit-config";
+import { ZKitConfig } from "@src/types/zkit-config";
 
 describe("config", () => {
   describe("loading", () => {

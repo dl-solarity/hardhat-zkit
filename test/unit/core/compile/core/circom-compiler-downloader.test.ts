@@ -4,13 +4,13 @@ import fsExtra from "fs-extra";
 import { spy } from "sinon";
 import { expect } from "chai";
 
-import { cleanUp, useEnvironment } from "../../../../helpers";
-import { getNormalizedFullPath } from "../../../../../src/utils/path-utils";
+import { cleanUp, useEnvironment } from "@test-helpers";
+import { getNormalizedFullPath } from "@src/utils/path-utils";
 
-import { CompilerPlatformBinary } from "../../../../../src/types/core";
-import { createReporter, Reporter } from "../../../../../src/reporter";
-import { LATEST_SUPPORTED_CIRCOM_VERSION } from "../../../../../src/constants";
-import { CircomCompilerDownloader } from "../../../../../src/core/compiler/CircomCompilerDownloader";
+import { CompilerPlatformBinary } from "@src/types/core";
+import { createReporter, Reporter } from "@src/reporter";
+import { LATEST_SUPPORTED_CIRCOM_VERSION } from "@src/constants";
+import { CircomCompilerDownloader } from "@src/core/compiler/CircomCompilerDownloader";
 
 describe("CircomCompilerDownloader", () => {
   createReporter(true);

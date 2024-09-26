@@ -1,8 +1,8 @@
 import fsExtra from "fs-extra";
 import { expect } from "chai";
 
-import { PtauDownloader } from "../../../../../src/core";
-import { useEnvironment } from "../../../../helpers";
+import { PtauDownloader } from "@src/core";
+import { useEnvironment } from "@test-helpers";
 
 describe("PtauDownloader", () => {
   describe("downloadPtau", () => {

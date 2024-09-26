@@ -2,6 +2,7 @@ import os from "os";
 import path from "path";
 import fs from "fs-extra";
 import https from "https";
+import semver from "semver";
 import { promisify } from "util";
 import { execFile } from "child_process";
 
@@ -18,7 +19,7 @@ import { HardhatZKitError } from "../../errors";
 import { CompilerInfo, CompilerPlatformBinary } from "../../types/core";
 
 import { downloadFile } from "../../utils/utils";
-import { getHighestVersion, isVersionHigherOrEqual } from "./versioning";
+import { getHighestVersion } from "./versioning";
 
 import { MultiProcessMutex } from "hardhat/internal/util/multi-process-mutex";
 
@@ -69,7 +70,7 @@ export class CircomCompilerDownloader {
 
     const latestDownloadedVersion = this._getLatestDownloadedCircomVersion();
 
-    return isVersionHigherOrEqual(latestDownloadedVersion, version);
+    return semver.gte(latestDownloadedVersion, version);
   }
 
   public async getCompilerBinary(version: string, isVersionStrict: boolean): Promise<CompilerInfo> {
