@@ -188,6 +188,8 @@ component main = Multiplier();
 <td>
 
 ```ts
+// file location: ./scripts/multiplier.test.ts
+
 import { zkit } from "hardhat"; // hardhat-zkit plugin
 import { expect } from "chai"; // chai-zkit extension
 import { Multiplier } from "@zkit"; // zktype circuit-object
@@ -224,7 +226,9 @@ npx hardhat zkit make
 
 This command will compile the circuit leveraging `wasm`-based Circom compiler, download the necessary `ptau` file regarding the number of circuit's constraints, build the required `zkey` and `vkey` files, and generate TypeScript object wrappers to enable full typization of signals and ZK proofs.
 
-Afterward, you may run the provided hardhat script.
+Afterward, you may run the provided hardhat script via `npx hardhat run "./scripts/multiplier.test.ts"`.
+
+> Check out the [Medium blog post](https://medium.com/@Arvolear/introducing-hardhat-zkit-how-did-you-even-use-circom-before-a7b463a5575b) to learn more.
 
 ### API reference
 
