@@ -11,6 +11,14 @@ import { ZKitConfig } from "../../types/zkit-config";
 import { ICircuitArtifacts } from "../../types/artifacts/circuit-artifacts";
 import { CircomResolvedFileInfo, CompileFlags } from "../../types/core";
 
+/**
+ * This class is responsible for determining the list of files and circuits that need to be compiled.
+ * It selects files by applying various filtering criteria and utilizes cached parameters from previous compilations
+ * to determine whether a specific circuit requires recompilation.
+ *
+ * By leveraging caching and filtering, this class optimizes the compilation process, ensuring only necessary
+ * circuits are recompiled, thus improving performance and reducing redundant work.
+ */
 export class CompilationFilesResolver {
   private readonly _zkitConfig: ZKitConfig;
   private readonly _projectRoot: string;
@@ -24,6 +32,25 @@ export class CompilationFilesResolver {
     this._projectRoot = hardhatConfig.paths.root;
   }
 
+  /**
+   * Returns the information about circuit files that need to be compiled based on the compilation flags
+   * and whether the circuit files or their dependencies have changed since the last compilation.
+   *
+   * The function follows these steps to determine the list of files to be compiled:
+   * 1. Finds all `.circom` files within the circuits directory specified in the configuration
+   * 2. Converts the discovered paths into the `sourceName` format, i.e.,
+   *    relative paths with respect to the circuits directory
+   * 3. Filters the paths based on the compilation settings filtering parameters provided in the configuration
+   * 4. Builds a {@link DependencyGraph} by resolving all dependencies using the {@link CircomFilesResolver}
+   * 5. Further filters {@link CircomResolvedFileInfo} objects, excluding files that do not have a main component
+   *    or are not located within the specified circuits directory
+   * 6. If the `force` flag is not provided, checks whether the compilation is necessary for the identified files
+   * 7. Returns an array of {@link CircomResolvedFileInfo} objects representing the files that need to be compiled
+   *
+   * @param compileFlags The flags to be used during the next compilation
+   * @param force Whether to force recompilation
+   * @returns An array of {@link CircomResolvedFileInfo} objects
+   */
   public async getResolvedFilesToCompile(
     compileFlags: CompileFlags,
     force: boolean,

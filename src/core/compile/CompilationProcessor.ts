@@ -25,6 +25,15 @@ import {
   CircomResolvedFileInfo,
 } from "../../types/core";
 
+/**
+ * This class handles the entire process of circuit compilation, from configuring the appropriate `circom` compiler
+ * to managing and organizing the compilation artifact files. The class ensures the correct version and architecture
+ * of the `circom` compiler is used based on the user's operating system, and it manages the compilation lifecycle,
+ * including artifact generation and file handling.
+ *
+ * This class works alongside other classes such as the {@link CircomCompilerFactory},
+ * {@link ICircuitArtifacts | ICircuitArtifacts}.
+ */
 export class CompilationProcessor {
   private readonly _zkitConfig: ZKitConfig;
   private readonly _nodeModulesPath: string;
@@ -45,10 +54,26 @@ export class CompilationProcessor {
     ]);
   }
 
+  /**
+   * Function responsible for compiling circuits, with relevant information passed as a parameter.
+   *
+   * The compilation process involves the following steps:
+   * 1. Identifies the highest pragma version among the passed {@link CircomResolvedFileInfo} objects
+   * 2. Creates a compiler object with the required version and architecture using {@link CircomCompilerFactory}
+   * 3. Creates an array of {@link CompilationInfo} objects,
+   *    containing all necessary information for subsequent compilation steps
+   * 4. Compiles the circuits using the created compiler object, with all results written to a temporary directory
+   * 5. Upon successful compilation, all files from the temporary directory are moved to the artifact directory
+   * 6. Saves the artifact information using {@link ICircuitArtifacts | CircuitArtifacts}
+   *
+   * @param filesInfoToCompile Information about circuit files needed for compilation
+   */
   public async compile(filesInfoToCompile: CircomResolvedFileInfo[]) {
     const tempDir: string = path.join(os.tmpdir(), ".zkit", uuid());
 
     try {
+      // Generates a temporary directory, used as a buffer for files to prevent overwriting
+      // previous compilation artifacts in case the current compilation fails
       fsExtra.mkdirSync(tempDir, { recursive: true });
 
       Reporter!.verboseLog("compilation-processor", "Compilation temp directory: %s", [tempDir]);
@@ -70,6 +95,7 @@ export class CompilationProcessor {
         version = this._zkitConfig.compilerVersion;
       }
 
+      // Ensure that the CircomCompilerFactory object is properly instantiated before interacting with it
       createCircomCompilerFactory();
       const compiler = await CircomCompilerFactory!.createCircomCompiler(version, isVersionStrict);
 
@@ -97,6 +123,8 @@ export class CompilationProcessor {
         info.circuitName,
         info.circuitFileName,
       );
+
+      // Path to the file where errors encountered during compilation will be logged
       const errorsFilePath: string = getNormalizedFullPath(info.tempArtifactsPath, "errors.log");
 
       fsExtra.mkdirSync(info.tempArtifactsPath, { recursive: true });
@@ -131,6 +159,7 @@ export class CompilationProcessor {
       }
 
       if (info.circuitFileName !== info.circuitName) {
+        // Renaming generated files after compilation to match the circuit template name rather than the file name
         renameFilesRecursively(info.tempArtifactsPath, info.circuitFileName, info.circuitName);
       }
 
@@ -246,7 +275,7 @@ export class CompilationProcessor {
       return BigInt(`0x${buffer.reverse().toString("hex")}`);
     };
 
-    /// @dev https://github.com/iden3/r1csfile/blob/d82959da1f88fbd06db0407051fde94afbf8824a/doc/r1cs_bin_format.md#format-of-the-file
+    // https://github.com/iden3/r1csfile/blob/d82959da1f88fbd06db0407051fde94afbf8824a/doc/r1cs_bin_format.md#format-of-the-file
     const numberOfSections = readBytes(8, 4);
     let sectionStart = 12;
 
@@ -254,7 +283,7 @@ export class CompilationProcessor {
       const sectionType = Number(readBytes(sectionStart, 4));
       const sectionSize = Number(readBytes(sectionStart + 4, 8));
 
-      /// @dev Reading header section
+      // Reading header section
       if (sectionType == 1) {
         const totalConstraintsOffset = 4 + 8 + 4 + 32 + 4 + 4 + 4 + 4 + 8;
 

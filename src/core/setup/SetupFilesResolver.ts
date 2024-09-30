@@ -11,6 +11,15 @@ import { FileFilterSettings, SetupSettings, ZKitConfig } from "../../types/zkit-
 import { CircuitArtifact, CompilerOutputFileInfo, ICircuitArtifacts } from "../../types/artifacts/circuit-artifacts";
 import { CircuitSetupInfo } from "../../types/core";
 
+/**
+ * Class responsible for resolving setup files for circuits in a given project.
+ *
+ * The SetupFilesResolver manages the retrieval and filtering of circuit setup information based on
+ * the specified setup settings. It interacts with circuit artifacts to gather necessary data,
+ * ensuring that the setup process is efficient and up-to-date. The class provides methods to determine
+ * which circuits require setup and handles caching to optimize performance. It integrates with the
+ * circuit setup cache to track changes in files and determine if a setup is necessary.
+ */
 export class SetupFilesResolver {
   private readonly _zkitConfig: ZKitConfig;
   private readonly _projectRoot: string;
@@ -23,6 +32,21 @@ export class SetupFilesResolver {
     this._projectRoot = hardhatConfig.paths.root;
   }
 
+  /**
+   * Retrieves information about circuits that need to be set up based on the provided setup settings.
+   *
+   * This method follows the execution flow:
+   * 1. Gathers all fully qualified names of the circuits from the circuit artifacts
+   * 2. Creates an array of circuit setup information by fetching the setup info for all circuits
+   * 3. If the force flag is not set, filters out circuits that have not changed since the last setup
+   *    based on their content hash and contribution settings
+   * 4. Applies additional filtering based on the provided setup settings to finalize the list of circuits
+   * 5. Returns an array of {@link CircuitSetupInfo} objects
+   *
+   * @param setupSettings The settings that dictate how the circuit setup should be performed
+   * @param force A boolean flag that, when true, skips filtering by file changes during setup
+   * @returns An array of {@link CircuitSetupInfo} objects containing information about the circuits to be set up
+   */
   public async getCircuitsInfoToSetup(setupSettings: SetupSettings, force: boolean): Promise<CircuitSetupInfo[]> {
     const allFullyQualifiedNames: string[] = await this._circuitArtifacts.getAllCircuitFullyQualifiedNames();
 

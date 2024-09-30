@@ -90,6 +90,8 @@ const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfi
     env.config,
   );
 
+  // Flags for specifying the necessary configurations during the setup process.
+  // R1CS, Wasm, and sym flags are mandatory
   const compileFlags: CompileFlags = {
     r1cs: true,
     wasm: true,
@@ -165,6 +167,8 @@ const setup: ActionType<SetupTaskConfig> = async (taskArgs: SetupTaskConfig, env
   if (circuitSetupInfoArr.length > 0) {
     let ptauDir = env.config.zkit.setupSettings.ptauDir;
 
+    // If `ptauDir` is not specified in the configuration,
+    // the `.zkit/ptau` folder in the user's home directory is used as the default location
     if (ptauDir) {
       ptauDir = path.isAbsolute(ptauDir) ? ptauDir : getNormalizedFullPath(env.config.paths.root, ptauDir);
     } else {

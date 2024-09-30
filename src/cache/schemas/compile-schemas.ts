@@ -1,6 +1,12 @@
 import { BigIntOrNestedArray } from "@distributedlab/circom-parser";
 import { z } from "zod";
 
+/**
+ * {@link https://github.com/colinhacks/zod | Zod} schema for defining a recursive type {@link BigIntOrNestedArray}.
+ *
+ * This schema allows for either a `BigInt` value or an array that contains
+ * other `BigInt` values or nested arrays of `BigInt` values, recursively.
+ */
 export const BigIntOrNestedArraySchema: z.ZodType<BigIntOrNestedArray> = z.lazy(() =>
   z.union([z.bigint(), BigIntOrNestedArraySchema.array()]),
 );

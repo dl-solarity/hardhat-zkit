@@ -1,4 +1,4 @@
-import fs from "fs-extra";
+import fsExtra from "fs-extra";
 import https from "https";
 import { exec } from "child_process";
 
@@ -9,13 +9,13 @@ import { Reporter } from "../reporter";
 import { ExecCallResult } from "../types/utils";
 
 /**
- * Downloads a file from the specified URL.
+ * Downloads a file from the specified URL
  *
- * @param {string} file - The path to save the file to.
- * @param {string} url - The URL to download the file from.
- * @param {Function} onFinishReporter - The Reporter callback function for when the download finishes.
- * @param {Function} onErrorReporter - The Reporter callback function for when an error occurs during the download.
- * @returns {Promise<boolean>} Whether the file was downloaded successfully.
+ * @param file The path to save the file to
+ * @param url The URL to download the file from
+ * @param onFinishReporter The Reporter callback function for when the download finishes
+ * @param onErrorReporter The Reporter callback function for when an error occurs during the download
+ * @returns Whether the file was downloaded successfully
  */
 export async function downloadFile(
   file: string,
@@ -24,8 +24,8 @@ export async function downloadFile(
   onErrorReporter: () => void,
 ): Promise<boolean> {
   try {
-    await fs.ensureFile(file);
-    const fileStream = fs.createWriteStream(file);
+    await fsExtra.ensureFile(file);
+    const fileStream = fsExtra.createWriteStream(file);
 
     return new Promise((resolve) => {
       const handleRequest = (currentUrl: string) => {
@@ -36,14 +36,14 @@ export async function downloadFile(
               handleRequest(redirectUrl);
             } else {
               onErrorReporter();
-              fs.unlink(file, () => resolve(false));
+              fsExtra.unlink(file, () => resolve(false));
             }
             return;
           }
 
           if (response.statusCode !== 200) {
             onErrorReporter();
-            fs.unlink(file, () => resolve(false));
+            fsExtra.unlink(file, () => resolve(false));
             return;
           }
 
@@ -58,7 +58,7 @@ export async function downloadFile(
             })
             .on("error", () => {
               onErrorReporter();
-              fs.unlink(file, () => resolve(false));
+              fsExtra.unlink(file, () => resolve(false));
             });
 
           fileStream
@@ -70,12 +70,12 @@ export async function downloadFile(
             })
             .on("error", () => {
               onErrorReporter();
-              fs.unlink(file, () => resolve(false));
+              fsExtra.unlink(file, () => resolve(false));
             });
         });
 
         request.on("error", () => {
-          fs.unlink(file, () => resolve(false));
+          fsExtra.unlink(file, () => resolve(false));
         });
       };
 
@@ -99,5 +99,5 @@ export async function execCall(execFile: string, callArgs: string[]): Promise<Ex
 }
 
 export function getFileHash(filePath: string): string {
-  return createNonCryptographicHashBasedIdentifier(Buffer.from(fs.readFileSync(filePath))).toString("hex");
+  return createNonCryptographicHashBasedIdentifier(Buffer.from(fsExtra.readFileSync(filePath))).toString("hex");
 }
