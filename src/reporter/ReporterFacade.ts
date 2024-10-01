@@ -20,6 +20,13 @@ import {
 import { createProgressBarProcessor } from "./ProgressBarProcessor";
 import { createSpinnerProcessor } from "./SpinnerProcessor";
 
+/**
+ * A facade for reporting various types of log information to the user,
+ * including general information, warnings, errors, and verbose logging for more detailed output.
+ *
+ * This class simplifies the interaction with the logging system, providing an easy-to-use interface
+ * for standard messages and detailed logs during the execution of operations.
+ */
 class ReporterFacade {
   private _setupReporter!: SetupReporter;
   private _progressReporter!: ProgressReporter;
