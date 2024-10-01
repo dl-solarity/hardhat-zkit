@@ -1,6 +1,6 @@
 import os from "os";
 import path from "path";
-import fs from "fs-extra";
+import fsExtra from "fs-extra";
 import semver from "semver";
 import { promisify } from "util";
 import { exec } from "child_process";
@@ -17,7 +17,43 @@ import { CompilerInfo, CompilerPlatformBinary, ICircomCompiler, NativeCompiler }
 // eslint-disable-next-line
 const { Context } = require("@distributedlab/circom2");
 
+/**
+ * Abstract factory class responsible for creating instances of Circom compilers.
+ *
+ * This class provides a method to instantiate different types of Circom compilers
+ * based on the specified version and platform. It includes logic to handle versioning,
+ * ensure compatibility with supported architectures, and determine the appropriate
+ * compiler to use (native, binary, or WASM) for the compilation process.
+ *
+ * The factory also includes error handling for unsupported versions and facilitates
+ * the use of binary translators on ARM architectures when necessary. This allows
+ * developers to seamlessly work with various Circom compiler versions while
+ * managing dependencies and ensuring optimal performance during circuit compilation.
+ */
 export class BaseCircomCompilerFactory {
+  /**
+   * Creates an instance of a Circom compiler based on the specified version and architecture.
+   *
+   * This method first checks if the requested Circom compiler version is supported. If the version
+   * exceeds the latest supported version, an error is thrown. The method attempts to create a native
+   * compiler first; if successful, the instance is returned immediately.
+   *
+   * If the native compiler cannot be created, the method determines the appropriate compiler binary
+   * for the current platform. If the requested version is strictly enforced and the system architecture
+   * is arm64, but the version is older than the supported arm64 version, it falls back to using the
+   * x64 binary.
+   *
+   * The method then attempts to create a binary compiler if the platform binary is not WASM. If this
+   * also fails, it defaults to creating a WASM compiler instance. This provides flexibility in compiler
+   * selection, accommodating various system architectures and version requirements.
+   *
+   * @param version The version of the Circom compiler to create
+   * @param isVersionStrict Indicates whether strict version matching is required
+   * @param verifyCompiler Optional flag indicating if the downloaded compiler should be verified
+   * @returns An instance of `ICircomCompiler` for the specified version
+   *
+   * @throws `HardhatZKitError` error if the specified compiler version is unsupported
+   */
   public async createCircomCompiler(
     version: string,
     isVersionStrict: boolean,
@@ -111,6 +147,7 @@ export class BaseCircomCompilerFactory {
     try {
       const execP = promisify(exec);
 
+      // Attempts to locate a globally installed Circom compiler using the `whereis` utility
       const { stdout: circomLocation } = await execP("whereis circom");
 
       const trimmedBinaryPath = circomLocation.trim().split(" ");
@@ -156,20 +193,41 @@ export class BaseCircomCompilerFactory {
   }
 
   private _getWasmCompiler(compilerPath: string): typeof Context {
-    return fs.readFileSync(require.resolve(compilerPath));
+    return fsExtra.readFileSync(require.resolve(compilerPath));
   }
 
   private async _getCompilersDir(): Promise<string> {
     const compilersDir = path.join(os.homedir(), ".zkit", "compilers");
 
-    await fs.ensureDir(compilersDir);
+    await fsExtra.ensureDir(compilersDir);
 
     return compilersDir;
   }
 }
 
+/**
+ * Singleton instance of the {@link BaseCircomCompilerFactory}.
+ *
+ * This variable holds a reference to a single instance of the
+ * {@link BaseCircomCompilerFactory}. It is initialized when the
+ * {@link createCircomCompilerFactory} function is called for the first time.
+ * Subsequent calls to this function will not create a new instance,
+ * ensuring that there is only one factory managing the creation of
+ * Circom compilers throughout the application.
+ *
+ * This design pattern promotes efficient resource usage and helps
+ * maintain consistent state when dealing with compiler instances.
+ */
 export let CircomCompilerFactory: BaseCircomCompilerFactory | null = null;
 
+/**
+ * Creates and initializes the {@link CircomCompilerFactory} singleton.
+ *
+ * If the {@link CircomCompilerFactory} instance already exists, the function
+ * does nothing. Otherwise, it creates a new instance of
+ * {@link BaseCircomCompilerFactory}, allowing for the management of
+ * Circom compiler instances throughout the application lifecycle.
+ */
 export function createCircomCompilerFactory() {
   if (CircomCompilerFactory) {
     return;

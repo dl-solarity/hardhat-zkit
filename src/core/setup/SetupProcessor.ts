@@ -14,12 +14,37 @@ import { getNormalizedFullPath } from "../../utils/path-utils";
 import { CircuitArtifact, ICircuitArtifacts } from "../../types/artifacts/circuit-artifacts";
 import { ContributionSettings, ProvingSystemType } from "../../types/core";
 
+/**
+ * Class responsible for processing the setup of circuit artifacts.
+ *
+ * This class facilitates the setup of circuits by generating the necessary
+ * cryptographic keys and artifacts required for zero-knowledge proofs.
+ * It utilizes temporary directories for managing intermediate files and
+ * provides methods for generating both ZKey and VKey files for the specified
+ * circuit artifacts, ensuring a streamlined setup process.
+ *
+ * The setup process involves key generation and artifact saving, with
+ * appropriate error handling and reporting mechanisms in place.
+ */
 export class SetupProcessor {
   constructor(
     private readonly _ptauDirFullPath: string,
     private readonly _circuitArtifacts: ICircuitArtifacts,
   ) {}
 
+  /**
+   * Function responsible for setting up circuits, using relevant artifacts and contribution settings.
+   *
+   * The setup process involves the following steps:
+   * 1. Creates a temporary directory for storing intermediate files during the setup process
+   * 2. Retrieves the required PTAU file path for the specified circuit artifacts
+   * 3. Generates ZKey files for the circuit artifacts using the provided contribution settings and PTAU file
+   * 4. Generates VKey files for the circuit artifacts
+   * 5. Saves the circuit artifacts with the generated ZKey and VKey files
+   *
+   * @param circuitArtifacts An array of circuit artifacts that need to be set up
+   * @param contributionSettings The contribution settings to be used during the setup process
+   */
   public async setup(circuitArtifacts: CircuitArtifact[], contributionSettings: ContributionSettings) {
     const tempDir: string = path.join(os.tmpdir(), ".zkit", uuid());
 

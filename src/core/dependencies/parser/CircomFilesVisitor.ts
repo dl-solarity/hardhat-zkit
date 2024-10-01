@@ -13,6 +13,14 @@ import {
 
 import { CircomFileData } from "../../../types/core";
 
+/**
+ * Class responsible for gathering comprehensive information from a Circom file.
+ *
+ * The `CircomFilesVisitor` traverses the abstract syntax tree (AST) of Circom files
+ * to collect data about pragma directives, includes, templates, and components.
+ * This class provides an efficient means of extracting and organizing the data
+ * contained within Circom files for further processing or validation.
+ */
 export class CircomFilesVisitor extends CircomVisitor<void> {
   fileData: CircomFileData;
   currentTemplate: string | null;

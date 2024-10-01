@@ -11,6 +11,19 @@ import {
 import { InputData } from "../../../types/core";
 import { HardhatZKitError } from "../../../errors";
 
+/**
+ * Visitor class for the {@link https://www.npmjs.com/package/@distributedlab/circom-parser | @distributedlab/circom-parser} package.
+ *
+ * The `CircomTemplateInputsVisitor` is designed to traverse the abstract
+ * syntax tree (AST) of Circom templates. Its primary role is to
+ * collect information about the inputs of the Circom circuits,
+ * specifically the dimensions and types of signals declared in the
+ * template.
+ *
+ * This class provides functionality to visit different components of
+ * the template structure, enabling efficient extraction and
+ * organization of input data for further processing or validation.
+ */
 export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
   templateInputs: Record<string, InputData>;
   expressionVisitor: CircomExpressionVisitor;
