@@ -4,6 +4,7 @@ import { isEqual } from "lodash";
 import { CompileCacheSchema } from "./schemas";
 import { CIRCUIT_COMPILE_CACHE_VERSION } from "../constants";
 
+import { BaseCache } from "@src/cache/BaseCache";
 import { CompileCache, CompileCacheEntry } from "../types/cache";
 import { CompileFlags } from "../types/core";
 import { Reporter } from "../reporter";
@@ -22,7 +23,7 @@ import { Reporter } from "../reporter";
  * The caching mechanism enhances performance and efficiency, especially when dealing
  * with large and complex circuit designs by minimizing redundant compilation efforts.
  */
-class BaseCircuitsCompileCache {
+class BaseCircuitsCompileCache extends BaseCache<CompileCache, CompileCacheEntry> {
   /**
    * Creates an instance of {@link BaseCircuitsCompileCache} with empty cache data
    *
@@ -75,80 +76,6 @@ class BaseCircuitsCompileCache {
       _format: CIRCUIT_COMPILE_CACHE_VERSION,
       files: {},
     });
-  }
-
-  constructor(private _compileCache: CompileCache) {}
-
-  /**
-   * Removes cache entries for files that no longer exist.
-   *
-   * This method helps keep the cache up-to-date by deleting references
-   * to non-existent files, ensuring that the cache remains valid.
-   */
-  public async removeNonExistingFiles() {
-    await Promise.all(
-      Object.keys(this._compileCache.files).map(async (absolutePath) => {
-        if (!(await fsExtra.pathExists(absolutePath))) {
-          this.removeEntry(absolutePath);
-        }
-      }),
-    );
-  }
-
-  /**
-   * Writes the current cache state to the specified file
-   *
-   * @param circuitsCompileCachePath The full path to the compile cache file where the cache will be saved
-   */
-  public async writeToFile(circuitsCompileCachePath: string) {
-    fsExtra.outputFileSync(
-      circuitsCompileCachePath,
-      JSON.stringify(this._compileCache, (_key, value) => {
-        if (typeof value === "bigint") {
-          return { __bigintval__: value.toString() };
-        }
-
-        return value;
-      }),
-    );
-  }
-
-  /**
-   * Adds a file cache entry to the cache data using the specified absolute path
-   *
-   * @param absolutePath The absolute path to the circuit file
-   * @param entry The cache entry to be added for the specified file path
-   */
-  public addFile(absolutePath: string, entry: CompileCacheEntry) {
-    this._compileCache.files[absolutePath] = entry;
-  }
-
-  /**
-   * Returns all stored cache entries
-   *
-   * @returns An array of all stored cache entries
-   */
-  public getEntries(): CompileCacheEntry[] {
-    return Object.values(this._compileCache.files);
-  }
-
-  /**
-   * Returns the cache entry for the specified file path, or undefined if no entry exists
-   *
-   * @param file The absolute path to the circuit file
-   * @returns The stored cache entry or undefined if no entry is found
-   */
-  public getEntry(file: string): CompileCacheEntry | undefined {
-    return this._compileCache.files[file];
-  }
-
-  /**
-   * Removes the cache entry for the specified file path from the cache
-   *
-   * @param file The absolute path to the circuit file
-   */
-  public removeEntry(file: string) {
-    delete this._compileCache.files[file];
   }
 
   /**

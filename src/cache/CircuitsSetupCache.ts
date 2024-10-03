@@ -4,10 +4,24 @@ import { isEqual } from "lodash";
 import { SetupCacheSchema } from "./schemas";
 import { CIRCUIT_SETUP_CACHE_VERSION } from "../constants";
 
+import { BaseCache } from "@src/cache/BaseCache";
 import { SetupCache, SetupCacheEntry } from "../types/cache";
 import { ContributionSettings } from "../types/core";
 
-class BaseCircuitsSetupCache {
+/**
+ * Class that implements the caching logic for setting up circuits.
+ *
+ * This class is responsible for managing the cache of circuit setup information, ensuring
+ * efficient reuse of previously stored setup data. By storing the setup details, the class
+ * helps prevent unnecessary reconfiguration of circuits that have not changed since the last setup.
+ *
+ * The class provides methods to clear, disable, and retrieve cached setup data, which can
+ * significantly reduce the overhead of repeated setups for large and complex circuit configurations.
+ *
+ * The caching mechanism enhances performance and resource management during the setup process,
+ * especially when dealing with multiple iterations of circuit configurations or contributions.
+ */
+class BaseCircuitsSetupCache extends BaseCache<SetupCache, SetupCacheEntry> {
   /**
    * Creates an empty instance of the {@link BaseCircuitsSetupCache} class
    *
@@ -50,73 +64,6 @@ class BaseCircuitsSetupCache {
       _format: CIRCUIT_SETUP_CACHE_VERSION,
       files: {},
     });
-  }
-
-  constructor(private _setupCache: SetupCache) {}
-
-  /**
-   * Removes cache entries for files that no longer exist.
-   *
-   * This method helps keep the cache up-to-date by deleting references
-   * to non-existent files, ensuring that the cache remains valid.
-   */
-  public async removeNonExistingFiles() {
-    await Promise.all(
-      Object.keys(this._setupCache.files).map(async (absolutePath) => {
-        if (!(await fsExtra.pathExists(absolutePath))) {
-          this.removeEntry(absolutePath);
-        }
-      }),
-    );
-  }
-
-  /**
-   * Writes the current cache state to a specified file
-   *
-   * @param circuitsCompileCachePath The full path to the cache file where the state will be written
-   */
-  public async writeToFile(circuitsCompileCachePath: string) {
-    await fsExtra.outputJson(circuitsCompileCachePath, this._setupCache, {
-      spaces: 2,
-    });
-  }
-
-  /**
-   * Adds a file cache entry to the cache data using the specified absolute path
-   *
-   * @param absolutePath The absolute path to the circuit file
-   * @param entry The cache entry to be added for the specified file path
-   */
-  public addFile(absolutePath: string, entry: SetupCacheEntry) {
-    this._setupCache.files[absolutePath] = entry;
-  }
-
-  /**
-   * Returns all stored cache entries
-   *
-   * @returns An array of all stored cache entries
-   */
-  public getEntries(): SetupCacheEntry[] {
-    return Object.values(this._setupCache.files);
-  }
-
-  /**
-   * Returns the cache entry for the specified file path, or undefined if no entry exists
-   *
-   * @param file The absolute path to the circuit file
-   * @returns The stored cache entry or undefined if no entry is found
-   */
-  public getEntry(file: string): SetupCacheEntry | undefined {
-    return this._setupCache.files[file];
-  }
-
-  /**
-   * Removes the cache entry for the specified file path from the cache
-   *
-   * @param file The absolute path to the circuit file
-   */
-  public removeEntry(file: string) {
-    delete this._setupCache.files[file];
   }
 
   /**
