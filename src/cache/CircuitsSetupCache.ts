@@ -1,11 +1,10 @@
-import fsExtra from "fs-extra";
 import { isEqual } from "lodash";
 
 import { SetupCacheSchema } from "./schemas";
 import { CIRCUIT_SETUP_CACHE_VERSION } from "../constants";
 
 import { BaseCache } from "@src/cache/BaseCache";
-import { SetupCache, SetupCacheEntry } from "../types/cache";
+import { SetupCacheEntry } from "../types/cache";
 import { ContributionSettings } from "../types/core";
 
 /**
@@ -21,51 +20,7 @@ import { ContributionSettings } from "../types/core";
  * The caching mechanism enhances performance and resource management during the setup process,
  * especially when dealing with multiple iterations of circuit configurations or contributions.
  */
-class BaseCircuitsSetupCache extends BaseCache<SetupCache, SetupCacheEntry> {
-  /**
-   * Creates an empty instance of the {@link BaseCircuitsSetupCache} class
-   *
-   * @returns A new instance of the {@link BaseCircuitsSetupCache} with empty cache data
-   */
-  public static createEmpty(): BaseCircuitsSetupCache {
-    return new BaseCircuitsSetupCache({
-      _format: CIRCUIT_SETUP_CACHE_VERSION,
-      files: {},
-    });
-  }
-
-  /**
-   * Creates an instance of {@link BaseCircuitsSetupCache} using the data read from the specified cache file
-   *
-   * @param circuitsSetupCachePath The full path to the setup cache file from which to read the data
-   * @returns A promise that resolves to an instance of {@link BaseCircuitsSetupCache} populated with the read data
-   */
-  public static async readFromFile(circuitsSetupCachePath: string): Promise<BaseCircuitsSetupCache> {
-    let cacheRaw: SetupCache = {
-      _format: CIRCUIT_SETUP_CACHE_VERSION,
-      files: {},
-    };
-
-    if (await fsExtra.pathExists(circuitsSetupCachePath)) {
-      cacheRaw = await fsExtra.readJson(circuitsSetupCachePath);
-    }
-
-    // Validate the correctness of the data read from the file using the Zod schema
-    const result = SetupCacheSchema.safeParse(cacheRaw);
-
-    if (result.success) {
-      const circuitsSetupCache = new BaseCircuitsSetupCache(result.data);
-      await circuitsSetupCache.removeNonExistingFiles();
-
-      return circuitsSetupCache;
-    }
-
-    return new BaseCircuitsSetupCache({
-      _format: CIRCUIT_SETUP_CACHE_VERSION,
-      files: {},
-    });
-  }
-
+class BaseCircuitsSetupCache extends BaseCache<SetupCacheEntry> {
   /**
    * Checks if the specified file has changed since the last check.
    *
@@ -123,11 +78,11 @@ export async function createCircuitsSetupCache(circuitsSetupCachePath?: string) 
     return;
   }
 
-  if (circuitsSetupCachePath) {
-    CircuitsSetupCache = await BaseCircuitsSetupCache.readFromFile(circuitsSetupCachePath);
-  } else {
-    CircuitsSetupCache = BaseCircuitsSetupCache.createEmpty();
-  }
+  CircuitsSetupCache = new BaseCircuitsSetupCache(
+    CIRCUIT_SETUP_CACHE_VERSION,
+    SetupCacheSchema,
+    circuitsSetupCachePath,
+  );
 }
 
 /**

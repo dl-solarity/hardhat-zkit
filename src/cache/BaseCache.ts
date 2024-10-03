@@ -1,6 +1,7 @@
 import fsExtra from "fs-extra";
 
-import { BaseCacheType, BaseCacheEntry } from "@src/types/cache/base-cache";
+import { BaseCacheEntry, BaseCacheSchema, BaseCacheType } from "@src/types/cache/base-cache";
+import { Reporter } from "@src/reporter";
 
 /**
  * Generic class that manages a cache of file-related entries.
@@ -10,15 +11,85 @@ import { BaseCacheType, BaseCacheEntry } from "@src/types/cache/base-cache";
  * and remove entries from the cache, as well as utilities to write the cache state to a file and clean
  * up stale entries for files that no longer exist on the filesystem.
  *
- * The cache operates on two generic types:
- * - `T` extends `BaseCacheType`: Represents the structure of the cache, which includes a collection of files.
- * - `E` extends `BaseCacheEntry`: Represents the individual cache entry for each file, storing metadata or other details.
+ * The cache operates on a single generic type:
+ * - `T` extends BaseCacheEntry: Represents the individual cache entry for each file, storing metadata or other details.
  *
  * Usage:
- * Extend this class and specify the appropriate cache and entry types to implement specific caching logic.
+ * Extend this class and specify the appropriate cache entry type to implement specific caching logic.
  */
-export class BaseCache<T extends BaseCacheType, E extends BaseCacheEntry> {
-  constructor(private _cache: T) {}
+export class BaseCache<T extends BaseCacheEntry> {
+  private _cache!: BaseCacheType<T>;
+
+  constructor(
+    private _cacheVersion: string,
+    private _cacheSchema: BaseCacheSchema,
+    cachePath?: string,
+  ) {
+    if (cachePath) {
+      this.readFromFile(cachePath);
+    } else {
+      this._cache = {
+        _format: this._cacheVersion,
+        files: {},
+      };
+    }
+  }
+
+  /**
+   * Clears the current cache data, resetting it to an empty state.
+   *
+   * This method initializes the cache with the version format and an empty file collection.
+   */
+  public clearCache() {
+    this._cache = {
+      _format: this._cacheVersion,
+      files: {},
+    };
+  }
+
+  /**
+   * Reads cache data from the specified file and populates the cache with the loaded data.
+   *
+   * This method attempts to read the cache file from the given `cachePath`. If the file exists, it parses
+   * the content and validates it against the defined cache schema. If the data is valid, the cache is updated.
+   * If the data is invalid, an error is logged using the Reporter.
+   *
+   * @param cachePath The full path to the cache file from which to read the data.
+   */
+  public readFromFile(cachePath: string) {
+    let cacheRaw: BaseCacheType<T> = {
+      _format: this._cacheVersion,
+      files: {},
+    };
+
+    if (fsExtra.pathExistsSync(cachePath)) {
+      cacheRaw = fsExtra.readJsonSync(cachePath, {
+        reviver: (_key: string, value: any): any => {
+          if (value != null && typeof value === "object" && "__bigintval__" in value) {
+            return BigInt(value["__bigintval__"]);
+          }
+
+          return value;
+        },
+      });
+    }
+
+    // Validate the correctness of the data read from the file using the Zod schema
+    const result = this._cacheSchema.safeParse(cacheRaw);
+
+    if (result.success) {
+      this._cache = result.data;
+
+      this.removeNonExistingFiles();
+    } else {
+      Reporter!.verboseLog("cache", "Errors during ZOD schema parsing: %o", [result.error]);
+    }
+
+    this._cache = {
+      _format: this._cacheVersion,
+      files: {},
+    };
+  }
 
   /**
    * Removes cache entries for files that no longer exist.
@@ -26,14 +97,12 @@ export class BaseCache<T extends BaseCacheType, E extends BaseCacheEntry> {
    * This method helps keep the cache up-to-date by deleting references
    * to non-existent files, ensuring that the cache remains valid.
    */
-  public async removeNonExistingFiles() {
-    await Promise.all(
-      Object.keys(this._cache.files).map(async (absolutePath) => {
-        if (!(await fsExtra.pathExists(absolutePath))) {
-          this.removeEntry(absolutePath);
-        }
-      }),
-    );
+  public removeNonExistingFiles() {
+    Object.keys(this._cache.files).map((absolutePath) => {
+      if (!fsExtra.pathExistsSync(absolutePath)) {
+        this.removeEntry(absolutePath);
+      }
+    });
   }
 
   /**
@@ -62,7 +131,7 @@ export class BaseCache<T extends BaseCacheType, E extends BaseCacheEntry> {
    * @param absolutePath The absolute path to the circuit file
    * @param entry The cache entry to be added for the specified file path
    */
-  public addFile(absolutePath: string, entry: E) {
+  public addFile(absolutePath: string, entry: T) {
     this._cache.files[absolutePath] = entry;
   }
 
@@ -71,7 +140,7 @@ export class BaseCache<T extends BaseCacheType, E extends BaseCacheEntry> {
    *
    * @returns An array of all stored cache entries
    */
-  public getEntries(): E[] {
+  public getEntries(): T[] {
     return Object.values(this._cache.files);
   }
 
@@ -81,8 +150,8 @@ export class BaseCache<T extends BaseCacheType, E extends BaseCacheEntry> {
    * @param file The absolute path to the circuit file
    * @returns The stored cache entry or undefined if no entry is found
    */
-  public getEntry(file: string): E | undefined {
-    return this._cache.files[file] as E | undefined;
+  public getEntry(file: string): T | undefined {
+    return this._cache.files[file];
   }
 
   /**

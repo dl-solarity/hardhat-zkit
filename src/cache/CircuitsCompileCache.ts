@@ -1,13 +1,11 @@
-import fsExtra from "fs-extra";
 import { isEqual } from "lodash";
 
 import { CompileCacheSchema } from "./schemas";
 import { CIRCUIT_COMPILE_CACHE_VERSION } from "../constants";
 
 import { BaseCache } from "@src/cache/BaseCache";
-import { CompileCache, CompileCacheEntry } from "../types/cache";
+import { CompileCacheEntry } from "../types/cache";
 import { CompileFlags } from "../types/core";
-import { Reporter } from "../reporter";
 
 /**
  * Class that implements the caching logic for compiling circuits.
@@ -23,61 +21,7 @@ import { Reporter } from "../reporter";
  * The caching mechanism enhances performance and efficiency, especially when dealing
  * with large and complex circuit designs by minimizing redundant compilation efforts.
  */
-class BaseCircuitsCompileCache extends BaseCache<CompileCache, CompileCacheEntry> {
-  /**
-   * Creates an instance of {@link BaseCircuitsCompileCache} with empty cache data
-   *
-   * @returns An instance of {@link BaseCircuitsCompileCache} initialized with empty cache data
-   */
-  public static createEmpty(): BaseCircuitsCompileCache {
-    return new BaseCircuitsCompileCache({
-      _format: CIRCUIT_COMPILE_CACHE_VERSION,
-      files: {},
-    });
-  }
-
-  /**
-   * Creates an instance of {@link BaseCircuitsCompileCache} using the data read from the specified cache file
-   *
-   * @param circuitsCompileCachePath The full path to the compile cache file from which to read the data
-   * @returns A promise that resolves to an instance of {@link BaseCircuitsCompileCache} populated with the read data
-   */
-  public static async readFromFile(circuitsCompileCachePath: string): Promise<BaseCircuitsCompileCache> {
-    let cacheRaw: CompileCache = {
-      _format: CIRCUIT_COMPILE_CACHE_VERSION,
-      files: {},
-    };
-
-    if (await fsExtra.pathExists(circuitsCompileCachePath)) {
-      cacheRaw = await fsExtra.readJson(circuitsCompileCachePath, {
-        reviver: (_key: string, value: any): any => {
-          if (value != null && typeof value === "object" && "__bigintval__" in value) {
-            return BigInt(value["__bigintval__"]);
-          }
-
-          return value;
-        },
-      });
-    }
-
-    // Validate the correctness of the data read from the file using the Zod schema
-    const result = CompileCacheSchema.safeParse(cacheRaw);
-
-    if (result.success) {
-      const circuitsCompileCache = new BaseCircuitsCompileCache(result.data);
-      await circuitsCompileCache.removeNonExistingFiles();
-
-      return circuitsCompileCache;
-    } else {
-      Reporter!.verboseLog("circuits-compile-cache", "Errors during ZOD schema parsing: %o", [result.error]);
-    }
-
-    return new BaseCircuitsCompileCache({
-      _format: CIRCUIT_COMPILE_CACHE_VERSION,
-      files: {},
-    });
-  }
-
+class BaseCircuitsCompileCache extends BaseCache<CompileCacheEntry> {
   /**
    * Checks if the specified file has changed since the last check based on its content hash and compile flags.
    *
@@ -132,11 +76,11 @@ export async function createCircuitsCompileCache(circuitsCompileCachePath?: stri
     return;
   }
 
-  if (circuitsCompileCachePath) {
-    CircuitsCompileCache = await BaseCircuitsCompileCache.readFromFile(circuitsCompileCachePath);
-  } else {
-    CircuitsCompileCache = BaseCircuitsCompileCache.createEmpty();
-  }
+  CircuitsCompileCache = new BaseCircuitsCompileCache(
+    CIRCUIT_COMPILE_CACHE_VERSION,
+    CompileCacheSchema,
+    circuitsCompileCachePath,
+  );
 }
 
 /**

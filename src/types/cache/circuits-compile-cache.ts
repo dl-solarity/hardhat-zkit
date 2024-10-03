@@ -7,8 +7,3 @@ export type CompileCacheEntry = {
   compileFlags: CompileFlags;
   fileData: ResolvedFileData;
 };
-
-export type CompileCache = {
-  _format: string;
-  files: Record<string, CompileCacheEntry>;
-};

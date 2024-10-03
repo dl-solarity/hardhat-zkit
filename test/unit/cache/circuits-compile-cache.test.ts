@@ -22,7 +22,7 @@ describe("CircuitsCompileCache", () => {
       await createCircuitsCompileCache(undefined);
 
       expect(CircuitsCompileCache!.constructor.name).to.be.eq("BaseCircuitsCompileCache");
-      expect(Object.values(CircuitsCompileCache!)[0]._format).to.be.eq(CIRCUIT_COMPILE_CACHE_VERSION);
+      expect(Object.values(CircuitsCompileCache!)[2]._format).to.be.eq(CIRCUIT_COMPILE_CACHE_VERSION);
     });
   });
 
