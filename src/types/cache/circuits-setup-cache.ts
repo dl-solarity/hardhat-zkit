@@ -6,8 +6,3 @@ export type SetupCacheEntry = {
   r1csSourcePath: string;
   contributionSettings: ContributionSettings;
 };
-
-export type SetupCache = {
-  _format: string;
-  files: Record<string, SetupCacheEntry>;
-};

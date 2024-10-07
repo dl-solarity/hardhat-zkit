@@ -1,12 +1,11 @@
-import fsExtra from "fs-extra";
 import { isEqual } from "lodash";
 
 import { CompileCacheSchema } from "./schemas";
 import { CIRCUIT_COMPILE_CACHE_VERSION } from "../constants";
 
-import { CompileCache, CompileCacheEntry } from "../types/cache";
+import { BaseCache } from "@src/cache/BaseCache";
+import { CompileCacheEntry } from "../types/cache";
 import { CompileFlags } from "../types/core";
-import { Reporter } from "../reporter";
 
 /**
  * Class that implements the caching logic for compiling circuits.
@@ -22,135 +21,7 @@ import { Reporter } from "../reporter";
  * The caching mechanism enhances performance and efficiency, especially when dealing
  * with large and complex circuit designs by minimizing redundant compilation efforts.
  */
-class BaseCircuitsCompileCache {
-  /**
-   * Creates an instance of {@link BaseCircuitsCompileCache} with empty cache data
-   *
-   * @returns An instance of {@link BaseCircuitsCompileCache} initialized with empty cache data
-   */
-  public static createEmpty(): BaseCircuitsCompileCache {
-    return new BaseCircuitsCompileCache({
-      _format: CIRCUIT_COMPILE_CACHE_VERSION,
-      files: {},
-    });
-  }
-
-  /**
-   * Creates an instance of {@link BaseCircuitsCompileCache} using the data read from the specified cache file
-   *
-   * @param circuitsCompileCachePath The full path to the compile cache file from which to read the data
-   * @returns A promise that resolves to an instance of {@link BaseCircuitsCompileCache} populated with the read data
-   */
-  public static async readFromFile(circuitsCompileCachePath: string): Promise<BaseCircuitsCompileCache> {
-    let cacheRaw: CompileCache = {
-      _format: CIRCUIT_COMPILE_CACHE_VERSION,
-      files: {},
-    };
-
-    if (await fsExtra.pathExists(circuitsCompileCachePath)) {
-      cacheRaw = await fsExtra.readJson(circuitsCompileCachePath, {
-        reviver: (_key: string, value: any): any => {
-          if (value != null && typeof value === "object" && "__bigintval__" in value) {
-            return BigInt(value["__bigintval__"]);
-          }
-
-          return value;
-        },
-      });
-    }
-
-    // Validate the correctness of the data read from the file using the Zod schema
-    const result = CompileCacheSchema.safeParse(cacheRaw);
-
-    if (result.success) {
-      const circuitsCompileCache = new BaseCircuitsCompileCache(result.data);
-      await circuitsCompileCache.removeNonExistingFiles();
-
-      return circuitsCompileCache;
-    } else {
-      Reporter!.verboseLog("circuits-compile-cache", "Errors during ZOD schema parsing: %o", [result.error]);
-    }
-
-    return new BaseCircuitsCompileCache({
-      _format: CIRCUIT_COMPILE_CACHE_VERSION,
-      files: {},
-    });
-  }
-
-  constructor(private _compileCache: CompileCache) {}
-
-  /**
-   * Removes cache entries for files that no longer exist.
-   *
-   * This method helps keep the cache up-to-date by deleting references
-   * to non-existent files, ensuring that the cache remains valid.
-   */
-  public async removeNonExistingFiles() {
-    await Promise.all(
-      Object.keys(this._compileCache.files).map(async (absolutePath) => {
-        if (!(await fsExtra.pathExists(absolutePath))) {
-          this.removeEntry(absolutePath);
-        }
-      }),
-    );
-  }
-
-  /**
-   * Writes the current cache state to the specified file
-   *
-   * @param circuitsCompileCachePath The full path to the compile cache file where the cache will be saved
-   */
-  public async writeToFile(circuitsCompileCachePath: string) {
-    fsExtra.outputFileSync(
-      circuitsCompileCachePath,
-      JSON.stringify(this._compileCache, (_key, value) => {
-        if (typeof value === "bigint") {
-          return { __bigintval__: value.toString() };
-        }
-
-        return value;
-      }),
-    );
-  }
-
-  /**
-   * Adds a file cache entry to the cache data using the specified absolute path
-   *
-   * @param absolutePath The absolute path to the circuit file
-   * @param entry The cache entry to be added for the specified file path
-   */
-  public addFile(absolutePath: string, entry: CompileCacheEntry) {
-    this._compileCache.files[absolutePath] = entry;
-  }
-
-  /**
-   * Returns all stored cache entries
-   *
-   * @returns An array of all stored cache entries
-   */
-  public getEntries(): CompileCacheEntry[] {
-    return Object.values(this._compileCache.files);
-  }
-
-  /**
-   * Returns the cache entry for the specified file path, or undefined if no entry exists
-   *
-   * @param file The absolute path to the circuit file
-   * @returns The stored cache entry or undefined if no entry is found
-   */
-  public getEntry(file: string): CompileCacheEntry | undefined {
-    return this._compileCache.files[file];
-  }
-
-  /**
-   * Removes the cache entry for the specified file path from the cache
-   *
-   * @param file The absolute path to the circuit file
-   */
-  public removeEntry(file: string) {
-    delete this._compileCache.files[file];
-  }
-
+class BaseCircuitsCompileCache extends BaseCache<CompileCacheEntry> {
   /**
    * Checks if the specified file has changed since the last check based on its content hash and compile flags.
    *
@@ -205,11 +76,11 @@ export async function createCircuitsCompileCache(circuitsCompileCachePath?: stri
     return;
   }
 
-  if (circuitsCompileCachePath) {
-    CircuitsCompileCache = await BaseCircuitsCompileCache.readFromFile(circuitsCompileCachePath);
-  } else {
-    CircuitsCompileCache = BaseCircuitsCompileCache.createEmpty();
-  }
+  CircuitsCompileCache = new BaseCircuitsCompileCache(
+    CIRCUIT_COMPILE_CACHE_VERSION,
+    CompileCacheSchema,
+    circuitsCompileCachePath,
+  );
 }
 
 /**

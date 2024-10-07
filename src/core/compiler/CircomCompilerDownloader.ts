@@ -1,7 +1,6 @@
 import os from "os";
 import path from "path";
 import fsExtra from "fs-extra";
-import https from "https";
 import semver from "semver";
 import { promisify } from "util";
 import { execFile } from "child_process";
@@ -10,7 +9,7 @@ import {
   COMPILER_AMD_REPOSITORY_URL,
   COMPILER_ARM_REPOSITORY_URL,
   COMPILER_WASM_REPOSITORY_URL,
-  LATEST_CIRCOM_COMPILER_URL,
+  LATEST_SUPPORTED_CIRCOM_VERSION,
   WASM_COMPILER_VERSIONING,
 } from "../../constants";
 import { Reporter } from "../../reporter";
@@ -187,7 +186,7 @@ export class CircomCompilerDownloader {
    */
   public async downloadCompiler(version: string, isVersionStrict: boolean, verifyCompiler: boolean): Promise<void> {
     await this._mutex.use(async () => {
-      const versionToDownload = isVersionStrict ? version : await this._getLatestCircomVersion();
+      const versionToDownload = isVersionStrict ? version : LATEST_SUPPORTED_CIRCOM_VERSION;
 
       if (await this.isCompilerDownloaded(versionToDownload, isVersionStrict)) {
         return;
@@ -234,27 +233,6 @@ export class CircomCompilerDownloader {
     } catch (error) {
       throw new HardhatZKitError(`Error reading directory: ${error}`);
     }
-  }
-
-  private async _getLatestCircomVersion(): Promise<string> {
-    return new Promise((resolve) => {
-      https
-        .get(LATEST_CIRCOM_COMPILER_URL, (res) => {
-          if (res.statusCode === 302 && res.headers.location) {
-            const location = res.headers.location;
-            const parts = location.split("/");
-            const versionTag = parts[parts.length - 1];
-            const version = versionTag.startsWith("v") ? versionTag.substring(1) : versionTag;
-
-            resolve(version);
-          } else {
-            throw new HardhatZKitError("Unable to resolve the latest available circom version");
-          }
-        })
-        .on("error", (error) => {
-          throw new HardhatZKitError(`Unable to resolve the latest available circom version: ${error}`);
-        });
-    });
   }
 
   private async _downloadCompiler(version: string): Promise<string> {
