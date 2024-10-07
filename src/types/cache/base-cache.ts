@@ -1,11 +1,6 @@
 import { z } from "zod";
 
-import { SetupCacheEntry } from "./circuits-setup-cache";
-import { CompileCacheEntry } from "./circuits-compile-cache";
-
-export type BaseCacheEntry = SetupCacheEntry | CompileCacheEntry;
-
-export type BaseCacheType<T extends BaseCacheEntry> = {
+export type BaseCacheType<T> = {
   _format: string;
   files: Record<string, T>;
 };

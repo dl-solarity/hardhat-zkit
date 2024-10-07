@@ -1,23 +1,23 @@
 import fsExtra from "fs-extra";
 
-import { BaseCacheEntry, BaseCacheSchema, BaseCacheType } from "@src/types/cache/base-cache";
 import { Reporter } from "@src/reporter";
+import { BaseCacheSchema, BaseCacheType } from "@src/types/cache/base-cache";
 
 /**
  * Generic class that manages a cache of file-related entries.
  *
- * This` class is designed to manage a collection of cache entries for files, where each entry
+ * This class is designed to manage a collection of cache entries for files, where each entry
  * holds metadata or other relevant data associated with a file. It offers functionality to add, retrieve,
  * and remove entries from the cache, as well as utilities to write the cache state to a file and clean
  * up stale entries for files that no longer exist on the filesystem.
  *
  * The cache operates on a single generic type:
- * - `T` extends BaseCacheEntry: Represents the individual cache entry for each file, storing metadata or other details.
+ * - `T`: Represents the individual cache entry for each file, storing metadata or other details.
  *
  * Usage:
  * Extend this class and specify the appropriate cache entry type to implement specific caching logic.
  */
-export class BaseCache<T extends BaseCacheEntry> {
+export class BaseCache<T> {
   private _cache!: BaseCacheType<T>;
 
   constructor(
@@ -79,16 +79,17 @@ export class BaseCache<T extends BaseCacheEntry> {
 
     if (result.success) {
       this._cache = result.data;
-
       this.removeNonExistingFiles();
-    } else {
-      Reporter!.verboseLog("cache", "Errors during ZOD schema parsing: %o", [result.error]);
+
+      return;
     }
 
     this._cache = {
       _format: this._cacheVersion,
       files: {},
     };
+
+    Reporter!.verboseLog("cache", "Errors during ZOD schema parsing: %o", [result.error]);
   }
 
   /**
@@ -117,6 +118,7 @@ export class BaseCache<T extends BaseCacheEntry> {
         if (typeof value === "bigint") {
           return { __bigintval__: value.toString() };
         }
+
         return value;
       },
       2,
