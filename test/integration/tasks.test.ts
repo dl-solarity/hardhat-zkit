@@ -168,6 +168,7 @@ describe("ZKit tasks", async function () {
         ]);
 
         const compilerPath = path.join(os.homedir(), ".zkit", "compilers", this.hre.config.zkit.compilerVersion);
+
         expect(fsExtra.readdirSync(compilerPath)).to.be.deep.equal([
           CircomCompilerDownloader.getCompilerPlatformBinary(),
         ]);

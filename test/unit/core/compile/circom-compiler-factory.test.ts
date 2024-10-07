@@ -19,7 +19,7 @@ import {
 
 import { CircomCompilerDownloader } from "@src/core/compiler/CircomCompilerDownloader";
 
-import { defaultCompileFlags } from "../../../../constants";
+import { defaultCompileFlags } from "../../../constants";
 import { LATEST_SUPPORTED_CIRCOM_VERSION } from "@src/constants";
 
 describe("CircomCompilerFactory", () => {

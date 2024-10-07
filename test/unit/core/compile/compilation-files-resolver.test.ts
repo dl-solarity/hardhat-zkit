@@ -6,7 +6,7 @@ import { TASK_COMPILE_SOLIDITY_READ_FILE as TASK_READ_FILE } from "hardhat/built
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { getAllFilesMatching } from "hardhat/internal/util/fs-utils";
 
-import { CompilationFilesResolverMock } from "./CompilationFilesResolverMock";
+import { CompilationFilesResolverMock } from "./mock/CompilationFilesResolverMock";
 import { useEnvironment } from "@test-helpers";
 import { CircuitsCompileCache } from "@src/cache";
 import { TASK_CIRCUITS_COMPILE, ZKIT_SCOPE_NAME } from "@src/task-names";
