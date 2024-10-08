@@ -3,7 +3,8 @@ import { isEqual } from "lodash";
 import { CompileCacheSchema } from "./schemas";
 import { CIRCUIT_COMPILE_CACHE_VERSION } from "../constants";
 
-import { BaseCache } from "@src/cache/BaseCache";
+import { BaseCache } from "../cache/BaseCache";
+
 import { CompileCacheEntry } from "../types/cache";
 import { CompileFlags } from "../types/core";
 

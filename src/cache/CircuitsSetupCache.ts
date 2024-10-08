@@ -3,7 +3,8 @@ import { isEqual } from "lodash";
 import { SetupCacheSchema } from "./schemas";
 import { CIRCUIT_SETUP_CACHE_VERSION } from "../constants";
 
-import { BaseCache } from "@src/cache/BaseCache";
+import { BaseCache } from "../cache/BaseCache";
+
 import { SetupCacheEntry } from "../types/cache";
 import { ContributionSettings } from "../types/core";
 

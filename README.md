@@ -49,7 +49,7 @@ The `hardhat-zkit` is a zero-config plugin, however, you may add the following t
 ```ts
 module.exports = {
   zkit: {
-    compilerVersion: "2.1.8",
+    compilerVersion: "2.1.9",
     circuitsDir: "circuits",
     compilationSettings: {
       artifactsDir: "zkit/artifacts",
