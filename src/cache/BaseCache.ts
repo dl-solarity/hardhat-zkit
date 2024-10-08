@@ -1,7 +1,8 @@
 import fsExtra from "fs-extra";
 
-import { Reporter } from "@src/reporter";
-import { BaseCacheSchema, BaseCacheType } from "@src/types/cache/base-cache";
+import { Reporter } from "../reporter";
+
+import { BaseCacheSchema, BaseCacheType } from "../types/cache/base-cache";
 
 /**
  * Generic class that manages a cache of file-related entries.
