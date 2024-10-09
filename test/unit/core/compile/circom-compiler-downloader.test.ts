@@ -191,8 +191,8 @@ describe("CircomCompilerDownloader", () => {
         compilersDir,
       );
 
-      await expect(circomCompilerDownloader.downloadCompiler("2.1.8", true, true)).to.be.rejectedWith(
-        "Failed to download Circom compiler v2.1.8. Please try again or download manually.",
+      await expect(circomCompilerDownloader.downloadCompiler("2.0.0", true, true)).to.be.rejectedWith(
+        "Failed to download Circom compiler v2.0.0. Please try again or download manually.",
       );
     });
   });
