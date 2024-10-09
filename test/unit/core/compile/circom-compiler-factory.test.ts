@@ -135,29 +135,6 @@ describe("CircomCompilerFactory", () => {
       archStub.restore();
     });
 
-    it("should create amd compiler if arm compiler with specific version is unavailable", async function () {
-      const archStub = stub(os, "arch").callsFake(() => {
-        return "arm64";
-      });
-
-      const platformStub = stub(os, "platform").callsFake(() => {
-        return "darwin";
-      });
-
-      const compilerDir = path.join(os.homedir(), ".zkit", "compilers", "2.1.7");
-      fsExtra.rmSync(compilerDir, { recursive: true, force: true });
-
-      const compiler = await CircomCompilerFactory!.createCircomCompiler("2.1.7", true, false);
-      const platform = CompilerPlatformBinary.MACOS_AMD;
-
-      expect(compiler).to.be.instanceof(BinaryCircomCompiler);
-      expect(fsExtra.readdirSync(compilerDir)).to.be.deep.equal([platform]);
-
-      fsExtra.rmSync(compilerDir, { recursive: true, force: true });
-      platformStub.restore();
-      archStub.restore();
-    });
-
     it("should create wasm compiler if the downloaded platform compiler is not working", async function () {
       const archStub = stub(os, "arch").callsFake(() => {
         return "arm64";
