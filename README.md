@@ -181,6 +181,7 @@ template Multiplier(){
    out <== in1 * in2;
 }
 
+// main component to compile the circuit
 component main = Multiplier();
 ```
 
@@ -205,8 +206,9 @@ async function main() {
 
   // proof testing
   const proof = await circuit.generateProof({ in1: "4", in2: "2" });
-
   await expect(circuit).to.verifyProof(proof);
+
+  console.log("OK");
 }
 
 main()
@@ -224,9 +226,9 @@ To see the plugin in action, place the `Multiplier` circuit in the `circuits` di
 npx hardhat zkit make
 ```
 
-This command will compile the circuit leveraging `wasm`-based Circom compiler, download the necessary `ptau` file regarding the number of circuit's constraints, build the required `zkey` and `vkey` files, and generate TypeScript object wrappers to enable full typization of signals and ZK proofs.
+This command will install the newest compatible Circom compiler, compile the provided circuit, download the necessary `ptau` file regarding the number of circuit's constraints, build the required `zkey` and `vkey` files, and generate TypeScript object wrappers to enable full typization of signals and ZK proofs.
 
-Afterward, you may run the provided hardhat script via `npx hardhat run "./scripts/multiplier.test.ts"`.
+Afterward, you may run the provided hardhat script via `npx hardhat run ./scripts/multiplier.test.ts`.
 
 > Check out the [Medium blog post](https://medium.com/@Arvolear/introducing-hardhat-zkit-how-did-you-even-use-circom-before-a7b463a5575b) to learn more.
 
@@ -252,5 +254,6 @@ Where:
 
 ## Known limitations
 
-- Due to current `wasm` memory limitations (address space is 32-bit), the plugin may fail to compile especially large circuits.
 - Temporarily, the only supported proving system is `groth16`.
+- Sometimes `hardhat` scripts that generate `zkey` files may run indefinitely. Waiting for [this snarkjs fix](https://github.com/iden3/snarkjs/pull/512) to be published.
+- Due to current `wasm` memory limitations (address space is 32-bit), the plugin may fail to compile especially large circuits on some platforms.
