@@ -1,5 +1,6 @@
 import os from "os";
 import path from "path";
+import semver from "semver";
 import fsExtra from "fs-extra";
 
 import { expect } from "chai";
@@ -20,7 +21,7 @@ import {
 import { CircomCompilerDownloader } from "@src/core/compiler/CircomCompilerDownloader";
 
 import { defaultCompileFlags } from "../../../constants";
-import { LATEST_SUPPORTED_CIRCOM_VERSION } from "@src/constants";
+import { LATEST_SUPPORTED_CIRCOM_VERSION, OLDEST_SUPPORTED_CIRCOM_VERSION } from "@src/constants";
 
 describe("CircomCompilerFactory", () => {
   let nativeCompilerStub: SinonStub;
@@ -66,7 +67,7 @@ describe("CircomCompilerFactory", () => {
 
     it("should correctly create circom compiler instance", async function () {
       createCircomCompilerFactory();
-      const compiler: ICircomCompiler = await CircomCompilerFactory!.createCircomCompiler("0.2.18", false);
+      const compiler: ICircomCompiler = await CircomCompilerFactory!.createCircomCompiler("2.1.7", false);
 
       const circuitFullPath: string = getNormalizedFullPath(this.hre.config.paths.root, "circuits/main/mul2.circom");
       const artifactsFullPath: string = getNormalizedFullPath(
@@ -96,12 +97,20 @@ describe("CircomCompilerFactory", () => {
     });
 
     it("should correctly throw error if pass invalid version", async function () {
-      const invalidVersion = "2.1.10";
+      const supportedVersionsRange = semver.validRange(
+        `${OLDEST_SUPPORTED_CIRCOM_VERSION} - ${LATEST_SUPPORTED_CIRCOM_VERSION}`,
+      );
 
-      const reason = `Unsupported Circom compiler version - ${invalidVersion}. Please provide another version.`;
+      let invalidVersion = "2.1.10";
+      let reason = `Unsupported Circom compiler version - ${invalidVersion}. Please provide another version from the range ${supportedVersionsRange}.`;
 
       createCircomCompilerFactory();
-      await expect(CircomCompilerFactory!.createCircomCompiler(invalidVersion, false)).to.be.rejectedWith(reason);
+      await expect(CircomCompilerFactory!.createCircomCompiler(invalidVersion, true)).to.be.rejectedWith(reason);
+
+      invalidVersion = "2.0.4";
+      reason = `Unsupported Circom compiler version - ${invalidVersion}. Please provide another version from the range ${supportedVersionsRange}.`;
+
+      await expect(CircomCompilerFactory!.createCircomCompiler(invalidVersion, true)).to.be.rejectedWith(reason);
     });
 
     it("should create compiler for each platform properly", async function () {

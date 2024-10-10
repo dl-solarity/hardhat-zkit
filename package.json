@@ -1,6 +1,6 @@
 {
   "name": "@solarity/hardhat-zkit",
-  "version": "0.4.5",
+  "version": "0.4.6",
   "description": "The ultimate TypeScript environment for Circom development",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
@@ -49,11 +49,14 @@
       "text"
     ]
   },
+  "engines": {
+    "node": ">=15"
+  },
   "dependencies": {
-    "@distributedlab/circom-parser": "0.1.2",
-    "@distributedlab/circom2": "0.2.18-rc.4",
+    "@distributedlab/circom-parser": "0.1.3",
     "@solarity/zkit": "0.2.6",
     "@solarity/zktype": "0.3.1",
+    "@wasmer/wasi": "0.12.0",
     "chalk": "4.1.2",
     "cli-progress": "3.12.0",
     "cli-table3": "0.6.5",
@@ -64,7 +67,9 @@
     "semver": "7.6.3",
     "snarkjs": "0.7.3",
     "uuid": "9.0.1",
-    "zod": "3.23.8"
+    "zod": "3.23.8",
+    "is-typed-array": "1.1.13",
+    "path-browserify": "1.0.1"
   },
   "peerDependencies": {
     "hardhat": "^2.16.0"

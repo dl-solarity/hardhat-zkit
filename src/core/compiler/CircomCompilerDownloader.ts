@@ -252,7 +252,7 @@ export class CircomCompilerDownloader {
         url = `${COMPILER_ARM_REPOSITORY_URL}/v${version}/${this._platform}`;
         break;
       default:
-        url = `${COMPILER_WASM_REPOSITORY_URL}/v${WASM_COMPILER_VERSIONING[version]}/circom.wasm`;
+        url = this._getWasmDownloadURL(version);
     }
 
     if (
@@ -277,6 +277,15 @@ export class CircomCompilerDownloader {
 
   private _getWasmCompilerDownloadPath(version: string): string {
     return path.join(this._compilersDir, version, "circom.wasm");
+  }
+
+  private _getWasmDownloadURL(version: string): string {
+    const wasmVersion = WASM_COMPILER_VERSIONING[version];
+    if (!wasmVersion) {
+      throw new HardhatZKitError(`Unsupported WASM version - ${version}`);
+    }
+
+    return `${COMPILER_WASM_REPOSITORY_URL}/v${wasmVersion}/circom.wasm`;
   }
 
   private async _postProcessCompilerDownload(downloadPath: string): Promise<void> {
