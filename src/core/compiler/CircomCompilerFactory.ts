@@ -7,7 +7,7 @@ import { exec } from "child_process";
 
 import { Reporter } from "../../reporter";
 import { HardhatZKitError } from "../../errors";
-import { LATEST_SUPPORTED_CIRCOM_VERSION, OLDEST_SUPPORTED_ARM_CIRCOM_VERSION } from "../../constants";
+import { LATEST_SUPPORTED_CIRCOM_VERSION, OLDEST_SUPPORTED_CIRCOM_VERSION } from "../../constants";
 
 import { BinaryCircomCompiler, WASMCircomCompiler } from "./CircomCompiler";
 import { CircomCompilerDownloader } from "./CircomCompilerDownloader";
@@ -59,8 +59,14 @@ export class BaseCircomCompilerFactory {
     isVersionStrict: boolean,
     verifyCompiler: boolean = true,
   ): Promise<ICircomCompiler> {
-    if (!semver.gte(LATEST_SUPPORTED_CIRCOM_VERSION, version)) {
-      throw new HardhatZKitError(`Unsupported Circom compiler version - ${version}. Please provide another version.`);
+    const supportedVersionsRange = semver.validRange(
+      `${OLDEST_SUPPORTED_CIRCOM_VERSION} - ${LATEST_SUPPORTED_CIRCOM_VERSION}`,
+    );
+
+    if (isVersionStrict && !semver.satisfies(version, supportedVersionsRange!)) {
+      throw new HardhatZKitError(
+        `Unsupported Circom compiler version - ${version}. Please provide another version from the range ${supportedVersionsRange}.`,
+      );
     }
 
     let compiler = await this._tryCreateNativeCompiler(version, isVersionStrict);
@@ -69,13 +75,7 @@ export class BaseCircomCompilerFactory {
       return compiler;
     }
 
-    let compilerPlatformBinary = CircomCompilerDownloader.getCompilerPlatformBinary();
-
-    // Utilize binary translators like Rosetta (macOS) or Prism (Windows)
-    // to run x64 binaries on arm64 systems when no arm64 versions are available.
-    if (isVersionStrict && os.arch() === "arm64" && !semver.gte(version, OLDEST_SUPPORTED_ARM_CIRCOM_VERSION)) {
-      compilerPlatformBinary = CircomCompilerDownloader.getCompilerPlatformBinary("x64");
-    }
+    const compilerPlatformBinary = CircomCompilerDownloader.getCompilerPlatformBinary();
 
     if (compilerPlatformBinary !== CompilerPlatformBinary.WASM) {
       compiler = await this._tryCreateBinaryCompiler(compilerPlatformBinary, version, isVersionStrict, verifyCompiler);

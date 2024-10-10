@@ -165,6 +165,18 @@ describe("CircomCompilerDownloader", () => {
       expect(reporterSpy.called).to.be.false;
     });
 
+    it("should throw an error if pass unsupported WASM compiler version", async function () {
+      const compilersDir = getNormalizedFullPath(this.hre.config.paths.root, "compilers");
+      await fsExtra.ensureDir(compilersDir);
+
+      const platform = CompilerPlatformBinary.WASM;
+      const circomCompilerDownloader = CircomCompilerDownloader.getCircomCompilerDownloader(platform, compilersDir);
+
+      await expect(circomCompilerDownloader.downloadCompiler("2.0.5", true, true)).to.be.rejectedWith(
+        "Unsupported WASM version - 2.0.5",
+      );
+    });
+
     it("should throw an error if the downloaded compiler is not working", async function () {
       const compilersDir = getNormalizedFullPath(this.hre.config.paths.root, "compilers");
       await fsExtra.ensureDir(compilersDir);
