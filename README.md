@@ -189,31 +189,28 @@ component main = Multiplier();
 <td>
 
 ```ts
-// file location: ./scripts/multiplier.test.ts
+// file location: ./test/multiplier.test.ts
 
 import { zkit } from "hardhat"; // hardhat-zkit plugin
 import { expect } from "chai"; // chai-zkit extension
 import { Multiplier } from "@zkit"; // zktype circuit-object
 
-async function main() {
-  const circuit: Multiplier = await zkit.getCircuit("Multiplier");
-  // or await zkit.getCircuit("circuits/multiplier.circom:Multiplier");
+describe("Multiplier", () => {
+  it("should test the circuit", async () => {
+    const circuit: Multiplier = await zkit.getCircuit("Multiplier");
+    // or await zkit.getCircuit("circuits/multiplier.circom:Multiplier");
 
-  // witness testing
-  await expect(circuit)
-    .with.witnessInputs({ in1: "3", in2: "7" })
-    .to.have.witnessOutputs({ out: "21" });
+    // witness testing
+    await expect(circuit)
+        .with.witnessInputs({ in1: "3", in2: "7" })
+        .to.have.witnessOutputs({ out: "21" });
 
-  // proof testing
-  const proof = await circuit.generateProof({ in1: "4", in2: "2" });
-  await expect(circuit).to.verifyProof(proof);
+    // proof testing
+    const proof = await circuit.generateProof({ in1: "4", in2: "2" });
 
-  console.log("OK");
-}
-
-main()
-  .then()
-  .catch((e) => console.log(e));
+    await expect(circuit).to.verifyProof(proof);
+  });
+});
 ```
 
 </td>
@@ -228,7 +225,7 @@ npx hardhat zkit make
 
 This command will install the newest compatible Circom compiler, compile the provided circuit, download the necessary `ptau` file regarding the number of circuit's constraints, build the required `zkey` and `vkey` files, and generate TypeScript object wrappers to enable full typization of signals and ZK proofs.
 
-Afterward, you may run the provided hardhat script via `npx hardhat run ./scripts/multiplier.test.ts`.
+Afterward, copy the provided script to the `test` directory and run the tests via `npx hardhat test`. You will see that all the tests are passing!
 
 > Check out the [Medium blog post](https://medium.com/@Arvolear/introducing-hardhat-zkit-how-did-you-even-use-circom-before-a7b463a5575b) to learn more.
 
