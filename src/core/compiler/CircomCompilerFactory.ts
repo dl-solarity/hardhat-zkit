@@ -14,9 +14,6 @@ import { CircomCompilerDownloader } from "./CircomCompilerDownloader";
 
 import { CompilerInfo, CompilerPlatformBinary, ICircomCompiler, NativeCompiler } from "../../types/core";
 
-// eslint-disable-next-line
-const { Context } = require("@distributedlab/circom2");
-
 /**
  * Abstract factory class responsible for creating instances of Circom compilers.
  *
@@ -185,7 +182,7 @@ export class BaseCircomCompilerFactory {
     return compilerBinaryInfo;
   }
 
-  private _getWasmCompiler(compilerPath: string): typeof Context {
+  private _getWasmCompiler(compilerPath: string): Buffer {
     return fsExtra.readFileSync(require.resolve(compilerPath));
   }
 
