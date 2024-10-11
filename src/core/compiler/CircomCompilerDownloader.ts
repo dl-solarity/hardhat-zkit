@@ -182,7 +182,9 @@ export class CircomCompilerDownloader {
    * @param version The version of the compiler to download
    * @param isVersionStrict Indicates whether to enforce strict version matching
    * @param verifyCompiler Indicates whether to perform verification on the downloaded compiler
-   * @throws `HardhatZKitError` If an error occurs during the download or verification process
+   *
+   * @throws `HardhatZKitError` If an error occurs during the download, verification process
+   * or getting WASM download URL for the specific version
    */
   public async downloadCompiler(version: string, isVersionStrict: boolean, verifyCompiler: boolean): Promise<void> {
     await this._mutex.use(async () => {

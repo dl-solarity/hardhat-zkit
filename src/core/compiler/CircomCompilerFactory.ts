@@ -24,24 +24,19 @@ const { Context } = require("@distributedlab/circom2");
  * based on the specified version and platform. It includes logic to handle versioning,
  * ensure compatibility with supported architectures, and determine the appropriate
  * compiler to use (native, binary, or WASM) for the compilation process.
- *
- * The factory also includes error handling for unsupported versions and facilitates
- * the use of binary translators on ARM architectures when necessary. This allows
- * developers to seamlessly work with various Circom compiler versions while
- * managing dependencies and ensuring optimal performance during circuit compilation.
  */
 export class BaseCircomCompilerFactory {
   /**
    * Creates an instance of a Circom compiler based on the specified version and architecture.
    *
-   * This method first checks if the requested Circom compiler version is supported. If the version
-   * exceeds the latest supported version, an error is thrown. The method attempts to create a native
-   * compiler first; if successful, the instance is returned immediately.
+   * This method first checks if the requested Circom compiler version is supported.
+   * If the version is strict and falls outside the range between the latest supported and
+   * the earliest supported versions, an error is thrown. If it's not strict, only the upper limit is checked.
+   *
+   * The method attempts to create a native compiler first; if successful, the instance is returned immediately.
    *
    * If the native compiler cannot be created, the method determines the appropriate compiler binary
-   * for the current platform. If the requested version is strictly enforced and the system architecture
-   * is arm64, but the version is older than the supported arm64 version, it falls back to using the
-   * x64 binary.
+   * for the current platform.
    *
    * The method then attempts to create a binary compiler if the platform binary is not WASM. If this
    * also fails, it defaults to creating a WASM compiler instance. This provides flexibility in compiler
@@ -59,14 +54,11 @@ export class BaseCircomCompilerFactory {
     isVersionStrict: boolean,
     verifyCompiler: boolean = true,
   ): Promise<ICircomCompiler> {
-    const supportedVersionsRange = semver.validRange(
-      `${OLDEST_SUPPORTED_CIRCOM_VERSION} - ${LATEST_SUPPORTED_CIRCOM_VERSION}`,
-    );
-
-    if (isVersionStrict && !semver.satisfies(version, supportedVersionsRange!)) {
-      throw new HardhatZKitError(
-        `Unsupported Circom compiler version - ${version}. Please provide another version from the range ${supportedVersionsRange}.`,
-      );
+    if (
+      (isVersionStrict && semver.lt(version, OLDEST_SUPPORTED_CIRCOM_VERSION)) ||
+      semver.gt(version, LATEST_SUPPORTED_CIRCOM_VERSION)
+    ) {
+      throw new HardhatZKitError(`Unsupported Circom compiler version - ${version}. Please provide another version.`);
     }
 
     let compiler = await this._tryCreateNativeCompiler(version, isVersionStrict);

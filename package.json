@@ -50,7 +50,7 @@
     ]
   },
   "engines": {
-    "node": ">=15"
+    "node": ">=16"
   },
   "dependencies": {
     "@distributedlab/circom-parser": "0.1.3",
