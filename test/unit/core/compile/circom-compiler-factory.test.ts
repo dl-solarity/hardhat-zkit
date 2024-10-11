@@ -66,7 +66,7 @@ describe("CircomCompilerFactory", () => {
 
     it("should correctly create circom compiler instance", async function () {
       createCircomCompilerFactory();
-      const compiler: ICircomCompiler = await CircomCompilerFactory!.createCircomCompiler("0.2.18", false);
+      const compiler: ICircomCompiler = await CircomCompilerFactory!.createCircomCompiler("2.1.7", false);
 
       const circuitFullPath: string = getNormalizedFullPath(this.hre.config.paths.root, "circuits/main/mul2.circom");
       const artifactsFullPath: string = getNormalizedFullPath(
@@ -96,12 +96,21 @@ describe("CircomCompilerFactory", () => {
     });
 
     it("should correctly throw error if pass invalid version", async function () {
-      const invalidVersion = "2.1.10";
-
-      const reason = `Unsupported Circom compiler version - ${invalidVersion}. Please provide another version.`;
+      let invalidVersion = "2.1.10";
+      let reason = `Unsupported Circom compiler version - ${invalidVersion}. Please provide another version.`;
 
       createCircomCompilerFactory();
+      await expect(CircomCompilerFactory!.createCircomCompiler(invalidVersion, true)).to.be.rejectedWith(reason);
+
+      invalidVersion = "2.2.0";
+      reason = `Unsupported Circom compiler version - ${invalidVersion}. Please provide another version.`;
+
       await expect(CircomCompilerFactory!.createCircomCompiler(invalidVersion, false)).to.be.rejectedWith(reason);
+
+      invalidVersion = "2.0.4";
+      reason = `Unsupported Circom compiler version - ${invalidVersion}. Please provide another version.`;
+
+      await expect(CircomCompilerFactory!.createCircomCompiler(invalidVersion, true)).to.be.rejectedWith(reason);
     });
 
     it("should create compiler for each platform properly", async function () {

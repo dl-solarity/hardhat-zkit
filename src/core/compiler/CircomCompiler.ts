@@ -7,7 +7,7 @@ import { ICircomCompiler, CompileConfig, BaseCompileConfig } from "../../types/c
 import { MAGIC_DESCRIPTOR } from "../../constants";
 
 // eslint-disable-next-line
-const { Context, CircomRunner, bindings } = require("@distributedlab/circom2");
+const { Context, CircomRunner, bindings, preopens } = require("./vendor");
 
 /**
  * An abstract class that serves as the base for all `circom` compiler implementations.
@@ -167,7 +167,7 @@ export class WASMCircomCompiler extends BaseCircomCompiler {
   private _getCircomRunner(callArgs: string[], quiet: boolean, errDescriptor: number): typeof CircomRunner {
     return new CircomRunner({
       args: callArgs,
-      preopens: { "/": "/" },
+      preopens,
       bindings: {
         ...bindings,
         exit(code: number) {

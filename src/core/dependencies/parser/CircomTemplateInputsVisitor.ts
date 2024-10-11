@@ -99,7 +99,7 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
     });
 
     return {
-      name: identifier.ID().getText(),
+      name: identifier.ID(0).getText(),
       dimension: inputDimension,
     };
   }
