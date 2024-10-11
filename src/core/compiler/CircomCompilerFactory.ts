@@ -54,6 +54,7 @@ export class BaseCircomCompilerFactory {
     isVersionStrict: boolean,
     verifyCompiler: boolean = true,
   ): Promise<ICircomCompiler> {
+    // Always check the latest supported version and check the oldest version only if it is strict
     if (
       (isVersionStrict && semver.lt(version, OLDEST_SUPPORTED_CIRCOM_VERSION)) ||
       semver.gt(version, LATEST_SUPPORTED_CIRCOM_VERSION)
