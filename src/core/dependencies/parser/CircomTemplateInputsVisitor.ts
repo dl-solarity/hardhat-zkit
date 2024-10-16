@@ -6,6 +6,9 @@ import {
   BigIntOrNestedArray,
   IdentifierContext,
   Variables,
+  VarDeclarationContext,
+  VarDefinitionContext,
+  RhsValueContext,
 } from "@distributedlab/circom-parser";
 
 import { InputData } from "../../../types/core";
@@ -26,7 +29,8 @@ import { HardhatZKitError } from "../../../errors";
  */
 export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
   templateInputs: Record<string, InputData>;
-  expressionVisitor: CircomExpressionVisitor;
+
+  vars: Variables = {};
 
   constructor(
     private readonly _templateName: string,
@@ -36,15 +40,11 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
 
     this.templateInputs = {};
 
-    const vars: Variables = {};
-
     for (const key of Object.keys(this._parameterValues)) {
-      vars[key] = {
+      this.vars[key] = {
         value: this._parameterValues[key],
       };
     }
-
-    this.expressionVisitor = new CircomExpressionVisitor(true, vars);
   }
 
   visitTemplateDeclaration = (ctx: TemplateDeclarationContext) => {
@@ -58,6 +58,63 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
           }
         });
     }
+  };
+
+  visitVarDeclaration = (ctx: VarDeclarationContext) => {
+    const vars = this._parseVarDefinition(ctx.varDefinition());
+
+    if (!ctx.ASSIGNMENT()) return;
+
+    const results = this._parseRHSValue(ctx.rhsValue());
+
+    if (vars.length !== results.length) {
+      throw new HardhatZKitError(`Mismatch between variable definitions and values - ${ctx.getText()}`);
+    }
+
+    vars.forEach((varName, index) => {
+      this.vars[varName] = {
+        value: results[index],
+      };
+    });
+  };
+
+  _parseVarDefinition = (ctx: VarDefinitionContext): string[] => {
+    return ctx.identifier_list().map((identifier) => identifier.ID(0).getText());
+  };
+
+  _parseRHSValue = (ctx: RhsValueContext): bigint[] => {
+    const expressionVisitor = new CircomExpressionVisitor(true, this.vars);
+
+    if (ctx.expression()) {
+      const expressionResult = expressionVisitor.visitExpression(ctx.expression());
+
+      if (Array.isArray(expressionResult)) {
+        throw new HardhatZKitError(`Currently, only single value assignment is supported - ${expressionResult}`);
+      }
+
+      return [expressionResult];
+    }
+
+    if (ctx.expressionList()) {
+      const expressionsResult: bigint[] = [];
+
+      ctx
+        .expressionList()
+        .expression_list()
+        .forEach((expression) => {
+          const expressionResult = expressionVisitor.visitExpression(expression);
+
+          if (Array.isArray(expressionResult)) {
+            throw new HardhatZKitError(`Currently, only single value assignment is supported - ${expressionResult}`);
+          }
+
+          expressionsResult.push(expressionResult);
+        });
+
+      return expressionsResult;
+    }
+
+    throw new HardhatZKitError(`RHS value as function call is not supported - ${ctx.getText()}`);
   };
 
   visitSignalDeclaration = (ctx: SignalDeclarationContext) => {
@@ -87,7 +144,8 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
     const inputDimension: string[] = [];
 
     identifier.arrayDimension_list().forEach((dimension) => {
-      const expressionResult = this.expressionVisitor.visitExpression(dimension.expression());
+      const expressionVisitor = new CircomExpressionVisitor(true, this.vars);
+      const expressionResult = expressionVisitor.visitExpression(dimension.expression());
 
       if (Array.isArray(expressionResult)) {
         throw new HardhatZKitError(
