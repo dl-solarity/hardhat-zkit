@@ -101,10 +101,6 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
       return;
     }
 
-    if (result === 0n && !ctx.ELSE()) {
-      return;
-    }
-
     if (result === 0n && ctx.ELSE()) {
       this.visitTemplateStmt(ctx.templateStmt(1));
 
