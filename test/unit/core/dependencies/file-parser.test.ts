@@ -11,7 +11,7 @@ import { CIRCUITS_COMPILE_CACHE_FILENAME } from "@src/constants";
 import { createCircuitsCompileCache } from "@src/cache";
 import { createReporter } from "@src/reporter";
 
-import { ResolvedFileData } from "@src/types/core";
+import { ResolvedFileData, ResolvedMainComponentData } from "@src/types/core";
 
 describe("CircomFilesParser", () => {
   describe("parse", () => {
@@ -76,6 +76,36 @@ describe("CircomFilesParser", () => {
 
       expect(result.parsedFileData.includes).to.be.deep.eq(["../base/mul2Base.circom", "../base/sumMul.circom"]);
       expect(result.parsedFileData.pragmaInfo.compilerVersion).to.be.eq("2.0.0");
+    });
+
+    it("should correctly parse data and resolve var definitions and if statements", async function () {
+      const mainComponentData: ResolvedMainComponentData = {
+        parameters: {
+          SIGNATURE_TYPE: 8n,
+          DG_HASH_TYPE: 8n,
+          DOCUMENT_TYPE: 512n,
+          EC_BLOCK_NUMBER: 256n,
+          EC_SHIFT: 2n,
+          DG1_SHIFT: 0n,
+          AA_SIGNATURE_ALGO: 17n,
+          DG15_SHIFT: 64n,
+          DG15_BLOCK_NUMBER: 64n,
+          AA_SHIFT: 256n,
+        },
+        signals: [],
+      };
+
+      const testFilePath = getNormalizedFullPath(this.hre.config.paths.root, "circuits/main/curve.circom");
+
+      const result = parser.parseTemplateInputs(testFilePath, "RegisterIdentityBuilder", mainComponentData.parameters);
+
+      expect(result["encapsulatedContent"].dimension).to.be.deep.equal([String(256n * 512n)]);
+      expect(result["dg1"].dimension).to.be.deep.equal(["1024"]);
+      expect(result["dg15"].dimension).to.be.deep.equal([String(64n * 512n)]);
+      expect(result["signedAttributes"].dimension).to.be.deep.equal(["1024"]);
+      expect(result["signature"].dimension).to.be.deep.equal(["32"]);
+      expect(result["pubkey"].dimension).to.be.deep.equal(["32"]);
+      expect(result["slaveMerkleInclusionBranches"].dimension).to.be.deep.equal(["80"]);
     });
   });
 

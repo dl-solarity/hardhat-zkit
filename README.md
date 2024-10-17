@@ -253,4 +253,5 @@ Where:
 
 - Temporarily, the only supported proving system is `groth16`.
 - Sometimes `hardhat` scripts that generate `zkey` files may run indefinitely. Waiting for [this snarkjs fix](https://github.com/iden3/snarkjs/pull/512) to be published.
+- Currently there is minimal support for `var` Circom variables. Some circuits may not work if you are using complex `var`-dependent expressions.
 - Due to current `wasm` memory limitations (address space is 32-bit), the plugin may fail to compile especially large circuits on some platforms.
