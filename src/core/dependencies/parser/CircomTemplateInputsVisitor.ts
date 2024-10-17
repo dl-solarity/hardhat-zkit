@@ -54,14 +54,18 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
         .templateBlock()
         .templateStmt_list()
         .forEach((stmt) => {
-          if (stmt.signalDeclaration()) {
-            this.visit(stmt.signalDeclaration());
-          }
+          this.visitTemplateStmt(stmt);
         });
     }
   };
 
   visitTemplateStmt = (ctx: TemplateStmtContext) => {
+    if (ctx.signalDeclaration()) {
+      this.visit(ctx.signalDeclaration());
+
+      return;
+    }
+
     if (ctx.identifier() && ctx.ASSIGNMENT() && ctx.expression(0)) {
       const id = ctx.identifier().ID(0).getText();
       const value = new CircomExpressionVisitor(true, this.vars).visitExpression(ctx.expression(0));
