@@ -9,6 +9,7 @@ import {
   VarDeclarationContext,
   VarDefinitionContext,
   RhsValueContext,
+  TemplateStmtContext,
 } from "@distributedlab/circom-parser";
 
 import { InputData } from "../../../types/core";
@@ -57,6 +58,53 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
             this.visit(stmt.signalDeclaration());
           }
         });
+    }
+  };
+
+  visitTemplateStmt = (ctx: TemplateStmtContext) => {
+    if (ctx.identifier() && ctx.ASSIGNMENT() && ctx.expression(0)) {
+      const id = ctx.identifier().ID(0).getText();
+      const value = new CircomExpressionVisitor(true, this.vars).visitExpression(ctx.expression(0));
+
+      if (Array.isArray(value)) {
+        throw new HardhatZKitError(`Currently, only single value assignment is supported - ${value}`);
+      }
+
+      this.vars[id] = {
+        value: value,
+      };
+
+      return;
+    }
+
+    if (!ctx.IF()) {
+      this.visitChildren(ctx);
+
+      return;
+    }
+
+    const result = new CircomExpressionVisitor(true, this.vars).visitExpression(ctx.parExpression().expression());
+
+    if (Array.isArray(result)) {
+      throw new HardhatZKitError(
+        `Currently, only single value assignment is supported as a result inside if statement - ${result}`,
+      );
+    }
+
+    if (result === 1n) {
+      this.visitTemplateStmt(ctx.templateStmt(0));
+
+      return;
+    }
+
+    if (result === 0n && !ctx.ELSE()) {
+      return;
+    }
+
+    if (result === 0n && ctx.ELSE()) {
+      this.visitTemplateStmt(ctx.templateStmt(1));
+
+      return;
     }
   };
 
