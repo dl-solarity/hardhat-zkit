@@ -17,7 +17,7 @@ export class WarningsReporter extends BaseReporter {
 
     this.warnings.add(
       `Inside the ${templateName} circuit (${context.start.line}:${context.start.column})
-      \rThe expression structure: ${context.getText()} not supported if used to determine the dimension of an input signal!`,
+      \rExpression structure: ${context.getText()} is not supported if used to determine the dimension of an input signal!`,
     );
   }
 
