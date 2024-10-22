@@ -4,7 +4,7 @@ import debug from "debug";
 import { VerifierLanguageType } from "@solarity/zkit";
 
 import { CircuitArtifact } from "../types/artifacts/circuit-artifacts";
-import { CompilationInfo, CircuitSetupInfo } from "../types/core";
+import { CompilationInfo, CircuitSetupInfo, SimpleParserRuleContext } from "../types/core";
 import {
   ProgressReporter,
   CircuitFilesResolvingReporter,
@@ -15,6 +15,7 @@ import {
   VerifiersGenerationReporter,
   VKeyFilesGenerationReporter,
   ZKeyFilesGenerationReporter,
+  WarningsReporter,
 } from "./reporters";
 
 import { createProgressBarProcessor } from "./ProgressBarProcessor";
@@ -31,6 +32,7 @@ class ReporterFacade {
   private _setupReporter!: SetupReporter;
   private _progressReporter!: ProgressReporter;
   private _ptauFileReporter!: PtauFileReporter;
+  private _warningsReporter!: WarningsReporter;
   private _circomCompilerReporter!: CircomCompilerReporter;
   private _circuitCompilationReporter!: CircuitCompilationReporter;
   private _verifiersGenerationReporter!: VerifiersGenerationReporter;
@@ -55,6 +57,7 @@ class ReporterFacade {
     this._vKeyFilesGenerationReporter = new VKeyFilesGenerationReporter(quiet);
     this._zKeyFilesGenerationReporter = new ZKeyFilesGenerationReporter(quiet);
     this._circuitFilesResolvingReporter = new CircuitFilesResolvingReporter(quiet);
+    this._warningsReporter = new WarningsReporter(quiet);
   }
 
   public setQuiet(newValue: boolean) {
@@ -217,6 +220,14 @@ class ReporterFacade {
 
   public updateProgressBarValue(valueToAdd: number) {
     this._progressReporter.updateProgressBarValue(valueToAdd);
+  }
+
+  public reportUnsupportedExpression(templateName: string, context: SimpleParserRuleContext) {
+    this._warningsReporter.reportUnsupportedExpression(templateName, context);
+  }
+
+  public reportAllWarnings(spinnerId: string | null) {
+    this._warningsReporter.reportAllWarnings(spinnerId);
   }
 
   public verboseLog(namespace: string, formatterStr: string, logArgs: any[] = []) {

@@ -10,10 +10,13 @@ import {
   VarDefinitionContext,
   RhsValueContext,
   TemplateStmtContext,
+  BlockInstantiationExpressionContext,
+  DotExpressionContext,
 } from "@distributedlab/circom-parser";
 
 import { InputData } from "../../../types/core";
 import { HardhatZKitError } from "../../../errors";
+import { Reporter } from "../../../reporter";
 
 /**
  * Visitor class for the {@link https://www.npmjs.com/package/@distributedlab/circom-parser | @distributedlab/circom-parser} package.
@@ -133,7 +136,24 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
   _parseRHSValue = (ctx: RhsValueContext): bigint[] => {
     const expressionVisitor = new CircomExpressionVisitor(true, this.vars);
 
+    /**
+     *  Due to the filtering below following expressions are skipped during the input signals resolution:
+     *
+     *  ```circom
+     *  var var1 = functionCall();
+     *  var var2 = component.out;
+     *  ```
+     */
     if (ctx.expression()) {
+      if (
+        ctx.expression() instanceof BlockInstantiationExpressionContext ||
+        ctx.expression() instanceof DotExpressionContext
+      ) {
+        Reporter?.reportUnsupportedExpression(this._templateName, ctx.expression());
+
+        return [0n];
+      }
+
       const expressionResult = expressionVisitor.visitExpression(ctx.expression());
 
       if (Array.isArray(expressionResult)) {

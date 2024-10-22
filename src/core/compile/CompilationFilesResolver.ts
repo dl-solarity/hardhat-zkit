@@ -117,6 +117,7 @@ export class CompilationFilesResolver {
       filteredResolvedFilesInfo = resolvedFilesInfoToCompile;
     }
 
+    Reporter!.reportAllWarnings(spinnerId);
     Reporter!.reportCircuitFilesResolvingResult(spinnerId);
 
     const filteredSourceNamesToCompile: string[] = filteredResolvedFilesInfo.map(
