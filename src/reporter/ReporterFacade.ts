@@ -227,8 +227,6 @@ class ReporterFacade {
   }
 
   public reportAllWarnings(spinnerId: string | null) {
-    if (!this._warningsReporter.hasWarnings()) return;
-
     this._warningsReporter.reportAllWarnings(spinnerId);
   }
 

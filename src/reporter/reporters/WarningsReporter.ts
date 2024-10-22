@@ -22,7 +22,7 @@ export class WarningsReporter extends BaseReporter {
   }
 
   public reportAllWarnings(spinnerId: string | null) {
-    if (this.isQuiet() || !spinnerId) return;
+    if (this.isQuiet() || !spinnerId || !this.hasWarnings()) return;
 
     const resolvingTimeMessage: string = this._getSpinnerWorkingTimeMessage(
       SpinnerProcessor!.getWorkingTime(spinnerId),
