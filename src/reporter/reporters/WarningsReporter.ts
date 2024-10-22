@@ -1,7 +1,7 @@
-import { SimpleParserRuleContext } from "../../types/core";
-
 import { SpinnerProcessor } from "../../reporter";
 import { BaseReporter } from "../../reporter/reporters/BaseReporter";
+
+import { SimpleParserRuleContext } from "../../types/core";
 
 export class WarningsReporter extends BaseReporter {
   public warnings: Set<string> = new Set();
