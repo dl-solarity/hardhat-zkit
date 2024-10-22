@@ -31,6 +31,16 @@ export class BaseSpinnerProcessor {
     this._idToSpinnerData.delete(spinnerId);
   }
 
+  public warnSpinner(spinnerId: string, warningMessage: string) {
+    const spinnerData = this._idToSpinnerData.get(spinnerId);
+
+    if (!spinnerData) return;
+
+    spinnerData.spinner.warn(warningMessage);
+
+    this._idToSpinnerData.delete(spinnerId);
+  }
+
   public getWorkingTime(spinnerId: string, fractionDigits: number = 2): string | undefined {
     const spinnerData = this._idToSpinnerData.get(spinnerId);
 

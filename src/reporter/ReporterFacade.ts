@@ -4,7 +4,7 @@ import debug from "debug";
 import { VerifierLanguageType } from "@solarity/zkit";
 
 import { CircuitArtifact } from "../types/artifacts/circuit-artifacts";
-import { CompilationInfo, CircuitSetupInfo } from "../types/core";
+import { CompilationInfo, CircuitSetupInfo, SimpleParserRuleContext } from "../types/core";
 import {
   ProgressReporter,
   CircuitFilesResolvingReporter,
@@ -222,8 +222,14 @@ class ReporterFacade {
     this._progressReporter.updateProgressBarValue(valueToAdd);
   }
 
-  public reportUnsupportedExpression(contextText: string) {
-    this._warningsReporter.reportUnsupportedExpression(contextText);
+  public reportUnsupportedExpression(templateName: string, context: SimpleParserRuleContext) {
+    this._warningsReporter.reportUnsupportedExpression(templateName, context);
+  }
+
+  public reportAllWarnings(spinnerId: string | null) {
+    if (!this._warningsReporter.hasWarnings()) return;
+
+    this._warningsReporter.reportAllWarnings(spinnerId);
   }
 
   public verboseLog(namespace: string, formatterStr: string, logArgs: any[] = []) {

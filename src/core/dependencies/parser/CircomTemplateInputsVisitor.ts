@@ -141,7 +141,7 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
         ctx.expression() instanceof BlockInstantiationExpressionContext ||
         ctx.expression() instanceof DotExpressionContext
       ) {
-        Reporter?.reportUnsupportedExpression(ctx.expression().getText());
+        Reporter?.reportUnsupportedExpression(this._templateName, ctx.expression());
 
         return [0n];
       }
