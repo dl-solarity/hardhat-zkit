@@ -16,7 +16,7 @@ export class WarningsReporter extends BaseReporter {
     if (this.isQuiet()) return;
 
     this.warnings.add(
-      `Inside the ${templateName} circuit (${context.start.line}:${context.start.column})\r
+      `Inside the ${templateName} circuit (${context.start.line}:${context.start.column})
       \rThe expression structure: ${context.getText()} not supported if used to determine the dimension of an input signal!`,
     );
   }
