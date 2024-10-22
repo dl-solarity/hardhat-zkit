@@ -16,8 +16,8 @@ export class WarningsReporter extends BaseReporter {
     if (this.isQuiet()) return;
 
     this.warnings.add(
-      `Inside the ${templateName} circuit (${context.start.line}:${context.start.column})
-      \rExpression structure: ${context.getText()} is not supported if used to determine the dimension of an input signal!`,
+      `\nInside the ${templateName} circuit (${context.start.line}:${context.start.column})
+      \rExpression structure: "${context.getText()}" is not supported if used to determine the dimension of an input signal!`,
     );
   }
 
@@ -30,7 +30,7 @@ export class WarningsReporter extends BaseReporter {
 
     SpinnerProcessor!.warnSpinner(
       spinnerId,
-      `Circuits are ready for the compilation ${resolvingTimeMessage}. But the analysis ended with warnings:`,
+      `Circuits are ready for the compilation ${resolvingTimeMessage}, however, the analysis ended with warnings:`,
     );
 
     for (const warning of this.warnings) {
