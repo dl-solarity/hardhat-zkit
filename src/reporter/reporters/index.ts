@@ -2,6 +2,7 @@ export * from "./BaseReporter";
 export * from "./SetupReporter";
 export * from "./ProgressReporter";
 export * from "./PtauFileReporter";
+export * from "./WarningsReporter";
 export * from "./CircomCompilerReporter";
 export * from "./CircuitCompilationReporter";
 export * from "./CircuitFilesResolvingReporter";

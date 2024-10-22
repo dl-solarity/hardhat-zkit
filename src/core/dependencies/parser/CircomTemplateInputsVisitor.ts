@@ -10,10 +10,13 @@ import {
   VarDefinitionContext,
   RhsValueContext,
   TemplateStmtContext,
+  BlockInstantiationExpressionContext,
+  DotExpressionContext,
 } from "@distributedlab/circom-parser";
 
 import { InputData } from "../../../types/core";
 import { HardhatZKitError } from "../../../errors";
+import { Reporter } from "../../../reporter";
 
 /**
  * Visitor class for the {@link https://www.npmjs.com/package/@distributedlab/circom-parser | @distributedlab/circom-parser} package.
@@ -134,6 +137,15 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
     const expressionVisitor = new CircomExpressionVisitor(true, this.vars);
 
     if (ctx.expression()) {
+      if (
+        ctx.expression() instanceof BlockInstantiationExpressionContext ||
+        ctx.expression() instanceof DotExpressionContext
+      ) {
+        Reporter?.reportUnsupportedExpression(ctx.expression().getText());
+
+        return [0n];
+      }
+
       const expressionResult = expressionVisitor.visitExpression(ctx.expression());
 
       if (Array.isArray(expressionResult)) {
