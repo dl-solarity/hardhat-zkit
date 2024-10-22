@@ -136,6 +136,14 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
   _parseRHSValue = (ctx: RhsValueContext): bigint[] => {
     const expressionVisitor = new CircomExpressionVisitor(true, this.vars);
 
+    /**
+     *  Due to the filtering below following expressions are skipped during the input signals resolution:
+     *
+     *  ```circom
+     *  var var1 = functionCall();
+     *  var var2 = component.out;
+     *  ```
+     */
     if (ctx.expression()) {
       if (
         ctx.expression() instanceof BlockInstantiationExpressionContext ||
