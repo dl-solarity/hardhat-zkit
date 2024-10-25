@@ -14,6 +14,13 @@ const defaultConfig: ZKitConfig = {
     skipFiles: [],
     c: false,
     json: false,
+    simplification: {
+      o0: false,
+      o1: false,
+      o2: false,
+      oldSimplificationHeuristics: false,
+      simplificationSubstitution: false,
+    },
   },
   setupSettings: {
     contributionSettings: {

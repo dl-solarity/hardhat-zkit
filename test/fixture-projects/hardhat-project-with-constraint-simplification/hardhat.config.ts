@@ -7,9 +7,10 @@ const defaultConfig: HardhatUserConfig = {
   zkit: {
     circuitsDir: "circuits",
     compilationSettings: {
+      artifactsDir: "zkit/artifacts",
       skipFiles: ["vendor"],
+      json: true,
       simplification: {
-        o1: true,
         simplificationSubstitution: true,
       },
     },
@@ -20,9 +21,7 @@ const defaultConfig: HardhatUserConfig = {
     quiet: true,
     verifiersSettings: {
       verifiersDir: "contracts/verifiers",
-      verifiersType: "vy",
     },
-    compilerVersion: "2.1.8",
   },
 };
 

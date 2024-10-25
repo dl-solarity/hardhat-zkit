@@ -26,6 +26,7 @@ import { getNormalizedFullPath } from "@src/utils/path-utils";
 import { getCompileCacheEntry, getSetupCacheEntry } from "../utils";
 
 import { HardhatZKit } from "@src/types/hardhat-zkit";
+import { ZKitConfig } from "@src/types/zkit-config";
 import { BaseCircomCompilerFactory } from "@src/core";
 import { CircomCompilerDownloader } from "@src/core/compiler/CircomCompilerDownloader";
 
@@ -98,6 +99,15 @@ describe("ZKit tasks", async function () {
     const updatedContent = fileContent.replace(/include\s*".*";/, `include "${newIncludePath}";`);
 
     fsExtra.writeFileSync(filePath, updatedContent, "utf-8");
+  }
+
+  function updateSimplificationFlag(config: ZKitConfig, flagToSet: "o0" | "o1" | "o2" | "oldSimplificationHeuristics") {
+    config.compilationSettings.simplification.o0 = false;
+    config.compilationSettings.simplification.o1 = false;
+    config.compilationSettings.simplification.o2 = false;
+    config.compilationSettings.simplification.oldSimplificationHeuristics = false;
+
+    config.compilationSettings.simplification[flagToSet] = true;
   }
 
   describe("compile", async function () {
@@ -258,6 +268,92 @@ describe("ZKit tasks", async function () {
             ` Invalid import ${invalidImportPath} from ${circuitPath}. Hardhat doesn't support imports with absolute paths.`,
           );
         });
+      });
+    });
+
+    describe("with different constraints simplifications flags", async function () {
+      const circuitName = "ComplexCircuitWithSimplifications";
+
+      const expectedFiles = [
+        `${circuitName}.r1cs`,
+        `${circuitName}.sym`,
+        `${circuitName}_artifacts.json`,
+        `${circuitName}_constraints.json`,
+        `${circuitName}_js`,
+        `${circuitName}_substitutions.json`,
+      ];
+
+      const fileSizes: {
+        r1cs: number;
+        constraints: number;
+        substitutions: number;
+      } = {
+        r1cs: 0,
+        constraints: 0,
+        substitutions: 0,
+      };
+
+      const checkAndUpdateFileSizes = (circuitPath: string) => {
+        expect(fsExtra.readdirSync(circuitPath)).to.be.deep.eq(expectedFiles);
+
+        const r1csSize = fsExtra.statSync(`${circuitPath}/${circuitName}.r1cs`).size;
+        const constraintsSize = fsExtra.statSync(`${circuitPath}/${circuitName}_constraints.json`).size;
+        const substitutionsSize = fsExtra.statSync(`${circuitPath}/${circuitName}_substitutions.json`).size;
+
+        expect(r1csSize).to.be.lt(fileSizes["r1cs"]);
+        expect(constraintsSize).to.be.lt(fileSizes["constraints"]);
+        expect(substitutionsSize).to.be.gt(fileSizes["substitutions"]);
+
+        fileSizes["r1cs"] = r1csSize;
+        fileSizes["constraints"] = constraintsSize;
+        fileSizes["substitutions"] = substitutionsSize;
+      };
+
+      useEnvironment("with-constraint-simplification", true);
+
+      it("should correctly compile circuits with different simplification flag", async function () {
+        const root = this.hre.config.paths.root;
+
+        const circuitPath = getNormalizedFullPath(
+          root,
+          `${this.hre.config.zkit.compilationSettings.artifactsDir}/circuits/${circuitName}.circom`,
+        );
+
+        updateSimplificationFlag(this.hre.config.zkit, "o0");
+
+        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
+
+        expect(fsExtra.readdirSync(circuitPath)).to.be.deep.eq(expectedFiles);
+
+        fileSizes["r1cs"] = fsExtra.statSync(`${circuitPath}/${circuitName}.r1cs`).size;
+        fileSizes["constraints"] = fsExtra.statSync(`${circuitPath}/${circuitName}_constraints.json`).size;
+        fileSizes["substitutions"] = fsExtra.statSync(`${circuitPath}/${circuitName}_substitutions.json`).size;
+
+        updateSimplificationFlag(this.hre.config.zkit, "o1");
+
+        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
+
+        checkAndUpdateFileSizes(circuitPath);
+
+        updateSimplificationFlag(this.hre.config.zkit, "o2");
+
+        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
+
+        checkAndUpdateFileSizes(circuitPath);
+
+        updateSimplificationFlag(this.hre.config.zkit, "oldSimplificationHeuristics");
+
+        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
+
+        expect(fsExtra.readdirSync(circuitPath)).to.be.deep.eq(expectedFiles);
+
+        expect(fsExtra.statSync(`${circuitPath}/${circuitName}.r1cs`).size).to.be.gte(fileSizes["r1cs"]);
+        expect(fsExtra.statSync(`${circuitPath}/${circuitName}_constraints.json`).size).to.be.gte(
+          fileSizes["constraints"],
+        );
+        expect(fsExtra.statSync(`${circuitPath}/${circuitName}_substitutions.json`).size).to.be.lte(
+          fileSizes["substitutions"],
+        );
       });
     });
   });

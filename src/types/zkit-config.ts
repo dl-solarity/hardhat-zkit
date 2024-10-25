@@ -12,10 +12,19 @@ export type ZKitConfig = {
   quiet: boolean;
 };
 
+export type CompileSimplificationFlags = {
+  o0: boolean;
+  o1: boolean;
+  o2: boolean;
+  oldSimplificationHeuristics: boolean;
+  simplificationSubstitution: boolean;
+};
+
 export type CompilationSettings = FileFilterSettings & {
   artifactsDir: string;
   c: boolean;
   json: boolean;
+  simplification: CompileSimplificationFlags;
 };
 
 export type SetupSettings = FileFilterSettings & {
