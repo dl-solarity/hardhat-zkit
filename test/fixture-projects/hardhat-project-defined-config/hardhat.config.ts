@@ -8,10 +8,7 @@ const defaultConfig: HardhatUserConfig = {
     circuitsDir: "circuits",
     compilationSettings: {
       skipFiles: ["vendor"],
-      simplification: {
-        o1: true,
-        simplificationSubstitution: true,
-      },
+      optimization: "O1",
     },
     setupSettings: {
       ptauDir: "zkit/ptau",

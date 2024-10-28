@@ -90,6 +90,8 @@ const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfi
     env.config,
   );
 
+  const optimization = taskArgs.optimization || env.config.zkit.compilationSettings.optimization;
+
   // Flags for specifying the necessary configurations during the setup process.
   // R1CS, Wasm, and sym flags are mandatory
   const compileFlags: CompileFlags = {
@@ -98,15 +100,9 @@ const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfi
     sym: true,
     json: taskArgs.json || env.config.zkit.compilationSettings.json,
     c: taskArgs.c || env.config.zkit.compilationSettings.c,
-    O0: taskArgs.o0 || env.config.zkit.compilationSettings.simplification.o0,
-    O1: taskArgs.o1 || env.config.zkit.compilationSettings.simplification.o1,
-    O2: taskArgs.o2 || env.config.zkit.compilationSettings.simplification.o2,
-    use_old_simplification_heuristics:
-      taskArgs.oldSimplificationHeuristics ||
-      env.config.zkit.compilationSettings.simplification.oldSimplificationHeuristics,
-    simplification_substitution:
-      taskArgs.simplificationSubstitution ||
-      env.config.zkit.compilationSettings.simplification.simplificationSubstitution,
+    O0: optimization === "O0",
+    O1: optimization === "O1",
+    O2: optimization === "O2",
   };
 
   Reporter!.reportCircuitFilesResolvingProcessHeader();
@@ -349,14 +345,12 @@ zkitScope
   .addFlag("json", "Outputs constraints in json file in the compilation artifacts directory.")
   .addFlag("c", "Enables the generation of cpp files in the compilation artifacts directory.")
   .addFlag("force", "Force compilation ignoring cache.")
-  .addFlag("o0", "Disables all constraint simplifications.")
-  .addFlag("o1", "Applies signal to signal and signal to constant simplification.")
-  .addFlag("o2", "Applies full constraint simplification.")
-  .addFlag(
-    "oldSimplificationHeuristics",
-    "Applies the old version of the heuristics when performing linear simplification.",
+  .addOptionalParam(
+    "optimization",
+    "Optimization flag for constraint simplification. Use 'O0' for no simplification, 'O1' for signal-to-signal and signal-to-constant simplification, and 'O2' for full simplification.",
+    undefined,
+    types.string,
   )
-  .addFlag("simplificationSubstitution", "Outputs the substitution applied in the simplification phase in json format.")
   .setAction(compile);
 
 zkitScope

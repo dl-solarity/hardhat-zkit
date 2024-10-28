@@ -26,7 +26,6 @@ import { getNormalizedFullPath } from "@src/utils/path-utils";
 import { getCompileCacheEntry, getSetupCacheEntry } from "../utils";
 
 import { HardhatZKit } from "@src/types/hardhat-zkit";
-import { ZKitConfig } from "@src/types/zkit-config";
 import { BaseCircomCompilerFactory } from "@src/core";
 import { CircomCompilerDownloader } from "@src/core/compiler/CircomCompilerDownloader";
 
@@ -99,15 +98,6 @@ describe("ZKit tasks", async function () {
     const updatedContent = fileContent.replace(/include\s*".*";/, `include "${newIncludePath}";`);
 
     fsExtra.writeFileSync(filePath, updatedContent, "utf-8");
-  }
-
-  function updateSimplificationFlag(config: ZKitConfig, flagToSet: "o0" | "o1" | "o2" | "oldSimplificationHeuristics") {
-    config.compilationSettings.simplification.o0 = false;
-    config.compilationSettings.simplification.o1 = false;
-    config.compilationSettings.simplification.o2 = false;
-    config.compilationSettings.simplification.oldSimplificationHeuristics = false;
-
-    config.compilationSettings.simplification[flagToSet] = true;
   }
 
   describe("compile", async function () {
@@ -280,38 +270,19 @@ describe("ZKit tasks", async function () {
         `${circuitName}_artifacts.json`,
         `${circuitName}_constraints.json`,
         `${circuitName}_js`,
-        `${circuitName}_substitutions.json`,
       ];
-
-      const fileSizes: {
-        r1cs: number;
-        constraints: number;
-        substitutions: number;
-      } = {
-        r1cs: 0,
-        constraints: 0,
-        substitutions: 0,
-      };
-
-      const checkAndUpdateFileSizes = (circuitPath: string) => {
-        expect(fsExtra.readdirSync(circuitPath)).to.be.deep.eq(expectedFiles);
-
-        const r1csSize = fsExtra.statSync(`${circuitPath}/${circuitName}.r1cs`).size;
-        const constraintsSize = fsExtra.statSync(`${circuitPath}/${circuitName}_constraints.json`).size;
-        const substitutionsSize = fsExtra.statSync(`${circuitPath}/${circuitName}_substitutions.json`).size;
-
-        expect(r1csSize).to.be.lt(fileSizes["r1cs"]);
-        expect(constraintsSize).to.be.lt(fileSizes["constraints"]);
-        expect(substitutionsSize).to.be.gt(fileSizes["substitutions"]);
-
-        fileSizes["r1cs"] = r1csSize;
-        fileSizes["constraints"] = constraintsSize;
-        fileSizes["substitutions"] = substitutionsSize;
-      };
 
       useEnvironment("with-constraint-simplification", true);
 
       it("should correctly compile circuits with different simplification flag", async function () {
+        const fileSizes: {
+          r1cs: number;
+          constraints: number;
+        } = {
+          r1cs: 0,
+          constraints: 0,
+        };
+
         const root = this.hre.config.paths.root;
 
         const circuitPath = getNormalizedFullPath(
@@ -319,41 +290,36 @@ describe("ZKit tasks", async function () {
           `${this.hre.config.zkit.compilationSettings.artifactsDir}/circuits/${circuitName}.circom`,
         );
 
-        updateSimplificationFlag(this.hre.config.zkit, "o0");
+        const runCompilationAndGetSizes = async (optimization: "O0" | "O1" | "O2") => {
+          this.hre.config.zkit.compilationSettings.optimization = optimization;
 
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
+          await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
 
-        expect(fsExtra.readdirSync(circuitPath)).to.be.deep.eq(expectedFiles);
+          expect(fsExtra.readdirSync(circuitPath)).to.deep.equal(expectedFiles);
 
-        fileSizes["r1cs"] = fsExtra.statSync(`${circuitPath}/${circuitName}.r1cs`).size;
-        fileSizes["constraints"] = fsExtra.statSync(`${circuitPath}/${circuitName}_constraints.json`).size;
-        fileSizes["substitutions"] = fsExtra.statSync(`${circuitPath}/${circuitName}_substitutions.json`).size;
+          const r1csSize = fsExtra.statSync(`${circuitPath}/${circuitName}.r1cs`).size;
+          const constraintsSize = fsExtra.statSync(`${circuitPath}/${circuitName}_constraints.json`).size;
 
-        updateSimplificationFlag(this.hre.config.zkit, "o1");
+          return { r1csSize, constraintsSize };
+        };
 
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
+        let { r1csSize, constraintsSize } = await runCompilationAndGetSizes("O0");
 
-        checkAndUpdateFileSizes(circuitPath);
+        fileSizes.r1cs = r1csSize;
+        fileSizes.constraints = constraintsSize;
 
-        updateSimplificationFlag(this.hre.config.zkit, "o2");
+        ({ r1csSize, constraintsSize } = await runCompilationAndGetSizes("O1"));
 
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
+        expect(r1csSize).to.be.lt(fileSizes.r1cs);
+        expect(constraintsSize).to.be.lt(fileSizes.constraints);
 
-        checkAndUpdateFileSizes(circuitPath);
+        fileSizes.r1cs = r1csSize;
+        fileSizes.constraints = constraintsSize;
 
-        updateSimplificationFlag(this.hre.config.zkit, "oldSimplificationHeuristics");
+        ({ r1csSize, constraintsSize } = await runCompilationAndGetSizes("O2"));
 
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
-
-        expect(fsExtra.readdirSync(circuitPath)).to.be.deep.eq(expectedFiles);
-
-        expect(fsExtra.statSync(`${circuitPath}/${circuitName}.r1cs`).size).to.be.gte(fileSizes["r1cs"]);
-        expect(fsExtra.statSync(`${circuitPath}/${circuitName}_constraints.json`).size).to.be.gte(
-          fileSizes["constraints"],
-        );
-        expect(fsExtra.statSync(`${circuitPath}/${circuitName}_substitutions.json`).size).to.be.lte(
-          fileSizes["substitutions"],
-        );
+        expect(r1csSize).to.be.lt(fileSizes.r1cs);
+        expect(constraintsSize).to.be.lt(fileSizes.constraints);
       });
     });
   });

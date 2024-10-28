@@ -7,8 +7,6 @@ export type CompileFlags = {
   O0: boolean;
   O1: boolean;
   O2: boolean;
-  use_old_simplification_heuristics: boolean;
-  simplification_substitution: boolean;
 };
 
 export type BaseCompileConfig = {

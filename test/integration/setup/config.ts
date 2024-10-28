@@ -28,13 +28,7 @@ describe("config", () => {
           skipFiles: ["vendor"],
           c: false,
           json: false,
-          simplification: {
-            o0: false,
-            o1: true,
-            o2: false,
-            oldSimplificationHeuristics: false,
-            simplificationSubstitution: true,
-          },
+          optimization: "O1",
         },
         setupSettings: {
           contributionSettings: {
@@ -78,13 +72,6 @@ describe("config", () => {
           skipFiles: [],
           c: false,
           json: false,
-          simplification: {
-            o0: false,
-            o1: false,
-            o2: false,
-            oldSimplificationHeuristics: false,
-            simplificationSubstitution: false,
-          },
         },
         setupSettings: {
           contributionSettings: {

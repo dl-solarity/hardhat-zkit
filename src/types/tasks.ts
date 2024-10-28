@@ -17,11 +17,7 @@ export type CompileTaskConfig = {
   json: boolean;
   c: boolean;
   quiet: boolean;
-  o0: boolean;
-  o1: boolean;
-  o2: boolean;
-  oldSimplificationHeuristics: boolean;
-  simplificationSubstitution: boolean;
+  optimization?: "O0" | "O1" | "O2";
 };
 
 export type GenerateVerifiersTaskConfig = {

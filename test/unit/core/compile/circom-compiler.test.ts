@@ -20,8 +20,6 @@ describe("WASMCircomCompiler", () => {
     O0: false,
     O1: false,
     O2: false,
-    use_old_simplification_heuristics: false,
-    simplification_substitution: false,
   };
 
   describe("compile:without-libraries", () => {
@@ -60,18 +58,13 @@ describe("WASMCircomCompiler", () => {
         artifactsFullPath,
         errorFileFullPath,
         linkLibraries: [],
-        compileFlags: { ...defaultCompileFlags, sym: true, simplification_substitution: true },
+        compileFlags: { ...defaultCompileFlags, sym: true },
         quiet: true,
       });
 
       fsExtra.rmSync(errorFileFullPath, { force: true });
 
-      expect(fsExtra.readdirSync(artifactsFullPath)).to.be.deep.eq([
-        "mul2.r1cs",
-        "mul2.sym",
-        "mul2_js",
-        "mul2_substitutions.json",
-      ]);
+      expect(fsExtra.readdirSync(artifactsFullPath)).to.be.deep.eq(["mul2.r1cs", "mul2.sym", "mul2_js"]);
 
       fsExtra.rmSync(typesDir, { recursive: true, force: true });
     });

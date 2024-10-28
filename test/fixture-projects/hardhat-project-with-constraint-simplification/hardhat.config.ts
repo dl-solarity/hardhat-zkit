@@ -10,9 +10,6 @@ const defaultConfig: HardhatUserConfig = {
       artifactsDir: "zkit/artifacts",
       skipFiles: ["vendor"],
       json: true,
-      simplification: {
-        simplificationSubstitution: true,
-      },
     },
     setupSettings: {
       ptauDir: "zkit/ptau",

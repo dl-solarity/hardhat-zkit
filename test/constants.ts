@@ -9,8 +9,6 @@ export const defaultCompileFlags: CompileFlags = {
   O0: false,
   O1: false,
   O2: false,
-  use_old_simplification_heuristics: false,
-  simplification_substitution: false,
 };
 
 export const defaultContributionSettings: ContributionSettings = {
