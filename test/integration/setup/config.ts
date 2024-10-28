@@ -72,6 +72,7 @@ describe("config", () => {
           skipFiles: [],
           c: false,
           json: false,
+          optimization: undefined,
         },
         setupSettings: {
           contributionSettings: {

@@ -14,6 +14,7 @@ const defaultConfig: ZKitConfig = {
     skipFiles: [],
     c: false,
     json: false,
+    optimization: undefined,
   },
   setupSettings: {
     contributionSettings: {
