@@ -106,6 +106,6 @@ export function getFileHash(filePath: string): string {
   return createNonCryptographicHashBasedIdentifier(Buffer.from(fsExtra.readFileSync(filePath))).toString("hex");
 }
 
-export async function getBn128Curve() {
-  return (snarkjs as any).curves.getCurveFromName(BN128_CURVE_NAME);
+export async function terminateCurve() {
+  (await (snarkjs as any).curves.getCurveFromName(BN128_CURVE_NAME)).terminate();
 }
