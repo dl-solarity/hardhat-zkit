@@ -7,6 +7,8 @@ import { replaceBackslashes } from "hardhat/utils/source-names";
 import { ERRORS } from "hardhat/internal/core/errors-list";
 import { HardhatError, NomicLabsHardhatPluginError } from "hardhat/internal/core/errors";
 
+import { ProvingSystemType } from "@solarity/zkit";
+
 import { HardhatZKitError } from "../errors";
 import { CIRCUIT_ARTIFACTS_SUFFIX } from "../constants";
 import { Reporter } from "../reporter";
@@ -33,6 +35,14 @@ export class CircuitArtifacts implements ICircuitArtifacts {
   };
 
   constructor(private readonly _artifactsPath: string) {}
+
+  public static getArtifactOutputFileKey(fileType: ArtifactsFileType, provingSystem: ProvingSystemType): string {
+    if (fileType === "zkey" || fileType === "vkey") {
+      return `${provingSystem}.${fileType}`;
+    }
+
+    return fileType;
+  }
 
   /**
    * Retrieves a {@link CircuitArtifact} object based on the provided short name or fully qualified name
@@ -148,11 +158,15 @@ export class CircuitArtifacts implements ICircuitArtifacts {
    *    for which to retrieve the path
    * @returns The full path of the specified artifact file associated with the provided {@link CircuitArtifact} object
    */
-  public getCircuitArtifactFileFullPath(circuitArtifact: CircuitArtifact, fileType: ArtifactsFileType): string {
+  public getCircuitArtifactFileFullPath(
+    circuitArtifact: CircuitArtifact,
+    fileType: ArtifactsFileType,
+    provingSystem: ProvingSystemType = "groth16",
+  ): string {
     return path.join(
       this._artifactsPath,
       circuitArtifact.circuitSourceName,
-      this._getOutputFileSourcePath(circuitArtifact.circuitTemplateName, fileType),
+      this._getOutputFileSourcePath(circuitArtifact.circuitTemplateName, fileType, provingSystem),
     );
   }
 
@@ -164,7 +178,11 @@ export class CircuitArtifacts implements ICircuitArtifacts {
    *    during the most recent session, such as during compilation
    * @returns A promise that resolves once the save operation is complete
    */
-  public async saveCircuitArtifact(circuitArtifact: CircuitArtifact, updatedFileTypes: ArtifactsFileType[]) {
+  public async saveCircuitArtifact(
+    circuitArtifact: CircuitArtifact,
+    updatedFileTypes: ArtifactsFileType[],
+    provingSystems: ProvingSystemType[],
+  ) {
     const fullyQualifiedName = this.getCircuitFullyQualifiedName(
       circuitArtifact.circuitSourceName,
       circuitArtifact.circuitTemplateName,
@@ -172,14 +190,23 @@ export class CircuitArtifacts implements ICircuitArtifacts {
 
     const artifactPath = this.formCircuitArtifactPathFromFullyQualifiedName(fullyQualifiedName);
 
-    // Updates the data for files that have been recently modified
-    for (const fileType of updatedFileTypes) {
-      const fileSourcePath: string = this.getCircuitArtifactFileFullPath(circuitArtifact, fileType);
+    const allArtifactProvingSystems = new Set<ProvingSystemType>([
+      ...circuitArtifact.baseCircuitInfo.protocol,
+      ...provingSystems,
+    ]);
 
-      circuitArtifact.compilerOutputFiles[fileType] = {
-        fileSourcePath,
-        fileHash: getFileHash(fileSourcePath),
-      };
+    circuitArtifact.baseCircuitInfo.protocol = [...allArtifactProvingSystems];
+
+    // Updates the data for files that have been recently modified
+    for (const provingSystem of provingSystems) {
+      for (const fileType of updatedFileTypes) {
+        const fileSourcePath: string = this.getCircuitArtifactFileFullPath(circuitArtifact, fileType, provingSystem);
+
+        circuitArtifact.compilerOutputFiles[CircuitArtifacts.getArtifactOutputFileKey(fileType, provingSystem)] = {
+          fileSourcePath,
+          fileHash: getFileHash(fileSourcePath),
+        };
+      }
     }
 
     Reporter!.verboseLog("circuit-artifacts", "Saving circuit artifact: %o", [circuitArtifact]);
@@ -291,7 +318,11 @@ export class CircuitArtifacts implements ICircuitArtifacts {
     return this.getCircuitFullyQualifiedName(sourceName, circuitName);
   }
 
-  private _getOutputFileSourcePath(circuitTemplateName: string, fileType: ArtifactsFileType): string {
+  private _getOutputFileSourcePath(
+    circuitTemplateName: string,
+    fileType: ArtifactsFileType,
+    provingSystem: ProvingSystemType,
+  ): string {
     switch (fileType) {
       case "wasm":
         return path.join(`${circuitTemplateName}_js`, `${circuitTemplateName}.wasm`);
@@ -304,9 +335,9 @@ export class CircuitArtifacts implements ICircuitArtifacts {
       case "json":
         return `${circuitTemplateName}_constraints.json`;
       case "vkey":
-        return `${circuitTemplateName}.vkey.json`;
+        return `${circuitTemplateName}.${provingSystem}.vkey.json`;
       case "zkey":
-        return `${circuitTemplateName}.zkey`;
+        return `${circuitTemplateName}.${provingSystem}.zkey`;
 
       default:
         throw new HardhatZKitError(`Invalid artifacts file type ${fileType}`);

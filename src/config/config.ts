@@ -18,7 +18,7 @@ const defaultConfig: ZKitConfig = {
   setupSettings: {
     contributionSettings: {
       provingSystem: "groth16",
-      contributions: 1,
+      contributions: 2,
     },
     ptauDir: undefined,
     ptauDownload: true,

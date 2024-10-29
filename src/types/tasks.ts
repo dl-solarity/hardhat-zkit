@@ -1,4 +1,4 @@
-import { VerifierLanguageType, VerifierProvingSystem } from "@solarity/zkit";
+import { VerifierLanguageType, ProvingSystemType } from "@solarity/zkit";
 
 export type MakeTaskConfig = {
   force: boolean;
@@ -29,6 +29,6 @@ export type GenerateVerifiersTaskConfig = {
 
 export type GetCircuitZKitConfig = {
   verifiersDir?: string;
-  verifierTemplateType?: VerifierProvingSystem;
   circuitName: string;
+  provingSystem: ProvingSystemType;
 };

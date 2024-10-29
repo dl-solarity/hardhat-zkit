@@ -90,7 +90,9 @@ describe("CircuitsSetupCache", () => {
     it("should return correct results", async function () {
       await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_MAKE }, { quiet: false });
 
-      expect(CircuitsSetupCache!.hasFileChanged("invalid-path", "", defaultContributionSettings)).to.be.true;
+      expect(CircuitsSetupCache!.hasFileChanged("invalid-path", "", defaultContributionSettings)).to.be.deep.eq(
+        defaultContributionSettings.provingSystems,
+      );
 
       const mul2FullName: string = "circuits/main/mul2.circom:Multiplier2";
 
@@ -104,17 +106,19 @@ describe("CircuitsSetupCache", () => {
 
       const contentHash = getFileHash(mul2R1CSFilePath);
 
-      expect(CircuitsSetupCache!.hasFileChanged(mul2ArtifactFullPath, contentHash + "1", defaultContributionSettings))
-        .to.be.true;
+      expect(
+        CircuitsSetupCache!.hasFileChanged(mul2ArtifactFullPath, contentHash + "1", defaultContributionSettings),
+      ).to.be.deep.eq(defaultContributionSettings.provingSystems);
       expect(
         CircuitsSetupCache!.hasFileChanged(mul2ArtifactFullPath, contentHash, {
           ...defaultContributionSettings,
-          contributions: 2,
+          contributions: 1,
         }),
-      ).to.be.true;
+      ).to.be.deep.eq(defaultContributionSettings.provingSystems);
 
-      expect(CircuitsSetupCache!.hasFileChanged(mul2ArtifactFullPath, contentHash, defaultContributionSettings)).to.be
-        .false;
+      expect(
+        CircuitsSetupCache!.hasFileChanged(mul2ArtifactFullPath, contentHash, defaultContributionSettings),
+      ).to.be.deep.eq([]);
 
       const typesDir: string = getNormalizedFullPath(this.hre.config.paths.root, "generated-types/zkit");
 

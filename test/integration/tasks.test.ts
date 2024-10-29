@@ -72,10 +72,10 @@ describe("ZKit tasks", async function () {
 
     getZkitCircuitFullPaths(config).forEach((path, index) => {
       expect(fsExtra.readdirSync(path)).to.be.deep.eq([
+        `${circuitNames[index]}.groth16.vkey.json`,
+        `${circuitNames[index]}.groth16.zkey`,
         `${circuitNames[index]}.r1cs`,
         `${circuitNames[index]}.sym`,
-        `${circuitNames[index]}.vkey.json`,
-        `${circuitNames[index]}.zkey`,
         `${circuitNames[index]}_artifacts.json`,
         `${circuitNames[index]}_js`,
       ]);
@@ -84,7 +84,7 @@ describe("ZKit tasks", async function () {
     const ptauFullPath: string = getNormalizedFullPath(config.paths!.root!, "zkit/ptau");
     expect(fsExtra.readdirSync(ptauFullPath)).to.be.deep.eq(["powers-of-tau-8.ptau"]);
 
-    const circuit = await zkit.getCircuit("Multiplier2");
+    const circuit = await zkit.getCircuit("Multiplier2", "groth16");
     await expect(circuit).with.witnessInputs({ in1: "3", in2: "7" }).to.have.witnessOutputs(["21"]);
 
     const proof = await circuit.generateProof({ in1: "4", in2: "2" });
@@ -303,7 +303,9 @@ describe("ZKit tasks", async function () {
       await checkMake(this.hre.config, this.hre.zkit);
 
       const verifiersFullPath: string = getNormalizedFullPath(this.hre.config.paths.root, "contracts/verifiers");
-      expect(fsExtra.readdirSync(verifiersFullPath)).to.be.deep.eq(circuitNames.map((name) => `${name}Verifier.sol`));
+      expect(fsExtra.readdirSync(verifiersFullPath)).to.be.deep.eq(
+        circuitNames.map((name) => `${name}Groth16Verifier.sol`),
+      );
     });
   });
 

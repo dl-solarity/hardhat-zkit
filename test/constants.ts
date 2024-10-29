@@ -1,4 +1,4 @@
-import { CompileFlags, ContributionSettings } from "../src/types/core";
+import { CompileFlags, SetupContributionSettings } from "../src/types/core";
 
 export const defaultCompileFlags: CompileFlags = {
   r1cs: true,
@@ -8,7 +8,7 @@ export const defaultCompileFlags: CompileFlags = {
   json: false,
 };
 
-export const defaultContributionSettings: ContributionSettings = {
-  provingSystem: "groth16",
-  contributions: 1,
+export const defaultContributionSettings: SetupContributionSettings = {
+  provingSystems: ["groth16"],
+  contributions: 2,
 };

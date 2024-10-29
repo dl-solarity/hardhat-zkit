@@ -7,12 +7,12 @@ import { v4 as uuid } from "uuid";
 
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
-import { CircomCompilerFactory, createCircomCompilerFactory } from "../compiler";
+import { ProvingSystemType } from "@solarity/zkit";
+
+import { CircomCompilerFactory, createCircomCompilerFactory, getHighestVersion, isVersionValid } from "../compiler";
 import { HardhatZKitError } from "../../errors";
 import { CIRCUIT_ARTIFACT_VERSION, NODE_MODULES } from "../../constants";
 import { Reporter } from "../../reporter";
-
-import { getHighestVersion, isVersionValid } from "../compiler/versioning";
 import { getNormalizedFullPath, renameFilesRecursively, readDirRecursively } from "../../utils/path-utils";
 
 import { ZKitConfig } from "../../types/zkit-config";
@@ -68,7 +68,7 @@ export class CompilationProcessor {
    *
    * @param filesInfoToCompile Information about circuit files needed for compilation
    */
-  public async compile(filesInfoToCompile: CircomResolvedFileInfo[]) {
+  public async compile(filesInfoToCompile: CircomResolvedFileInfo[], provingSystems: ProvingSystemType[]) {
     const tempDir: string = path.join(os.tmpdir(), ".zkit", uuid());
 
     try {
@@ -109,7 +109,7 @@ export class CompilationProcessor {
 
       await this._moveFromTempDirToArtifacts(compilationInfoArr);
 
-      await this._emitArtifacts(compilationInfoArr);
+      await this._emitArtifacts(compilationInfoArr, provingSystems);
 
       Reporter!.reportCompilationResult(compilationInfoArr);
     } finally {
@@ -167,7 +167,7 @@ export class CompilationProcessor {
     }
   }
 
-  private async _emitArtifacts(compilationInfoArr: CompilationInfo[]) {
+  private async _emitArtifacts(compilationInfoArr: CompilationInfo[], provingSystems: ProvingSystemType[]) {
     for (const info of compilationInfoArr) {
       const fullyQualifiedName: string = this._circuitArtifacts.getCircuitFullyQualifiedName(
         info.resolvedFile.sourceName,
@@ -185,6 +185,7 @@ export class CompilationProcessor {
           circuitFileName: info.circuitFileName,
           circuitSourceName: info.resolvedFile.sourceName,
           baseCircuitInfo: {
+            protocol: [],
             constraintsNumber: 0,
             signals: [],
           },
@@ -196,12 +197,14 @@ export class CompilationProcessor {
         throw new HardhatZKitError("Unable to emit artifacts for resolved file without main component data");
       }
 
-      circuitArtifact.baseCircuitInfo = {
-        constraintsNumber: info.constraintsNumber,
-        signals: info.resolvedFile.fileData.mainComponentData.signals,
-      };
+      circuitArtifact.baseCircuitInfo.constraintsNumber = info.constraintsNumber;
+      circuitArtifact.baseCircuitInfo.signals = info.resolvedFile.fileData.mainComponentData.signals;
 
-      await this._circuitArtifacts.saveCircuitArtifact(circuitArtifact, this._getUpdatedArtifactFileTypes());
+      await this._circuitArtifacts.saveCircuitArtifact(
+        circuitArtifact,
+        this._getUpdatedArtifactFileTypes(),
+        provingSystems,
+      );
     }
   }
 

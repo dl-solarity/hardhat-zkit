@@ -4,8 +4,8 @@ import { CircomFilesParser } from "../src/core";
 import { getFileHash } from "../src/utils/utils";
 import { getNormalizedFullPath } from "../src/utils/path-utils";
 
-import { CompileCacheEntry, SetupCacheEntry } from "../src/types/cache";
-import { CompileFlags, ContributionSettings, ResolvedFileData } from "../src/types/core";
+import { CompileCacheEntry, ProvingSystemData, SetupCacheEntry } from "../src/types/cache";
+import { CompileFlags, ResolvedFileData } from "../src/types/core";
 import { defaultCompileFlags, defaultContributionSettings } from "./constants";
 
 export async function getCompileCacheEntry(
@@ -38,17 +38,21 @@ export async function getCompileCacheEntry(
 export async function getSetupCacheEntry(
   sourceName: string,
   r1csSourcePath: string,
-  contributionSettings: ContributionSettings = defaultContributionSettings,
-  r1csContentHash?: string,
+  provingSystemsData?: ProvingSystemData[],
 ): Promise<SetupCacheEntry> {
-  if (!r1csContentHash) {
-    r1csContentHash = getFileHash(r1csSourcePath);
+  if (!provingSystemsData) {
+    provingSystemsData = defaultContributionSettings.provingSystems.map((provingSystem) => {
+      return {
+        provingSystem: provingSystem,
+        lastR1CSFileHash: getFileHash(r1csSourcePath),
+      };
+    });
   }
 
   return {
     circuitSourceName: sourceName,
     r1csSourcePath,
-    r1csContentHash,
-    contributionSettings,
+    provingSystemsData,
+    contributionsNumber: defaultContributionSettings.contributions,
   };
 }

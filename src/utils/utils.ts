@@ -4,6 +4,8 @@ import { exec } from "child_process";
 
 import { createNonCryptographicHashBasedIdentifier } from "hardhat/internal/util/hash";
 
+import { ProvingSystemType } from "@solarity/zkit";
+
 import { Reporter } from "../reporter";
 
 import { ExecCallResult } from "../types/utils";
@@ -100,4 +102,12 @@ export async function execCall(execFile: string, callArgs: string[]): Promise<Ex
 
 export function getFileHash(filePath: string): string {
   return createNonCryptographicHashBasedIdentifier(Buffer.from(fsExtra.readFileSync(filePath))).toString("hex");
+}
+
+export function getUniqueProvingSystems(provingSystems: ProvingSystemType | ProvingSystemType[]): ProvingSystemType[] {
+  if (Array.isArray(provingSystems)) {
+    return [...new Set(provingSystems)];
+  } else {
+    return [provingSystems];
+  }
 }

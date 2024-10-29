@@ -1,3 +1,4 @@
+import { ProvingSystemType } from "@solarity/zkit";
 import { SignalInfo } from "../core";
 
 export interface ICircuitArtifacts {
@@ -15,9 +16,17 @@ export interface ICircuitArtifacts {
 
   getCircuitArtifactsDirFullPath(): string;
 
-  getCircuitArtifactFileFullPath(circuitArtifact: CircuitArtifact, fileType: ArtifactsFileType): string;
+  getCircuitArtifactFileFullPath(
+    circuitArtifact: CircuitArtifact,
+    fileType: ArtifactsFileType,
+    provingSystem: ProvingSystemType,
+  ): string;
 
-  saveCircuitArtifact(circuitArtifact: CircuitArtifact, updatedFileTypes: ArtifactsFileType[]): Promise<void>;
+  saveCircuitArtifact(
+    circuitArtifact: CircuitArtifact,
+    updatedFileTypes: ArtifactsFileType[],
+    provingSystems: ProvingSystemType[],
+  ): Promise<void>;
 
   clearCache(): void;
 
@@ -30,12 +39,13 @@ export type CircuitArtifact = {
   circuitTemplateName: string;
   circuitSourceName: string;
   baseCircuitInfo: BaseCircuitInfo;
-  compilerOutputFiles: Partial<Record<ArtifactsFileType, CompilerOutputFileInfo>>;
+  compilerOutputFiles: Partial<Record<string, CompilerOutputFileInfo>>;
 };
 
 export type BaseCircuitInfo = {
   constraintsNumber: number;
   signals: SignalInfo[];
+  protocol: ProvingSystemType[];
 };
 
 export type CompilerOutputFileInfo = {

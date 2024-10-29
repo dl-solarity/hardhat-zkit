@@ -1,17 +1,17 @@
 import { z } from "zod";
 
-export const ProvingSystemTypeSchema = z.literal("groth16");
+export const ProvingSystemTypeSchema = z.literal("groth16").or(z.literal("plonk"));
 
-export const ContributionSettingsSchema = z.object({
+export const ProvingSystemDataSchema = z.object({
   provingSystem: ProvingSystemTypeSchema,
-  contributions: z.number(),
+  lastR1CSFileHash: z.string(),
 });
 
 export const SetupCacheEntrySchema = z.object({
   circuitSourceName: z.string(),
-  r1csContentHash: z.string(),
   r1csSourcePath: z.string(),
-  contributionSettings: ContributionSettingsSchema,
+  provingSystemsData: ProvingSystemDataSchema.array(),
+  contributionsNumber: z.number(),
 });
 
 export const SetupCacheSchema = z.object({

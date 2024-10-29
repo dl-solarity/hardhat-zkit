@@ -3,7 +3,6 @@ import debug from "debug";
 
 import { VerifierLanguageType } from "@solarity/zkit";
 
-import { CircuitArtifact } from "../types/artifacts/circuit-artifacts";
 import { CompilationInfo, CircuitSetupInfo } from "../types/core";
 import {
   ProgressReporter,
@@ -148,8 +147,8 @@ class ReporterFacade {
     this._setupReporter.reportHeader();
   }
 
-  public reportSetupResult(circuitArtifacts: CircuitArtifact[]) {
-    this._setupReporter.reportResult(circuitArtifacts);
+  public reportSetupResult(circuitSetupInfoArr: CircuitSetupInfo[]) {
+    this._setupReporter.reportResult(circuitSetupInfoArr);
   }
 
   public reportZKeyFilesGenerationHeader(contributions: number) {

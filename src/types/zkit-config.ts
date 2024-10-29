@@ -1,6 +1,4 @@
-import { VerifierLanguageType } from "@solarity/zkit";
-
-import { ContributionSettings } from "./core";
+import { VerifierLanguageType, ProvingSystemType } from "@solarity/zkit";
 
 export type ZKitConfig = {
   compilerVersion?: string;
@@ -22,6 +20,11 @@ export type SetupSettings = FileFilterSettings & {
   ptauDir: string | undefined;
   ptauDownload: boolean;
   contributionSettings: ContributionSettings;
+};
+
+export type ContributionSettings = {
+  provingSystem: ProvingSystemType | ProvingSystemType[];
+  contributions: number;
 };
 
 export type FileFilterSettings = {

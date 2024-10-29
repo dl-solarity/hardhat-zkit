@@ -3,10 +3,11 @@ import fs from "fs";
 import chalk from "chalk";
 
 import { BaseReporter } from "./BaseReporter";
-import { CircuitSetupInfo } from "../../types/core";
-import { CircuitArtifact } from "../../types/artifacts/circuit-artifacts";
+import { CircuitArtifacts } from "../../artifacts/CircuitArtifacts";
 import { HardhatZKitError } from "../../errors";
 import { BYTES_IN_MB } from "../../constants";
+
+import { CircuitSetupInfo } from "../../types/core";
 
 export class SetupReporter extends BaseReporter {
   public reportHeader() {
@@ -47,11 +48,12 @@ export class SetupReporter extends BaseReporter {
     }
   }
 
-  public reportResult(circuitArtifacts: CircuitArtifact[]) {
+  public reportResult(circuitSetupInfoArr: CircuitSetupInfo[]) {
     if (this.isQuiet()) return;
 
     let output: string = "";
-    const circuitsMessage: string = circuitArtifacts.length > 1 ? `${circuitArtifacts.length} circuits` : `one circuit`;
+    const circuitsMessage: string =
+      circuitSetupInfoArr.length > 1 ? `${circuitSetupInfoArr.length} circuits` : `one circuit`;
 
     output += `\n${chalk.bold(`Successfully generated keys for ${circuitsMessage}.`)}\n`;
 
@@ -59,11 +61,20 @@ export class SetupReporter extends BaseReporter {
 
     table.push([{ content: chalk.bold("Circuit Name") }, { content: chalk.bold(`ZKey file size (MB)`) }]);
 
-    for (const circuitArtifact of circuitArtifacts) {
-      table.push([
-        { content: circuitArtifact.circuitTemplateName },
-        { content: this._getFileSizeInMB(circuitArtifact.compilerOutputFiles.zkey?.fileSourcePath), hAlign: "right" },
-      ]);
+    for (const setupInfo of circuitSetupInfoArr) {
+      for (const provingSystem of setupInfo.provingSystems) {
+        table.push([
+          { content: `${setupInfo.circuitArtifact.circuitTemplateName} ${chalk.grey(`(${provingSystem})`)}` },
+          {
+            content: this._getFileSizeInMB(
+              setupInfo.circuitArtifact.compilerOutputFiles[
+                CircuitArtifacts.getArtifactOutputFileKey("zkey", provingSystem)
+              ]?.fileSourcePath,
+            ),
+            hAlign: "right",
+          },
+        ]);
+      }
     }
 
     output += `\n${table.toString()}\n`;
