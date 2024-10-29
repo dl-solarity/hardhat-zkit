@@ -2,11 +2,15 @@ import fsExtra from "fs-extra";
 import https from "https";
 import { exec } from "child_process";
 
+import * as snarkjs from "snarkjs";
+
 import { createNonCryptographicHashBasedIdentifier } from "hardhat/internal/util/hash";
 
 import { Reporter } from "../reporter";
 
 import { ExecCallResult } from "../types/utils";
+
+import { BN128_CURVE_NAME } from "../constants";
 
 /**
  * Downloads a file from the specified URL
@@ -100,4 +104,8 @@ export async function execCall(execFile: string, callArgs: string[]): Promise<Ex
 
 export function getFileHash(filePath: string): string {
   return createNonCryptographicHashBasedIdentifier(Buffer.from(fsExtra.readFileSync(filePath))).toString("hex");
+}
+
+export async function terminateCurve() {
+  await (await (snarkjs as any).curves.getCurveFromName(BN128_CURVE_NAME)).terminate();
 }
