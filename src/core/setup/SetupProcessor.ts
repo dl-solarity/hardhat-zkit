@@ -9,6 +9,7 @@ import { PtauDownloader } from "../utils/PtauDownloader";
 import { HardhatZKitError } from "../../errors";
 import { PTAU_FILE_REG_EXP } from "../../constants";
 import { Reporter } from "../../reporter";
+import { getBn128Curve } from "../../utils/utils";
 import { getNormalizedFullPath } from "../../utils/path-utils";
 
 import { CircuitArtifact, ICircuitArtifacts } from "../../types/artifacts/circuit-artifacts";
@@ -80,6 +81,8 @@ export class SetupProcessor {
 
     Reporter!.reportZKeyFilesGenerationHeader(contributions);
 
+    const curve = await getBn128Curve();
+
     for (const circuitArtifact of circuitArtifacts) {
       const r1csFilePath = circuitArtifact.compilerOutputFiles.r1cs?.fileSourcePath;
       const zkeyFilePath = this._circuitArtifacts.getCircuitArtifactFileFullPath(circuitArtifact, "zkey");
@@ -120,11 +123,15 @@ export class SetupProcessor {
       Reporter!.reportZKeyFileGenerationResult(spinnerId, circuitArtifact.circuitTemplateName, contributions);
     }
 
+    curve.terminate();
+
     return circuitArtifacts;
   }
 
   private async _generateVKeyFiles(circuitArtifacts: CircuitArtifact[]) {
     Reporter!.reportVKeyFilesGenerationHeader();
+
+    const curve = await getBn128Curve();
 
     for (const circuitArtifact of circuitArtifacts) {
       const zkeyFilePath = this._circuitArtifacts.getCircuitArtifactFileFullPath(circuitArtifact, "zkey");
@@ -145,6 +152,8 @@ export class SetupProcessor {
 
       Reporter!.reportVKeyFileGenerationResult(spinnerId, circuitArtifact.circuitTemplateName);
     }
+
+    curve.terminate();
   }
 
   private async _getPtauFile(circuitArtifacts: CircuitArtifact[]): Promise<string> {

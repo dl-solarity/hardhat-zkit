@@ -34,3 +34,5 @@ export const WASM_COMPILER_VERSIONING: { [key: string]: string } = {
   "2.1.8": "0.2.18-rc.3",
   "2.1.9": "0.2.19-rc.0",
 };
+
+export const BN128_CURVE_NAME = "bn128";
