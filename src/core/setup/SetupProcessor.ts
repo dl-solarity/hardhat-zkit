@@ -131,30 +131,28 @@ export class SetupProcessor {
   private async _generateVKeyFiles(circuitArtifacts: CircuitArtifact[]) {
     Reporter!.reportVKeyFilesGenerationHeader();
 
-    for (const circuitArtifact of circuitArtifacts) {
-      const zkeyFilePath = this._circuitArtifacts.getCircuitArtifactFileFullPath(circuitArtifact, "zkey");
-      const vkeyFilePath = this._circuitArtifacts.getCircuitArtifactFileFullPath(circuitArtifact, "vkey");
+    try {
+      for (const circuitArtifact of circuitArtifacts) {
+        const zkeyFilePath = this._circuitArtifacts.getCircuitArtifactFileFullPath(circuitArtifact, "zkey");
+        const vkeyFilePath = this._circuitArtifacts.getCircuitArtifactFileFullPath(circuitArtifact, "vkey");
 
-      Reporter!.verboseLog("setup-processor:vkey", "Generating VKey file for %s circuit with params %o", [
-        circuitArtifact.circuitTemplateName,
-        { zkeyFilePath, vkeyFilePath },
-      ]);
+        Reporter!.verboseLog("setup-processor:vkey", "Generating VKey file for %s circuit with params %o", [
+          circuitArtifact.circuitTemplateName,
+          { zkeyFilePath, vkeyFilePath },
+        ]);
 
-      const spinnerId: string | null = Reporter!.reportVKeyFileGenerationStartWithSpinner(
-        circuitArtifact.circuitTemplateName,
-      );
+        const spinnerId: string | null = Reporter!.reportVKeyFileGenerationStartWithSpinner(
+          circuitArtifact.circuitTemplateName,
+        );
 
-      let vKeyData;
+        const vKeyData = await snarkjs.zKey.exportVerificationKey(zkeyFilePath);
 
-      try {
-        vKeyData = await snarkjs.zKey.exportVerificationKey(zkeyFilePath);
-      } finally {
-        await terminateCurve();
+        fsExtra.outputFileSync(vkeyFilePath, JSON.stringify(vKeyData));
+
+        Reporter!.reportVKeyFileGenerationResult(spinnerId, circuitArtifact.circuitTemplateName);
       }
-
-      fsExtra.outputFileSync(vkeyFilePath, JSON.stringify(vKeyData));
-
-      Reporter!.reportVKeyFileGenerationResult(spinnerId, circuitArtifact.circuitTemplateName);
+    } finally {
+      await terminateCurve();
     }
   }
 

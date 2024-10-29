@@ -107,5 +107,5 @@ export function getFileHash(filePath: string): string {
 }
 
 export async function terminateCurve() {
-  (await (snarkjs as any).curves.getCurveFromName(BN128_CURVE_NAME)).terminate();
+  await (await (snarkjs as any).curves.getCurveFromName(BN128_CURVE_NAME)).terminate();
 }
