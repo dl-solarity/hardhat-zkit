@@ -7,6 +7,8 @@ export const CIRCUIT_COMPILE_CACHE_VERSION = "hh-zkit-compile-cache-1";
 export const CIRCUIT_SETUP_CACHE_VERSION = "hh-zkit-setup-cache-1";
 export const CIRCUIT_ARTIFACT_VERSION = "hh-zkit-artifacts-1";
 
+export const BN128_CURVE_NAME = "bn128";
+
 export const NODE_MODULES = "node_modules";
 
 export const MAGIC_DESCRIPTOR = 1337;
@@ -34,5 +36,3 @@ export const WASM_COMPILER_VERSIONING: { [key: string]: string } = {
   "2.1.8": "0.2.18-rc.3",
   "2.1.9": "0.2.19-rc.0",
 };
-
-export const BN128_CURVE_NAME = "bn128";

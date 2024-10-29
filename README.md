@@ -233,7 +233,7 @@ Afterward, copy the provided script to the `test` directory and run the tests vi
 
 ---
 
-- **`getCircuit(<fullCircuitName|circuitName>) -> zkit`**
+- **`async getCircuit(<circuitName|fullCircuitName>) -> zkit`**
 
 The method accepts the name of the `main` component of the circuit and returns the instantiated zkit object pointing to that circuit.
 
@@ -251,7 +251,7 @@ Where:
 
 ## Known limitations
 
-- Temporarily, the only supported proving system is `groth16`.
-- Sometimes `hardhat` scripts that generate `zkey` files may run indefinitely. Waiting for [this snarkjs fix](https://github.com/iden3/snarkjs/pull/512) to be published.
+- Temporarily, the only available proving system is `groth16`. Support for `plonk` is just behind the corner.
+- Sometimes `hardhat` scripts that generate ZK proofs may run indefinitely. This will be fixed in the next major release.
 - Currently there is minimal support for `var` Circom variables. Some circuits may not work if you are using complex `var`-dependent expressions.
 - Due to current `wasm` memory limitations (address space is 32-bit), the plugin may fail to compile especially large circuits on some platforms.
