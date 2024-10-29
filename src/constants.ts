@@ -27,7 +27,7 @@ export const COMPILER_AMD_REPOSITORY_URL = "https://github.com/iden3/circom/rele
 export const COMPILER_ARM_REPOSITORY_URL = "https://github.com/distributed-lab/circom/releases/download";
 export const COMPILER_WASM_REPOSITORY_URL = "https://github.com/distributed-lab/circom-wasm/releases/download";
 
-export const LATEST_SUPPORTED_CIRCOM_VERSION = "2.1.9";
+export const LATEST_SUPPORTED_CIRCOM_VERSION = "2.2.0";
 export const OLDEST_SUPPORTED_CIRCOM_VERSION = "2.0.5";
 
 export const WASM_COMPILER_VERSIONING: { [key: string]: string } = {
