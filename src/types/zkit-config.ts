@@ -16,6 +16,7 @@ export type CompilationSettings = FileFilterSettings & {
   artifactsDir: string;
   c: boolean;
   json: boolean;
+  optimization?: "O0" | "O1" | "O2";
 };
 
 export type SetupSettings = FileFilterSettings & {

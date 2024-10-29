@@ -6,6 +6,9 @@ export const defaultCompileFlags: CompileFlags = {
   sym: true,
   c: false,
   json: false,
+  O0: false,
+  O1: false,
+  O2: false,
 };
 
 export const defaultContributionSettings: ContributionSettings = {

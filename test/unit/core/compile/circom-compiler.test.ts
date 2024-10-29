@@ -17,6 +17,9 @@ describe("WASMCircomCompiler", () => {
     c: false,
     json: false,
     sym: false,
+    O0: false,
+    O1: false,
+    O2: false,
   };
 
   describe("compile:without-libraries", () => {

@@ -4,6 +4,9 @@ export type CompileFlags = {
   sym: boolean;
   json: boolean;
   c: boolean;
+  O0: boolean;
+  O1: boolean;
+  O2: boolean;
 };
 
 export type BaseCompileConfig = {

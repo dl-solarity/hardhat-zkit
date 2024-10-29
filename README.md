@@ -57,6 +57,7 @@ module.exports = {
       skipFiles: [],
       c: false,
       json: false,
+      optimization: "O2",
     },
     setupSettings: {
       contributionSettings: {
@@ -88,6 +89,7 @@ Where:
   - `skipFiles` - The list of directories (or files) to be excluded from the compilation.
   - `c` - The flag to generate the c-based witness generator (generates wasm by default).
   - `json` - The flag to output the constraints in json format.
+  - `optimization` - The flag to set the level of constraint simplification during compilation (`O0`, `O1` or `O2`). 
 - `setupSettings`
   - `contributionSettings`
     - `provingSystem` - The option to indicate which proving system to use.
