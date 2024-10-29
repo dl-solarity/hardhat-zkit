@@ -182,7 +182,9 @@ export class CircomCompilerDownloader {
    * @param version The version of the compiler to download
    * @param isVersionStrict Indicates whether to enforce strict version matching
    * @param verifyCompiler Indicates whether to perform verification on the downloaded compiler
-   * @throws `HardhatZKitError` If an error occurs during the download or verification process
+   *
+   * @throws `HardhatZKitError` If an error occurs during the download, verification process
+   * or getting WASM download URL for the specific version
    */
   public async downloadCompiler(version: string, isVersionStrict: boolean, verifyCompiler: boolean): Promise<void> {
     await this._mutex.use(async () => {
@@ -252,7 +254,7 @@ export class CircomCompilerDownloader {
         url = `${COMPILER_ARM_REPOSITORY_URL}/v${version}/${this._platform}`;
         break;
       default:
-        url = `${COMPILER_WASM_REPOSITORY_URL}/v${WASM_COMPILER_VERSIONING[version]}/circom.wasm`;
+        url = this._getWasmDownloadURL(version);
     }
 
     if (
@@ -277,6 +279,15 @@ export class CircomCompilerDownloader {
 
   private _getWasmCompilerDownloadPath(version: string): string {
     return path.join(this._compilersDir, version, "circom.wasm");
+  }
+
+  private _getWasmDownloadURL(version: string): string {
+    const wasmVersion = WASM_COMPILER_VERSIONING[version];
+    if (!wasmVersion) {
+      throw new HardhatZKitError(`Unsupported WASM version - ${version}`);
+    }
+
+    return `${COMPILER_WASM_REPOSITORY_URL}/v${wasmVersion}/circom.wasm`;
   }
 
   private async _postProcessCompilerDownload(downloadPath: string): Promise<void> {

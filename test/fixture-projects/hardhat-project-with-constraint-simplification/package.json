@@ -1,0 +1,8 @@
+{
+  "name": "hardhat-project-with-constraint-simplification",
+  "version": "1.0.0",
+  "scripts": {
+    "compile": "hardhat compile --force",
+    "clean": "hardhat clean && rm -rf artifacts && rm -rf cache"
+  }
+}

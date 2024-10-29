@@ -21,3 +21,20 @@ export type CircomFileData = {
   mainComponentInfo: MainComponent;
   templates: Templates;
 };
+
+export interface Token {
+  tokenIndex: number;
+  line: number;
+  column: number;
+  channel: number;
+  text: string;
+  type: number;
+  start: number;
+  stop: number;
+}
+
+export interface SimpleParserRuleContext {
+  start: Token;
+
+  getText(): string;
+}

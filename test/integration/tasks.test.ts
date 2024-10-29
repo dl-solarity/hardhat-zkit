@@ -260,6 +260,68 @@ describe("ZKit tasks", async function () {
         });
       });
     });
+
+    describe("with different constraints simplifications flags", async function () {
+      const circuitName = "ComplexCircuitWithSimplifications";
+
+      const expectedFiles = [
+        `${circuitName}.r1cs`,
+        `${circuitName}.sym`,
+        `${circuitName}_artifacts.json`,
+        `${circuitName}_constraints.json`,
+        `${circuitName}_js`,
+      ];
+
+      useEnvironment("with-constraint-simplification", true);
+
+      it("should correctly compile circuits with different simplification flag", async function () {
+        const fileSizes: {
+          r1cs: number;
+          constraints: number;
+        } = {
+          r1cs: 0,
+          constraints: 0,
+        };
+
+        const root = this.hre.config.paths.root;
+
+        const circuitPath = getNormalizedFullPath(
+          root,
+          `${this.hre.config.zkit.compilationSettings.artifactsDir}/circuits/${circuitName}.circom`,
+        );
+
+        const runCompilationAndGetSizes = async (optimization: "O0" | "O1" | "O2") => {
+          this.hre.config.zkit.compilationSettings.optimization = optimization;
+
+          await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
+
+          expect(fsExtra.readdirSync(circuitPath)).to.deep.equal(expectedFiles);
+
+          const r1csSize = fsExtra.statSync(`${circuitPath}/${circuitName}.r1cs`).size;
+          const constraintsSize = fsExtra.statSync(`${circuitPath}/${circuitName}_constraints.json`).size;
+
+          return { r1csSize, constraintsSize };
+        };
+
+        let { r1csSize, constraintsSize } = await runCompilationAndGetSizes("O0");
+
+        fileSizes.r1cs = r1csSize;
+        fileSizes.constraints = constraintsSize;
+
+        ({ r1csSize, constraintsSize } = await runCompilationAndGetSizes("O1"));
+
+        expect(r1csSize).to.be.lt(fileSizes.r1cs);
+        expect(constraintsSize).to.be.lt(fileSizes.constraints);
+
+        fileSizes.r1cs = r1csSize;
+        fileSizes.constraints = constraintsSize;
+
+        ({ r1csSize, constraintsSize } = await runCompilationAndGetSizes("O2"));
+
+        expect(r1csSize).to.be.lt(fileSizes.r1cs);
+        expect(constraintsSize).to.be.lt(fileSizes.constraints);
+      });
+    });
   });
 
   describe("setup", async function () {

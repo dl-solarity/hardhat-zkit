@@ -66,7 +66,7 @@ describe("CircomCompilerFactory", () => {
 
     it("should correctly create circom compiler instance", async function () {
       createCircomCompilerFactory();
-      const compiler: ICircomCompiler = await CircomCompilerFactory!.createCircomCompiler("0.2.18", false);
+      const compiler: ICircomCompiler = await CircomCompilerFactory!.createCircomCompiler("2.1.7", false);
 
       const circuitFullPath: string = getNormalizedFullPath(this.hre.config.paths.root, "circuits/main/mul2.circom");
       const artifactsFullPath: string = getNormalizedFullPath(
@@ -96,12 +96,21 @@ describe("CircomCompilerFactory", () => {
     });
 
     it("should correctly throw error if pass invalid version", async function () {
-      const invalidVersion = "2.1.10";
-
-      const reason = `Unsupported Circom compiler version - ${invalidVersion}. Please provide another version.`;
+      let invalidVersion = "2.1.10";
+      let reason = `Unsupported Circom compiler version - ${invalidVersion}. Please provide another version.`;
 
       createCircomCompilerFactory();
+      await expect(CircomCompilerFactory!.createCircomCompiler(invalidVersion, true)).to.be.rejectedWith(reason);
+
+      invalidVersion = "2.2.0";
+      reason = `Unsupported Circom compiler version - ${invalidVersion}. Please provide another version.`;
+
       await expect(CircomCompilerFactory!.createCircomCompiler(invalidVersion, false)).to.be.rejectedWith(reason);
+
+      invalidVersion = "2.0.4";
+      reason = `Unsupported Circom compiler version - ${invalidVersion}. Please provide another version.`;
+
+      await expect(CircomCompilerFactory!.createCircomCompiler(invalidVersion, true)).to.be.rejectedWith(reason);
     });
 
     it("should create compiler for each platform properly", async function () {
@@ -132,29 +141,6 @@ describe("CircomCompilerFactory", () => {
 
       await checkPlatformSpecificCompiler("linux");
 
-      archStub.restore();
-    });
-
-    it("should create amd compiler if arm compiler with specific version is unavailable", async function () {
-      const archStub = stub(os, "arch").callsFake(() => {
-        return "arm64";
-      });
-
-      const platformStub = stub(os, "platform").callsFake(() => {
-        return "darwin";
-      });
-
-      const compilerDir = path.join(os.homedir(), ".zkit", "compilers", "2.1.7");
-      fsExtra.rmSync(compilerDir, { recursive: true, force: true });
-
-      const compiler = await CircomCompilerFactory!.createCircomCompiler("2.1.7", true, false);
-      const platform = CompilerPlatformBinary.MACOS_AMD;
-
-      expect(compiler).to.be.instanceof(BinaryCircomCompiler);
-      expect(fsExtra.readdirSync(compilerDir)).to.be.deep.equal([platform]);
-
-      fsExtra.rmSync(compilerDir, { recursive: true, force: true });
-      platformStub.restore();
       archStub.restore();
     });
 

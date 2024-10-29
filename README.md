@@ -57,6 +57,7 @@ module.exports = {
       skipFiles: [],
       c: false,
       json: false,
+      optimization: "O2",
     },
     setupSettings: {
       contributionSettings: {
@@ -88,6 +89,7 @@ Where:
   - `skipFiles` - The list of directories (or files) to be excluded from the compilation.
   - `c` - The flag to generate the c-based witness generator (generates wasm by default).
   - `json` - The flag to output the constraints in json format.
+  - `optimization` - The flag to set the level of constraint simplification during compilation (`O0`, `O1` or `O2`). 
 - `setupSettings`
   - `contributionSettings`
     - `provingSystem` - The option to indicate which proving system to use.
@@ -181,6 +183,7 @@ template Multiplier(){
    out <== in1 * in2;
 }
 
+// main component to compile the circuit
 component main = Multiplier();
 ```
 
@@ -188,30 +191,28 @@ component main = Multiplier();
 <td>
 
 ```ts
-// file location: ./scripts/multiplier.test.ts
+// file location: ./test/multiplier.test.ts
 
 import { zkit } from "hardhat"; // hardhat-zkit plugin
 import { expect } from "chai"; // chai-zkit extension
 import { Multiplier } from "@zkit"; // zktype circuit-object
 
-async function main() {
-  const circuit: Multiplier = await zkit.getCircuit("Multiplier");
-  // or await zkit.getCircuit("circuits/multiplier.circom:Multiplier");
+describe("Multiplier", () => {
+  it("should test the circuit", async () => {
+    const circuit: Multiplier = await zkit.getCircuit("Multiplier");
+    // or await zkit.getCircuit("circuits/multiplier.circom:Multiplier");
 
-  // witness testing
-  await expect(circuit)
-    .with.witnessInputs({ in1: "3", in2: "7" })
-    .to.have.witnessOutputs({ out: "21" });
+    // witness testing
+    await expect(circuit)
+        .with.witnessInputs({ in1: "3", in2: "7" })
+        .to.have.witnessOutputs({ out: "21" });
 
-  // proof testing
-  const proof = await circuit.generateProof({ in1: "4", in2: "2" });
+    // proof testing
+    const proof = await circuit.generateProof({ in1: "4", in2: "2" });
 
-  await expect(circuit).to.verifyProof(proof);
-}
-
-main()
-  .then()
-  .catch((e) => console.log(e));
+    await expect(circuit).to.verifyProof(proof);
+  });
+});
 ```
 
 </td>
@@ -224,9 +225,9 @@ To see the plugin in action, place the `Multiplier` circuit in the `circuits` di
 npx hardhat zkit make
 ```
 
-This command will compile the circuit leveraging `wasm`-based Circom compiler, download the necessary `ptau` file regarding the number of circuit's constraints, build the required `zkey` and `vkey` files, and generate TypeScript object wrappers to enable full typization of signals and ZK proofs.
+This command will install the newest compatible Circom compiler, compile the provided circuit, download the necessary `ptau` file regarding the number of circuit's constraints, build the required `zkey` and `vkey` files, and generate TypeScript object wrappers to enable full typization of signals and ZK proofs.
 
-Afterward, you may run the provided hardhat script via `npx hardhat run "./scripts/multiplier.test.ts"`.
+Afterward, copy the provided script to the `test` directory and run the tests via `npx hardhat test`. You will see that all the tests are passing!
 
 > Check out the [Medium blog post](https://medium.com/@Arvolear/introducing-hardhat-zkit-how-did-you-even-use-circom-before-a7b463a5575b) to learn more.
 
@@ -252,5 +253,7 @@ Where:
 
 ## Known limitations
 
-- Due to current `wasm` memory limitations (address space is 32-bit), the plugin may fail to compile especially large circuits.
 - Temporarily, the only supported proving system is `groth16`.
+- Sometimes `hardhat` scripts that generate `zkey` files may run indefinitely. Waiting for [this snarkjs fix](https://github.com/iden3/snarkjs/pull/512) to be published.
+- Currently there is minimal support for `var` Circom variables. Some circuits may not work if you are using complex `var`-dependent expressions.
+- Due to current `wasm` memory limitations (address space is 32-bit), the plugin may fail to compile especially large circuits on some platforms.
