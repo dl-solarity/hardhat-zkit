@@ -11,6 +11,7 @@ import { HardhatZKitError } from "../../errors";
 import { PROVING_SYSTEM_CONSTRAINTS_MULTIPLIERS, PTAU_FILE_REG_EXP } from "../../constants";
 import { Reporter } from "../../reporter";
 import { PtauDownloader } from "../utils/PtauDownloader";
+import { terminateCurve } from "../../utils/utils";
 import { getNormalizedFullPath } from "../../utils/path-utils";
 
 import { ICircuitArtifacts } from "../../types/artifacts/circuit-artifacts";
@@ -85,90 +86,98 @@ export class SetupProcessor {
   ) {
     Reporter!.reportZKeyFilesGenerationHeader(contributionSettings);
 
-    for (const setupInfo of circuitSetupInfoArr) {
-      const r1csFilePath = setupInfo.circuitArtifact.compilerOutputFiles.r1cs!.fileSourcePath;
+    try {
+      for (const setupInfo of circuitSetupInfoArr) {
+        const r1csFilePath = setupInfo.circuitArtifact.compilerOutputFiles.r1cs!.fileSourcePath;
 
-      for (const provingSystem of setupInfo.provingSystems) {
-        const spinnerId: string | null = Reporter!.reportZKeyFileGenerationStartWithSpinner(
-          setupInfo.circuitArtifact.circuitTemplateName,
-          provingSystem,
-        );
+        for (const provingSystem of setupInfo.provingSystems) {
+          const spinnerId: string | null = Reporter!.reportZKeyFileGenerationStartWithSpinner(
+            setupInfo.circuitArtifact.circuitTemplateName,
+            provingSystem,
+          );
 
-        const zkeyFilePath = this._circuitArtifacts.getCircuitArtifactFileFullPath(
-          setupInfo.circuitArtifact,
-          "zkey",
-          provingSystem,
-        );
+          const zkeyFilePath = this._circuitArtifacts.getCircuitArtifactFileFullPath(
+            setupInfo.circuitArtifact,
+            "zkey",
+            provingSystem,
+          );
 
-        Reporter!.verboseLog(
-          "setup-processor:zkey",
-          "Generating ZKey file for %s circuit with %s proving system and params %o",
-          [setupInfo.circuitArtifact.circuitTemplateName, provingSystem, { r1csFilePath, zkeyFilePath }],
-        );
+          Reporter!.verboseLog(
+            "setup-processor:zkey",
+            "Generating ZKey file for %s circuit with %s proving system and params %o",
+            [setupInfo.circuitArtifact.circuitTemplateName, provingSystem, { r1csFilePath, zkeyFilePath }],
+          );
 
-        switch (provingSystem) {
-          case "groth16":
-            await this._generateGroth16ZKeyFile(
-              r1csFilePath,
-              ptauFilePath,
-              zkeyFilePath,
-              contributionSettings.contributions,
-            );
-            break;
-          case "plonk":
-            await this._generatePlonkZKeyFile(r1csFilePath, ptauFilePath, zkeyFilePath);
-            break;
-          default:
-            throw new HardhatZKitError(`Unsupported proving system - ${provingSystem}`);
+          switch (provingSystem) {
+            case "groth16":
+              await this._generateGroth16ZKeyFile(
+                r1csFilePath,
+                ptauFilePath,
+                zkeyFilePath,
+                contributionSettings.contributions,
+              );
+              break;
+            case "plonk":
+              await this._generatePlonkZKeyFile(r1csFilePath, ptauFilePath, zkeyFilePath);
+              break;
+            default:
+              throw new HardhatZKitError(`Unsupported proving system - ${provingSystem}`);
+          }
+
+          Reporter!.reportZKeyFileGenerationResult(
+            spinnerId,
+            setupInfo.circuitArtifact.circuitTemplateName,
+            provingSystem,
+            contributionSettings.contributions,
+          );
         }
-
-        Reporter!.reportZKeyFileGenerationResult(
-          spinnerId,
-          setupInfo.circuitArtifact.circuitTemplateName,
-          provingSystem,
-          contributionSettings.contributions,
-        );
       }
+    } finally {
+      await terminateCurve();
     }
   }
 
   private async _generateVKeyFiles(circuitSetupInfoArr: CircuitSetupInfo[]) {
     Reporter!.reportVKeyFilesGenerationHeader();
 
-    for (const setupInfo of circuitSetupInfoArr) {
-      for (const provingSystem of setupInfo.provingSystems) {
-        const spinnerId: string | null = Reporter!.reportVKeyFileGenerationStartWithSpinner(
-          setupInfo.circuitArtifact.circuitTemplateName,
-          provingSystem,
-        );
+    try {
+      for (const setupInfo of circuitSetupInfoArr) {
+        for (const provingSystem of setupInfo.provingSystems) {
+          const spinnerId: string | null = Reporter!.reportVKeyFileGenerationStartWithSpinner(
+            setupInfo.circuitArtifact.circuitTemplateName,
+            provingSystem,
+          );
 
-        const zkeyFilePath = this._circuitArtifacts.getCircuitArtifactFileFullPath(
-          setupInfo.circuitArtifact,
-          "zkey",
-          provingSystem,
-        );
-        const vkeyFilePath = this._circuitArtifacts.getCircuitArtifactFileFullPath(
-          setupInfo.circuitArtifact,
-          "vkey",
-          provingSystem,
-        );
+          const zkeyFilePath = this._circuitArtifacts.getCircuitArtifactFileFullPath(
+            setupInfo.circuitArtifact,
+            "zkey",
+            provingSystem,
+          );
+          const vkeyFilePath = this._circuitArtifacts.getCircuitArtifactFileFullPath(
+            setupInfo.circuitArtifact,
+            "vkey",
+            provingSystem,
+          );
 
-        Reporter!.verboseLog(
-          "setup-processor:vkey",
-          "Generating VKey file for %s circuit with %s proving system and params %o",
-          [setupInfo.circuitArtifact.circuitTemplateName, provingSystem, { zkeyFilePath, vkeyFilePath }],
-        );
+          Reporter!.verboseLog(
+            "setup-processor:vkey",
+            "Generating VKey file for %s circuit with %s proving system and params %o",
+            [setupInfo.circuitArtifact.circuitTemplateName, provingSystem, { zkeyFilePath, vkeyFilePath }],
+          );
 
-        const vKeyData = await snarkjs.zKey.exportVerificationKey(zkeyFilePath);
+          const vKeyData = await snarkjs.zKey.exportVerificationKey(zkeyFilePath);
 
-        fsExtra.outputFileSync(vkeyFilePath, JSON.stringify(vKeyData));
+          fsExtra.outputFileSync(vkeyFilePath, JSON.stringify(vKeyData));
 
-        Reporter!.reportVKeyFileGenerationResult(
-          spinnerId,
-          setupInfo.circuitArtifact.circuitTemplateName,
-          provingSystem,
-        );
+          Reporter!.reportVKeyFileGenerationResult(
+            spinnerId,
+            setupInfo.circuitArtifact.circuitTemplateName,
+            provingSystem,
+          );
+        }
       }
+    } finally {
+      await terminateCurve();
     }
   }
 

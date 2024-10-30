@@ -2,6 +2,8 @@ import fsExtra from "fs-extra";
 import https from "https";
 import { exec } from "child_process";
 
+import * as snarkjs from "snarkjs";
+
 import { createNonCryptographicHashBasedIdentifier } from "hardhat/internal/util/hash";
 
 import { ProvingSystemType } from "@solarity/zkit";
@@ -9,6 +11,8 @@ import { ProvingSystemType } from "@solarity/zkit";
 import { Reporter } from "../reporter";
 
 import { ExecCallResult } from "../types/utils";
+
+import { BN128_CURVE_NAME } from "../constants";
 
 /**
  * Downloads a file from the specified URL
@@ -110,4 +114,8 @@ export function getUniqueProvingSystems(provingSystems: ProvingSystemType | Prov
   } else {
     return [provingSystems];
   }
+}
+
+export async function terminateCurve() {
+  await (await (snarkjs as any).curves.getCurveFromName(BN128_CURVE_NAME)).terminate();
 }

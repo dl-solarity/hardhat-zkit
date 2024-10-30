@@ -63,6 +63,9 @@ export const CompileFlagsSchema = z.object({
   sym: z.boolean(),
   json: z.boolean(),
   c: z.boolean(),
+  O0: z.boolean(),
+  O1: z.boolean(),
+  O2: z.boolean(),
 });
 
 export const ResolvedFileDataSchema = z.object({
