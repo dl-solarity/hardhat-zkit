@@ -10,29 +10,23 @@ on:
 
 jobs:
   test:
-    name: 'Node.js v${{ matrix.node }}'
+    name: 'Docker Tests'
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node:
-          - 18
-          - 20
     steps:
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '${{ matrix.node }}'
+      - name: Checkout the repository
+        uses: actions/checkout@v3
 
-      - uses: actions/checkout@v3
-      - name: 'Cache node_modules'
-        uses: actions/cache@v3
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-v${{ matrix.node }}-${{ hashFiles('**/package.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-v${{ matrix.node }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
-      - name: Install Dependencies
-        run: npm install
+      - name: Build Docker Image
+        run: docker build -t hardhat-zkit-test-runner .
 
-      - name: Run All Tests
-        run: npm run test
+      - name: Run Tests Inside Docker Container
+        run: docker run --rm hardhat-zkit-test-runner
+
+      - name: Cleanup Docker resources
+        run: |
+          docker rmi hardhat-zkit-test-runner --force
+          docker buildx prune -a -f
+          docker system prune -a -f --volumes
