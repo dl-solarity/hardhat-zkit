@@ -111,6 +111,20 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
     }
   };
 
+  visitSignalDeclaration = (ctx: SignalDeclarationContext) => {
+    const signalDefinition = ctx.signalDefinition();
+
+    let signalType = "intermediate";
+
+    if (signalDefinition.SIGNAL_TYPE()) {
+      signalType = signalDefinition.SIGNAL_TYPE().getText();
+    }
+
+    [signalDefinition.identifier(), ...ctx.identifier_list()].forEach((identifier) =>
+      this._saveInputData(identifier, signalType),
+    );
+  };
+
   visitVarDeclaration = (ctx: VarDeclarationContext) => {
     const vars = this._parseVarDefinition(ctx.varDefinition());
 
@@ -129,11 +143,11 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
     });
   };
 
-  _parseVarDefinition = (ctx: VarDefinitionContext): string[] => {
+  private _parseVarDefinition(ctx: VarDefinitionContext): string[] {
     return ctx.identifier_list().map((identifier) => identifier.ID(0).getText());
-  };
+  }
 
-  _parseRHSValue = (ctx: RhsValueContext): bigint[] => {
+  private _parseRHSValue(ctx: RhsValueContext): bigint[] {
     const expressionVisitor = new CircomExpressionVisitor(true, this.vars);
 
     /**
@@ -183,21 +197,7 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
     }
 
     throw new HardhatZKitError(`RHS value as function call is not supported - ${ctx.getText()}`);
-  };
-
-  visitSignalDeclaration = (ctx: SignalDeclarationContext) => {
-    const signalDefinition = ctx.signalDefinition();
-
-    let signalType = "intermediate";
-
-    if (signalDefinition.SIGNAL_TYPE()) {
-      signalType = signalDefinition.SIGNAL_TYPE().getText();
-    }
-
-    [signalDefinition.identifier(), ...ctx.identifier_list()].forEach((identifier) =>
-      this._saveInputData(identifier, signalType),
-    );
-  };
+  }
 
   private _saveInputData(identifier: IdentifierContext, signalType: string) {
     const parsedData = this._parseIdentifier(identifier);
