@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 import fs from "fs";
 import chalk from "chalk";
+import { capitalize } from "lodash";
 
 import { BaseReporter } from "./BaseReporter";
 import { CircuitArtifacts } from "../../artifacts/CircuitArtifacts";
@@ -59,12 +60,17 @@ export class SetupReporter extends BaseReporter {
 
     const table = this._getCLITable();
 
-    table.push([{ content: chalk.bold("Circuit Name") }, { content: chalk.bold(`ZKey file size (MB)`) }]);
+    table.push([
+      { content: chalk.bold("Circuit Name") },
+      { content: chalk.bold("Proving system") },
+      { content: chalk.bold(`ZKey file size (MB)`) },
+    ]);
 
     for (const setupInfo of circuitSetupInfoArr) {
       for (const provingSystem of setupInfo.provingSystems) {
         table.push([
-          { content: `${setupInfo.circuitArtifact.circuitTemplateName} ${chalk.grey(`(${provingSystem})`)}` },
+          { content: setupInfo.circuitArtifact.circuitTemplateName },
+          { content: capitalize(provingSystem), hAlign: "left" },
           {
             content: this._getFileSizeInMB(
               setupInfo.circuitArtifact.compilerOutputFiles[

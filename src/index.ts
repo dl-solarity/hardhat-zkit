@@ -286,12 +286,13 @@ const generateVerifiers: ActionType<GenerateVerifiersTaskConfig> = async (
     for (const name of allFullyQualifiedNames) {
       const circuitArtifact: CircuitArtifact = await env.zkit.circuitArtifacts.readCircuitArtifact(name);
 
-      const spinnerId: string | null = Reporter!.reportVerifierGenerationStartWithSpinner(
-        circuitArtifact.circuitTemplateName,
-        verifiersType,
-      );
-
       for (const provingSystem of provingSystems) {
+        const spinnerId: string | null = Reporter!.reportVerifierGenerationStartWithSpinner(
+          circuitArtifact.circuitTemplateName,
+          verifiersType,
+          provingSystem,
+        );
+
         if (!protocolImplementers.has(provingSystem)) {
           switch (provingSystem) {
             case "groth16":
@@ -318,12 +319,17 @@ const generateVerifiers: ActionType<GenerateVerifiersTaskConfig> = async (
           },
           protocolImplementer,
         ).createVerifier(verifiersType);
-      }
 
-      Reporter!.reportVerifierGenerationResult(spinnerId, circuitArtifact.circuitTemplateName, verifiersType);
+        Reporter!.reportVerifierGenerationResult(
+          spinnerId,
+          circuitArtifact.circuitTemplateName,
+          verifiersType,
+          provingSystem,
+        );
+      }
     }
 
-    Reporter!.reportVerifiersGenerationResult(verifiersType, allFullyQualifiedNames.length);
+    Reporter!.reportVerifiersGenerationResult(verifiersType, allFullyQualifiedNames.length * provingSystems.length);
   } else {
     Reporter!.reportNothingToGenerate();
   }

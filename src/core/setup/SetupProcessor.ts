@@ -83,18 +83,17 @@ export class SetupProcessor {
     contributionSettings: SetupContributionSettings,
     ptauFilePath: string,
   ) {
-    const contributions: number = contributionSettings.contributions;
-
-    Reporter!.reportZKeyFilesGenerationHeader(contributions);
+    Reporter!.reportZKeyFilesGenerationHeader(contributionSettings);
 
     for (const setupInfo of circuitSetupInfoArr) {
       const r1csFilePath = setupInfo.circuitArtifact.compilerOutputFiles.r1cs!.fileSourcePath;
 
-      const spinnerId: string | null = Reporter!.reportZKeyFileGenerationStartWithSpinner(
-        setupInfo.circuitArtifact.circuitTemplateName,
-      );
-
       for (const provingSystem of setupInfo.provingSystems) {
+        const spinnerId: string | null = Reporter!.reportZKeyFileGenerationStartWithSpinner(
+          setupInfo.circuitArtifact.circuitTemplateName,
+          provingSystem,
+        );
+
         const zkeyFilePath = this._circuitArtifacts.getCircuitArtifactFileFullPath(
           setupInfo.circuitArtifact,
           "zkey",
@@ -109,7 +108,12 @@ export class SetupProcessor {
 
         switch (provingSystem) {
           case "groth16":
-            await this._generateGroth16ZKeyFile(r1csFilePath, ptauFilePath, zkeyFilePath, contributions);
+            await this._generateGroth16ZKeyFile(
+              r1csFilePath,
+              ptauFilePath,
+              zkeyFilePath,
+              contributionSettings.contributions,
+            );
             break;
           case "plonk":
             await this._generatePlonkZKeyFile(r1csFilePath, ptauFilePath, zkeyFilePath);
@@ -117,9 +121,14 @@ export class SetupProcessor {
           default:
             throw new HardhatZKitError(`Unsupported proving system - ${provingSystem}`);
         }
-      }
 
-      Reporter!.reportZKeyFileGenerationResult(spinnerId, setupInfo.circuitArtifact.circuitTemplateName, contributions);
+        Reporter!.reportZKeyFileGenerationResult(
+          spinnerId,
+          setupInfo.circuitArtifact.circuitTemplateName,
+          provingSystem,
+          contributionSettings.contributions,
+        );
+      }
     }
   }
 
@@ -127,11 +136,12 @@ export class SetupProcessor {
     Reporter!.reportVKeyFilesGenerationHeader();
 
     for (const setupInfo of circuitSetupInfoArr) {
-      const spinnerId: string | null = Reporter!.reportVKeyFileGenerationStartWithSpinner(
-        setupInfo.circuitArtifact.circuitTemplateName,
-      );
-
       for (const provingSystem of setupInfo.provingSystems) {
+        const spinnerId: string | null = Reporter!.reportVKeyFileGenerationStartWithSpinner(
+          setupInfo.circuitArtifact.circuitTemplateName,
+          provingSystem,
+        );
+
         const zkeyFilePath = this._circuitArtifacts.getCircuitArtifactFileFullPath(
           setupInfo.circuitArtifact,
           "zkey",
@@ -152,9 +162,13 @@ export class SetupProcessor {
         const vKeyData = await snarkjs.zKey.exportVerificationKey(zkeyFilePath);
 
         fsExtra.outputFileSync(vkeyFilePath, JSON.stringify(vKeyData));
-      }
 
-      Reporter!.reportVKeyFileGenerationResult(spinnerId, setupInfo.circuitArtifact.circuitTemplateName);
+        Reporter!.reportVKeyFileGenerationResult(
+          spinnerId,
+          setupInfo.circuitArtifact.circuitTemplateName,
+          provingSystem,
+        );
+      }
     }
   }
 

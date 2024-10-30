@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import debug from "debug";
 
-import { VerifierLanguageType } from "@solarity/zkit";
+import { ProvingSystemType, VerifierLanguageType } from "@solarity/zkit";
 
 import {
   ProgressReporter,
@@ -19,7 +19,7 @@ import {
 import { createProgressBarProcessor } from "./ProgressBarProcessor";
 import { createSpinnerProcessor } from "./SpinnerProcessor";
 
-import { CompilationInfo, CircuitSetupInfo, SimpleParserRuleContext } from "../types/core";
+import { CompilationInfo, CircuitSetupInfo, SimpleParserRuleContext, SetupContributionSettings } from "../types/core";
 
 /**
  * A facade for reporting various types of log information to the user,
@@ -155,28 +155,43 @@ class ReporterFacade {
     this._setupReporter.reportResult(circuitSetupInfoArr);
   }
 
-  public reportZKeyFilesGenerationHeader(contributions: number) {
-    this._zKeyFilesGenerationReporter.reportHeader(contributions);
+  public reportZKeyFilesGenerationHeader(contributionSettings: SetupContributionSettings) {
+    this._zKeyFilesGenerationReporter.reportHeader(contributionSettings);
   }
 
-  public reportZKeyFileGenerationStartWithSpinner(circuitName: string): string | null {
-    return this._zKeyFilesGenerationReporter.reportStartWithSpinner(circuitName);
+  public reportZKeyFileGenerationStartWithSpinner(
+    circuitName: string,
+    provingSystem: ProvingSystemType,
+  ): string | null {
+    return this._zKeyFilesGenerationReporter.reportStartWithSpinner(circuitName, provingSystem);
   }
 
-  public reportZKeyFileGenerationResult(spinnerId: string | null, circuitName: string, contributionsNumber: number) {
-    this._zKeyFilesGenerationReporter.reportResult(spinnerId, circuitName, contributionsNumber);
+  public reportZKeyFileGenerationResult(
+    spinnerId: string | null,
+    circuitName: string,
+    provingSystem: ProvingSystemType,
+    contributionsNumber: number,
+  ) {
+    this._zKeyFilesGenerationReporter.reportResult(spinnerId, circuitName, provingSystem, contributionsNumber);
   }
 
   public reportVKeyFilesGenerationHeader() {
     this._vKeyFilesGenerationReporter.reportHeader();
   }
 
-  public reportVKeyFileGenerationStartWithSpinner(circuitName: string): string | null {
-    return this._vKeyFilesGenerationReporter.reportStartWithSpinner(circuitName);
+  public reportVKeyFileGenerationStartWithSpinner(
+    circuitName: string,
+    provingSystem: ProvingSystemType,
+  ): string | null {
+    return this._vKeyFilesGenerationReporter.reportStartWithSpinner(circuitName, provingSystem);
   }
 
-  public reportVKeyFileGenerationResult(spinnerId: string | null, circuitName: string) {
-    this._vKeyFilesGenerationReporter.reportResult(spinnerId, circuitName);
+  public reportVKeyFileGenerationResult(
+    spinnerId: string | null,
+    circuitName: string,
+    provingSystem: ProvingSystemType,
+  ) {
+    this._vKeyFilesGenerationReporter.reportResult(spinnerId, circuitName, provingSystem);
   }
 
   public reportNothingToCompile() {
@@ -198,16 +213,18 @@ class ReporterFacade {
   public reportVerifierGenerationStartWithSpinner(
     circuitName: string,
     verifiersType: VerifierLanguageType,
+    provingSystem: ProvingSystemType,
   ): string | null {
-    return this._verifiersGenerationReporter.reportStartWithSpinner(circuitName, verifiersType);
+    return this._verifiersGenerationReporter.reportStartWithSpinner(circuitName, verifiersType, provingSystem);
   }
 
   public reportVerifierGenerationResult(
     spinnerId: string | null,
     circuitName: string,
     verifiersType: VerifierLanguageType,
+    provingSystem: ProvingSystemType,
   ) {
-    this._verifiersGenerationReporter.reportResult(spinnerId, circuitName, verifiersType);
+    this._verifiersGenerationReporter.reportResult(spinnerId, circuitName, verifiersType, provingSystem);
   }
 
   public reportVerifiersGenerationResult(verifiersType: VerifierLanguageType, verifiersCount: number) {

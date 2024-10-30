@@ -1,5 +1,9 @@
 /* eslint-disable no-console */
 import chalk from "chalk";
+import { capitalize } from "lodash";
+
+import { ProvingSystemType } from "@solarity/zkit";
+
 import { BaseReporter } from "./BaseReporter";
 import { SpinnerProcessor } from "../SpinnerProcessor";
 
@@ -16,11 +20,15 @@ export class VKeyFilesGenerationReporter extends BaseReporter {
     console.log(output);
   }
 
-  public reportStartWithSpinner(circuitName: string): string | null {
-    return this._startSpinner(circuitName, "generate-vkey", `Generating VKey file for ${circuitName} circuit`);
+  public reportStartWithSpinner(circuitName: string, provingSystem: ProvingSystemType): string | null {
+    return this._startSpinner(
+      circuitName,
+      "generate-vkey",
+      `Generating ${capitalize(provingSystem)} VKey file for ${circuitName} circuit`,
+    );
   }
 
-  public reportResult(spinnerId: string | null, circuitName: string) {
+  public reportResult(spinnerId: string | null, circuitName: string, provingSystem: ProvingSystemType) {
     if (this.isQuiet() || !spinnerId) return;
 
     const generationTimeMessage: string = this._getSpinnerWorkingTimeMessage(
@@ -29,7 +37,7 @@ export class VKeyFilesGenerationReporter extends BaseReporter {
 
     SpinnerProcessor!.succeedSpinner(
       spinnerId,
-      `Generated VKey file for ${chalk.italic(circuitName)} circuit ${generationTimeMessage}`,
+      `Generated ${capitalize(provingSystem)} VKey file for ${chalk.italic(circuitName)} circuit ${generationTimeMessage}`,
     );
   }
 }
