@@ -8,9 +8,6 @@ artifacts
 coverage.json
 coverage
 
-publish
-!publish/package.json
-
 # Compilation output
 /build-test/
 /dist

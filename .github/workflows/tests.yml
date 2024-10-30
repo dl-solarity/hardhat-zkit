@@ -10,8 +10,13 @@ on:
 
 jobs:
   test:
-    name: 'Docker Tests'
+    name: 'Node.js v${{ matrix.node }}'
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node:
+          - 18
+          - 20
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v3
@@ -19,14 +24,11 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Build Docker Image and Run Tests on Node 18
-        run: docker build --build-arg NODE_VERSION=18.0.0 -t hardhat-zkit-test-runner-node18 --progress=plain --no-cache .
-
-      - name: Build Docker Image and Run Tests on Node 20
-        run: docker build --build-arg NODE_VERSION=20.0.0 -t hardhat-zkit-test-runner-node20 --progress=plain --no-cache .
+      - name: Build Docker Image and Run Tests
+        run: docker build --build-arg NODE_VERSION=${{ matrix.node }}.0.0 -t hardhat-zkit-test-runner-node${{ matrix.node }} --progress=plain --no-cache .
 
       - name: Cleanup Docker resources
         run: |
-          docker rmi hardhat-zkit-test-runner-node18 hardhat-zkit-test-runner-node20 --force
+          docker rmi hardhat-zkit-test-runner-node${{ matrix.node }} --force
           docker buildx prune -a -f
           docker system prune -a -f --volumes
