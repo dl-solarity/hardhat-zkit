@@ -45,7 +45,9 @@ export class SetupFilesResolver {
    * 4. Applies additional filtering based on the provided setup settings to finalize the list of circuits
    * 5. Returns an array of {@link CircuitSetupInfo} objects
    *
-   * @param setupSettings The settings that dictate how the circuit setup should be performed
+   * @param contributionSettings The setup configuration settings, including the required proving systems
+   *    and the number of contributions for the `Groth16` proving system
+   * @param setupFilterSettings The file filtering settings to be applied during the setup procedure
    * @param force A boolean flag that, when true, skips filtering by file changes during setup
    * @returns An array of {@link CircuitSetupInfo} objects containing information about the circuits to be set up
    */

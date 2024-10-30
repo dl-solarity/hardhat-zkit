@@ -67,6 +67,7 @@ export class CompilationProcessor {
    * 6. Saves the artifact information using {@link ICircuitArtifacts | CircuitArtifacts}
    *
    * @param filesInfoToCompile Information about circuit files needed for compilation
+   * @param provingSystems An array of {@link ProvingSystemType | proving systems} from the plugin config
    */
   public async compile(filesInfoToCompile: CircomResolvedFileInfo[], provingSystems: ProvingSystemType[]) {
     const tempDir: string = path.join(os.tmpdir(), ".zkit", uuid());

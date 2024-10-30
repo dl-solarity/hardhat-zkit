@@ -31,8 +31,8 @@ class BaseCircuitsSetupCache extends BaseCache<SetupCacheEntry> {
    *
    * @param artifactAbsolutePath The absolute path of the artifact file to check
    * @param r1csContentHash The content hash of the R1CS file to compare
-   * @param contributionSettings The contribution settings to compare
-   * @returns True if the file has changed, false otherwise.
+   * @param contributionSettings The setup contribution settings to compare
+   * @returns An array of {@link ProvingSystemType | proving systems} that were modified or required for setup
    */
   public hasFileChanged(
     artifactAbsolutePath: string,

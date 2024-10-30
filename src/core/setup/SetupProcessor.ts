@@ -44,8 +44,10 @@ export class SetupProcessor {
    * 4. Generates VKey files for the circuit artifacts
    * 5. Saves the circuit artifacts with the generated ZKey and VKey files
    *
-   * @param circuitArtifacts An array of circuit artifacts that need to be set up
-   * @param contributionSettings The contribution settings to be used during the setup process
+   * @param circuitSetupInfoArr An array of {@link CircuitSetupInfo} objects,
+   *    each containing the information required to set up specific circuits
+   * @param contributionSettings The settings for the setup process, specifying the necessary proving systems
+   *    and the number of contributions for the `Groth16` proving system
    */
   public async setup(circuitSetupInfoArr: CircuitSetupInfo[], contributionSettings: SetupContributionSettings) {
     const tempDir: string = path.join(os.tmpdir(), ".zkit", uuid());

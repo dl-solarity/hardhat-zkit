@@ -36,6 +36,14 @@ export class CircuitArtifacts implements ICircuitArtifacts {
 
   constructor(private readonly _artifactsPath: string) {}
 
+  /**
+   * Generates a unique artifact file key using the specified {@link ArtifactsFileType | fileType}
+   * and {@link ProvingSystemType | provingSystem}
+   *
+   * @param fileType The type of the artifact file
+   * @param provingSystem The type of the proving system
+   * @returns A generated key for the artifact file
+   */
   public static getArtifactOutputFileKey(fileType: ArtifactsFileType, provingSystem: ProvingSystemType): string {
     if (fileType === "zkey" || fileType === "vkey") {
       return `${provingSystem}.${fileType}`;
@@ -151,7 +159,10 @@ export class CircuitArtifacts implements ICircuitArtifacts {
 
   /**
    * Constructs and returns the full path for a specific artifact file based on the provided
-   * {@link CircuitArtifact} object and the specified {@link ArtifactsFileType | file type}
+   * {@link CircuitArtifact} object, the specified {@link ArtifactsFileType | file type}
+   * and {@link ProvingSystemType | proving system type}.
+   *
+   * The {@link ProvingSystemType | provingSystem} parameter has `groth16` value by default
    *
    * @param circuitArtifact The {@link CircuitArtifact} object representing the artifact
    * @param fileType The {@link ArtifactsFileType | file type} indicating the type of artifact file
@@ -176,6 +187,8 @@ export class CircuitArtifacts implements ICircuitArtifacts {
    * @param circuitArtifact The {@link CircuitArtifact} object to be saved
    * @param updatedFileTypes An array of {@link ArtifactsFileType | file types} that have been modified
    *    during the most recent session, such as during compilation
+   * @param provingSystems An array of {@link ProvingSystemType | proving systems} that have been added
+   *    during the most recent session
    * @returns A promise that resolves once the save operation is complete
    */
   public async saveCircuitArtifact(
