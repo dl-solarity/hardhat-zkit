@@ -25,7 +25,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
 
       - name: Build Docker Image and Run Tests
-        run: docker build --build-arg NODE_VERSION=${{ matrix.node }}.0.0 -t hardhat-zkit-test-runner-node${{ matrix.node }} --progress=plain --no-cache .
+        run: docker build --build-arg NODE_VERSION=${{ matrix.node }} -t hardhat-zkit-test-runner-node${{ matrix.node }} --progress=plain --no-cache .
 
       - name: Cleanup Docker resources
         run: |

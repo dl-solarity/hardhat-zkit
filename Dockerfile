@@ -1,6 +1,6 @@
-ARG NODE_VERSION=20.0.0
+ARG NODE_VERSION=20
 
-FROM node:${NODE_VERSION}-alpine
+FROM node:${NODE_VERSION}
 
 WORKDIR /hardhat-zkit
 
@@ -8,4 +8,6 @@ COPY . .
 
 RUN npm install
 
-RUN npm run test-local
+ARG RUN_TESTS=true
+
+RUN if [ "$RUN_TESTS" = "true" ]; then npm run test-local; fi

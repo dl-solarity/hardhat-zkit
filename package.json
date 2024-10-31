@@ -40,7 +40,9 @@
     "test": "npm run test-docker",
     "test-docker": "docker build -t hardhat-zkit --progress=plain --no-cache . && docker rmi hardhat-zkit --force",
     "test-local": "mocha --recursive 'test/**/*.ts' --exit",
-    "coverage": "nyc mocha --recursive 'test/**/*.ts' --exit",
+    "coverage": "npm run coverage-docker",
+    "coverage-docker": "bash scripts/docker-coverage.sh",
+    "coverage-local": "nyc mocha --recursive 'test/**/*.ts' --exit",
     "clean-tests": "npm run clean --workspaces",
     "lint-fix": "prettier --write \"./**/*.ts\" && eslint \"{src,test}/**/*.{js,ts}\" --cache --fix",
     "publish-to-npm": "npm run build && npm run lint-fix && npm publish ./ --access public"
