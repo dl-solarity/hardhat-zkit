@@ -4,14 +4,14 @@ import { expect } from "chai";
 import { createNonCryptographicHashBasedIdentifier } from "hardhat/internal/util/hash";
 
 import { useEnvironment } from "@test-helpers";
-import { CircomFilesParser } from "@src/core";
+import { CircomFilesParser, CircomFilesVisitor, CircomTemplateInputsVisitor } from "@src/core";
 import { TASK_CIRCUITS_COMPILE, ZKIT_SCOPE_NAME } from "@src/task-names";
 import { getNormalizedFullPath } from "@src/utils/path-utils";
 import { CIRCUITS_COMPILE_CACHE_FILENAME } from "@src/constants";
 import { createCircuitsCompileCache } from "@src/cache";
 import { createReporter } from "@src/reporter";
-
-import { ResolvedFileData, ResolvedMainComponentData } from "@src/types/core";
+import { ResolvedFileData } from "@src/types/core";
+import { getCircomParser, VariableContext } from "@distributedlab/circom-parser";
 
 describe("CircomFilesParser", () => {
   describe("parse", () => {
@@ -79,33 +79,44 @@ describe("CircomFilesParser", () => {
     });
 
     it("should correctly parse data and resolve var definitions and if statements", async function () {
-      const mainComponentData: ResolvedMainComponentData = {
-        parameters: {
-          SIGNATURE_TYPE: 8n,
-          DG_HASH_TYPE: 8n,
-          DOCUMENT_TYPE: 512n,
-          EC_BLOCK_NUMBER: 256n,
-          EC_SHIFT: 2n,
-          DG1_SHIFT: 0n,
-          AA_SIGNATURE_ALGO: 17n,
-          DG15_SHIFT: 64n,
-          DG15_BLOCK_NUMBER: 64n,
-          AA_SHIFT: 256n,
-        },
-        signals: [],
+      const mainComponentData: VariableContext = {
+        SIGNATURE_TYPE: 8n,
+        DG_HASH_TYPE: 8n,
+        DOCUMENT_TYPE: 512n,
+        EC_BLOCK_NUMBER: 256n,
+        EC_SHIFT: 2n,
+        DG1_SHIFT: 0n,
+        AA_SIGNATURE_ALGO: 17n,
+        DG15_SHIFT: 64n,
+        DG15_BLOCK_NUMBER: 64n,
+        AA_SHIFT: 256n,
       };
 
       const testFilePath = getNormalizedFullPath(this.hre.config.paths.root, "circuits/main/curve.circom");
 
-      const result = parser.parseTemplateInputs(testFilePath, "RegisterIdentityBuilder", mainComponentData.parameters);
+      const visitor = new CircomFilesVisitor(testFilePath);
 
-      expect(result["encapsulatedContent"].dimension).to.be.deep.equal([String(256n * 512n)]);
-      expect(result["dg1"].dimension).to.be.deep.equal(["1024"]);
-      expect(result["dg15"].dimension).to.be.deep.equal([String(64n * 512n)]);
-      expect(result["signedAttributes"].dimension).to.be.deep.equal(["1024"]);
-      expect(result["signature"].dimension).to.be.deep.equal(["32"]);
-      expect(result["pubkey"].dimension).to.be.deep.equal(["32"]);
-      expect(result["slaveMerkleInclusionBranches"].dimension).to.be.deep.equal(["80"]);
+      const parser = getCircomParser(testFilePath);
+
+      visitor.visit(parser.circuit());
+
+      const circomTemplateInputsVisitor = new CircomTemplateInputsVisitor(
+        testFilePath,
+        visitor.fileData.templates["RegisterIdentityBuilder"].context,
+        mainComponentData,
+      );
+
+      circomTemplateInputsVisitor.startParse();
+
+      const result = circomTemplateInputsVisitor.templateInputs;
+
+      expect(result["encapsulatedContent"].dimension).to.be.deep.equal([256 * 512]);
+      expect(result["dg1"].dimension).to.be.deep.equal([1024]);
+      expect(result["dg15"].dimension).to.be.deep.equal([64 * 512]);
+      expect(result["signedAttributes"].dimension).to.be.deep.equal([1024]);
+      expect(result["signature"].dimension).to.be.deep.equal([32]);
+      expect(result["pubkey"].dimension).to.be.deep.equal([32]);
+      expect(result["slaveMerkleInclusionBranches"].dimension).to.be.deep.equal([80]);
     });
   });
 
@@ -124,7 +135,7 @@ describe("CircomFilesParser", () => {
 
       expect(function () {
         parser.parse(fileContent, circuitPath, contentHash);
-      }).to.throw("Expression value must be of type bigint or bigint array (16:32)");
+      }).to.throw("Failed to parse array parameter with index 0. Parameter: getValue() (16:32)");
     });
   });
 });

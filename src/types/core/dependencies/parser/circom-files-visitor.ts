@@ -1,14 +1,64 @@
-import { MainComponent, PragmaComponent } from "@distributedlab/circom-parser";
+import {
+  CircomValueType,
+  ParserErrorItem,
+  ParserRuleContext,
+  TemplateDefinitionContext,
+} from "@distributedlab/circom-parser";
+
+export enum ErrorType {
+  SignalDimensionResolution,
+  TemplateAlreadyUsed,
+  InvalidPragmaVersion,
+  FailedToResolveMainComponentParameter,
+  InternalExpressionHelperError,
+  MissingTemplateParameterValue,
+  InvalidIdentifierDimensionValue,
+  FailedToResolveIdentifier,
+  FailedToResolveIdentifierValue,
+  VarArraysNotSupported,
+  VarTupleLikeDeclarationNotSupported,
+  FailedToResolveIfCondition,
+  InvalidConditionReturnedValue,
+  InvalidLeftAssignment,
+  ComplexAccessNotSupported,
+  AssigneeNotDeclared,
+  QUOOperationNotSupported,
+  ReachedUnkownOperation,
+  InvalidIncDecOperation,
+}
 
 export type InputData = {
-  dimension: string[];
   type: string;
+  dimension: number[];
 };
 
+export type IdentifierObject = {
+  name: string;
+  arrayAccess?: number[];
+};
+
+export type CircuitResolutionError = {
+  type: ErrorType;
+  fileIdentifier: string;
+  context: ParserRuleContext;
+  message?: string;
+  templateIdentifier?: string;
+  linkedParserErrors?: ParserErrorItem[];
+};
+
+export type MainComponent = {
+  templateName: string | null;
+  publicInputs: string[];
+  parameters: CircomValueType[];
+};
+
+export type PragmaComponent = { isCustom: boolean; compilerVersion: string };
+
 export type Template = {
-  inputs: Record<string, InputData>;
   parameters: string[];
   isCustom: boolean;
+  parallel: boolean;
+  context: TemplateDefinitionContext;
 };
 
 export type Templates = {
