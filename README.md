@@ -57,7 +57,7 @@ module.exports = {
       skipFiles: [],
       c: false,
       json: false,
-      optimization: "O2",
+      optimization: "O1",
     },
     setupSettings: {
       contributionSettings: {
