@@ -1,21 +1,22 @@
 node_modules
 .DS_Store
 .idea
+.vscode
 .eslintcache
+.env
+.npm
 
 # Hardhat files
 artifacts
-coverage.json
-coverage
 
 # Compilation output
 /build-test/
 /dist
 
+# Coverage
 .nyc_output
-
-# Below is Github's node gitignore template,
-# ignoring the node_modules part, as it'd ignore every node_modules, and we have some for testing
+coverage.json
+coverage
 
 # Logs
 logs
@@ -38,7 +39,5 @@ pids
 typings/
 **/.storage.json
 
-# Optional npm cache directory
-.npm
-
+# Exclude
 !src/**/artifacts

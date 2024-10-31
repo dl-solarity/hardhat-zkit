@@ -21,14 +21,11 @@ jobs:
       - name: Checkout the repository
         uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx
+      - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Build Docker Image and Run Tests
-        run: docker build --build-arg NODE_VERSION=${{ matrix.node }} -t hardhat-zkit-node${{ matrix.node }} --progress=plain --no-cache .
+      - name: Build Docker image
+        run: docker build --build-arg NODE_VERSION=${{ matrix.node }} -t hardhat-zkit-node${{ matrix.node }} --progress=plain .
 
-      - name: Cleanup Docker resources
-        run: |
-          docker rmi hardhat-zkit-node${{ matrix.node }} --force
-          docker buildx prune -a -f
-          docker system prune -a -f --volumes
+      - name: Run tests
+        run: docker run --rm hardhat-zkit-node${{ matrix.node }} test-local
