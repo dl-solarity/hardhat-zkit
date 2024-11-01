@@ -3,21 +3,11 @@ import path from "path";
 import fs from "fs";
 
 import { lazyObject } from "hardhat/plugins";
-import { extendConfig, extendEnvironment, scope, task, subtask, types } from "hardhat/config";
+import { extendConfig, extendEnvironment, scope, task, types } from "hardhat/config";
 import { ActionType, HardhatRuntimeEnvironment, RunSuperFunction } from "hardhat/types";
 import { TASK_CLEAN, TASK_COMPILE_SOLIDITY_READ_FILE as TASK_READ_FILE } from "hardhat/builtin-tasks/task-names";
-import { willRunWithTypescript } from "hardhat/internal/core/typescript-support";
 
-import {
-  CircuitZKit,
-  CircuitZKitConfig,
-  VerifierLanguageType,
-  ProvingSystemType,
-  IProtocolImplementer,
-  Groth16Implementer,
-  PlonkImplementer,
-} from "@solarity/zkit";
-import { CircuitTypesGenerator } from "@solarity/zktype";
+import { CircuitZKit, VerifierLanguageType, ProvingSystemType } from "@solarity/zkit";
 
 import "./type-extensions";
 
@@ -28,7 +18,6 @@ import {
   TASK_CIRCUITS_SETUP,
   TASK_GENERATE_VERIFIERS,
   TASK_ZKIT_CLEAN,
-  SUBTASK_ZKIT_GET_CIRCUIT_ZKIT,
 } from "./task-names";
 
 import { zkitConfigExtender } from "./config/config";
@@ -45,6 +34,8 @@ import {
   TypeGenerationProcessor,
   SetupProcessor,
   SetupFilesResolver,
+  isVersionValid,
+  CircuitZKitBuilder,
 } from "./core";
 
 import { HardhatZKitError } from "./errors";
@@ -52,15 +43,8 @@ import { Reporter, createReporter } from "./reporter";
 import { CircuitArtifacts } from "./artifacts/CircuitArtifacts";
 import { CIRCUITS_COMPILE_CACHE_FILENAME, CIRCUITS_SETUP_CACHE_FILENAME } from "./constants";
 import { getNormalizedFullPath, getUniqueProvingSystems } from "./utils";
-import { isVersionValid } from "./core/compiler/versioning";
 
-import {
-  MakeTaskConfig,
-  CompileTaskConfig,
-  GenerateVerifiersTaskConfig,
-  GetCircuitZKitConfig,
-  SetupTaskConfig,
-} from "./types/tasks";
+import { MakeTaskConfig, CompileTaskConfig, GenerateVerifiersTaskConfig, SetupTaskConfig } from "./types/tasks";
 import { CircuitArtifact } from "./types/artifacts/circuit-artifacts";
 import { CompileFlags, CircomResolvedFileInfo, CircuitSetupInfo, SetupContributionSettings } from "./types/core";
 import { ProvingSystemData } from "./types/cache";
@@ -74,14 +58,16 @@ extendEnvironment((hre) => {
     const circuitArtifacts: CircuitArtifacts = new CircuitArtifacts(
       getNormalizedFullPath(hre.config.paths.root, hre.config.zkit.compilationSettings.artifactsDir),
     );
+    const circuitZKitBuilder: CircuitZKitBuilder = new CircuitZKitBuilder(hre);
 
     return {
       circuitArtifacts,
+      circuitZKitBuilder,
       getCircuit: async (
         circuitName: string,
-        provingSystem: ProvingSystemType = "groth16",
-      ): Promise<CircuitZKit<typeof provingSystem>> => {
-        return hre.run(SUBTASK_ZKIT_GET_CIRCUIT_ZKIT, { circuitName, provingSystem });
+        provingSystem?: ProvingSystemType,
+      ): Promise<CircuitZKit<ProvingSystemType>> => {
+        return circuitZKitBuilder.getCircuitZKit(circuitName, provingSystem);
       },
     };
   });
@@ -274,51 +260,24 @@ const generateVerifiers: ActionType<GenerateVerifiersTaskConfig> = async (
   Reporter!.verboseLog("index", "Verifiers generation dir - %s", [verifiersDirFullPath]);
 
   const allFullyQualifiedNames: string[] = await env.zkit.circuitArtifacts.getAllCircuitFullyQualifiedNames();
+  let verifiersCount: number = 0;
 
   if (allFullyQualifiedNames.length > 0) {
     Reporter!.reportVerifiersGenerationHeader(verifiersType);
 
-    const provingSystems: ProvingSystemType[] = getUniqueProvingSystems(
-      env.config.zkit.setupSettings.contributionSettings.provingSystem,
-    );
-    const protocolImplementers = new Map<ProvingSystemType, IProtocolImplementer<ProvingSystemType>>();
-
     for (const name of allFullyQualifiedNames) {
       const circuitArtifact: CircuitArtifact = await env.zkit.circuitArtifacts.readCircuitArtifact(name);
 
-      for (const provingSystem of provingSystems) {
+      for (const provingSystem of circuitArtifact.baseCircuitInfo.protocol) {
         const spinnerId: string | null = Reporter!.reportVerifierGenerationStartWithSpinner(
           circuitArtifact.circuitTemplateName,
           verifiersType,
           provingSystem,
         );
 
-        if (!protocolImplementers.has(provingSystem)) {
-          switch (provingSystem) {
-            case "groth16":
-              protocolImplementers.set(provingSystem, new Groth16Implementer());
-              break;
-            case "plonk":
-              protocolImplementers.set(provingSystem, new PlonkImplementer());
-              break;
-            default:
-              throw new HardhatZKitError(`Unsupported proving system - ${provingSystem}`);
-          }
-        }
-
-        const protocolImplementer: IProtocolImplementer<typeof provingSystem> =
-          protocolImplementers.get(provingSystem)!;
-
-        await new CircuitZKit<typeof provingSystem>(
-          {
-            circuitName: circuitArtifact.circuitTemplateName,
-            circuitArtifactsPath: path.dirname(
-              env.zkit.circuitArtifacts.formCircuitArtifactPathFromFullyQualifiedName(name),
-            ),
-            verifierDirPath: verifiersDirFullPath,
-          },
-          protocolImplementer,
-        ).createVerifier(verifiersType);
+        (await env.zkit.circuitZKitBuilder.getCircuitZKit(name, provingSystem, taskArgs.verifiersDir)).createVerifier(
+          verifiersType,
+        );
 
         Reporter!.reportVerifierGenerationResult(
           spinnerId,
@@ -326,10 +285,12 @@ const generateVerifiers: ActionType<GenerateVerifiersTaskConfig> = async (
           verifiersType,
           provingSystem,
         );
+
+        verifiersCount++;
       }
     }
 
-    Reporter!.reportVerifiersGenerationResult(verifiersType, allFullyQualifiedNames.length * provingSystems.length);
+    Reporter!.reportVerifiersGenerationResult(verifiersType, verifiersCount);
   } else {
     Reporter!.reportNothingToGenerate();
   }
@@ -354,56 +315,6 @@ const clean: ActionType<any> = async (_taskArgs: any, env: HardhatRuntimeEnviron
   fs.rmSync(circuitsSetupCacheFullPath, { force: true });
   fs.rmSync(artifactsDirFullPath, { recursive: true, force: true });
   fs.rmSync(circuitTypesFullPath, { recursive: true, force: true });
-};
-
-const getCircuitZKit: ActionType<GetCircuitZKitConfig> = async (
-  taskArgs: GetCircuitZKitConfig,
-  env: HardhatRuntimeEnvironment,
-): Promise<CircuitZKit<typeof taskArgs.provingSystem>> => {
-  const circuitArtifact: CircuitArtifact = await env.zkit.circuitArtifacts.readCircuitArtifact(taskArgs.circuitName);
-
-  const verifiersDirFullPath: string = getNormalizedFullPath(
-    env.config.paths.root,
-    taskArgs.verifiersDir ?? env.config.zkit.verifiersSettings.verifiersDir,
-  );
-  const circuitArtifactsDirPath: string = getNormalizedFullPath(
-    env.zkit.circuitArtifacts.getCircuitArtifactsDirFullPath(),
-    circuitArtifact.circuitSourceName,
-  );
-
-  const typesGenerator: CircuitTypesGenerator = new CircuitTypesGenerator({
-    basePath: env.config.zkit.circuitsDir,
-    projectRoot: env.config.paths.root,
-    outputTypesDir: env.config.zkit.typesDir,
-    circuitsArtifactsPaths: [],
-  });
-
-  const circuitZKitConfig: CircuitZKitConfig = {
-    circuitName: circuitArtifact.circuitTemplateName,
-    circuitArtifactsPath: circuitArtifactsDirPath,
-    verifierDirPath: verifiersDirFullPath,
-  };
-
-  if (willRunWithTypescript(env.hardhatArguments.config)) {
-    const module = await typesGenerator.getCircuitObject(taskArgs.circuitName);
-
-    return new module(circuitZKitConfig);
-  } else {
-    let protocolImplementer: IProtocolImplementer<typeof taskArgs.provingSystem>;
-
-    switch (taskArgs.provingSystem) {
-      case "groth16":
-        protocolImplementer = new Groth16Implementer();
-        break;
-      case "plonk":
-        protocolImplementer = new PlonkImplementer();
-        break;
-      default:
-        throw new HardhatZKitError(`Unsupported proving system - ${taskArgs.provingSystem}`);
-    }
-
-    return new CircuitZKit<typeof taskArgs.provingSystem>(circuitZKitConfig, protocolImplementer);
-  }
 };
 
 task(TASK_CLEAN).setAction(async (_taskArgs: any, env: HardhatRuntimeEnvironment, runSuper: RunSuperFunction<any>) => {
@@ -459,9 +370,3 @@ zkitScope
   .setAction(generateVerifiers);
 
 zkitScope.task(TASK_ZKIT_CLEAN, "Clean all circuit artifacts, keys, types and etc").setAction(clean);
-
-subtask(SUBTASK_ZKIT_GET_CIRCUIT_ZKIT)
-  .addOptionalParam("verifiersDir", undefined, undefined, types.string)
-  .addOptionalParam("verifierTemplateType", undefined, undefined, types.any)
-  .addParam("circuitName", undefined, undefined, types.string)
-  .setAction(getCircuitZKit);

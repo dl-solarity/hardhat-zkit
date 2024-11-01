@@ -84,7 +84,7 @@ describe("ZKit tasks", async function () {
     const ptauFullPath: string = getNormalizedFullPath(config.paths!.root!, "zkit/ptau");
     expect(fsExtra.readdirSync(ptauFullPath)).to.be.deep.eq(["powers-of-tau-8.ptau"]);
 
-    const circuit = await zkit.getCircuit("Multiplier2", "groth16");
+    const circuit = await zkit.getCircuit("Multiplier2");
     await expect(circuit).with.witnessInputs({ in1: "3", in2: "7" }).to.have.witnessOutputs(["21"]);
 
     const proof = await circuit.generateProof({ in1: "4", in2: "2" });

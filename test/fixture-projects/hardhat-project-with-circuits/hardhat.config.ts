@@ -11,6 +11,9 @@ const defaultConfig: HardhatUserConfig = {
       skipFiles: ["vendor"],
     },
     setupSettings: {
+      contributionSettings: {
+        provingSystem: ["groth16"],
+      },
       ptauDir: "zkit/ptau",
       ptauDownload: true,
     },
