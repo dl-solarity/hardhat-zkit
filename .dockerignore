@@ -8,7 +8,6 @@ Dockerfile
 .git
 .gitignore
 .env
-.editorconfig
 
 # Compilation output
 /build-test/
