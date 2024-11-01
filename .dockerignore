@@ -2,12 +2,12 @@ node_modules
 .DS_Store
 .idea
 .vscode
-.eslintcache
-.env
 .npm
-
-# Hardhat files
-artifacts
+.eslintcache
+Dockerfile
+.git
+.gitignore
+.env
 
 # Compilation output
 /build-test/
@@ -34,10 +34,3 @@ pids
 
 # node-waf configuration
 .lock-wscript
-
-# TypeScript v1 declaration files
-typings/
-**/.storage.json
-
-# Exclude
-!src/**/artifacts

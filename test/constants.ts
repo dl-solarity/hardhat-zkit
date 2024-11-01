@@ -7,7 +7,7 @@ export const defaultCompileFlags: CompileFlags = {
   c: false,
   json: false,
   O0: false,
-  O1: false,
+  O1: true,
   O2: false,
 };
 
