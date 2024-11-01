@@ -53,7 +53,7 @@
     "node": ">=16"
   },
   "dependencies": {
-    "@distributedlab/circom-parser": "0.1.5",
+    "@distributedlab/circom-parser": "0.2.0",
     "@solarity/zkit": "0.2.6",
     "@solarity/zktype": "0.3.1",
     "@wasmer/wasi": "0.12.0",
