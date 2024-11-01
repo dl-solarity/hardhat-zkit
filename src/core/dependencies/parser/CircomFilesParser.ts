@@ -62,7 +62,10 @@ export class CircomFilesParser {
     circomFilesVisitor.visit(context);
 
     const visitorErrors = circomFilesVisitor.errors.filter(
-      (error) => error.type === ErrorType.SignalDimensionResolution,
+      (error) =>
+        error.type === ErrorType.InvalidPragmaVersion ||
+        error.type === ErrorType.TemplateAlreadyUsed ||
+        error.type === ErrorType.FailedToResolveMainComponentParameter,
     );
 
     if (visitorErrors.length > 0) {
