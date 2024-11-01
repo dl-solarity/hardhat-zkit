@@ -23,7 +23,7 @@ export enum ErrorType {
   ComplexAccessNotSupported,
   AssigneeNotDeclared,
   QUOOperationNotSupported,
-  ReachedUnkownOperation,
+  ReachedUnknownOperation,
   InvalidIncDecOperation,
 }
 

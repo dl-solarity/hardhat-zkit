@@ -6,7 +6,7 @@ import { CircuitsCompileCache } from "../../../cache";
 import { Reporter } from "../../../reporter";
 
 import { VisitorError } from "../parser/VisitorError";
-import { CircomResolvedFile, InputData, ResolvedFileData } from "../../../types/core";
+import { CircomResolvedFile, ErrorType, InputData, ResolvedFileData } from "../../../types/core";
 
 /**
  * A parser class for handling Circom files and extracting relevant data.
@@ -61,8 +61,12 @@ export class CircomFilesParser {
 
     circomFilesVisitor.visit(context);
 
-    if (circomFilesVisitor.errors.length > 0) {
-      throw new VisitorError(circomFilesVisitor.errors);
+    const visitorErrors = circomFilesVisitor.errors.filter(
+      (error) => error.type !== ErrorType.ComplexAccessNotSupported,
+    );
+
+    if (visitorErrors.length > 0) {
+      throw new VisitorError(visitorErrors);
     }
 
     this._cache.set(contentHash, { parsedFileData: circomFilesVisitor.fileData });
@@ -97,8 +101,12 @@ export class CircomFilesParser {
 
     circomTemplateInputsVisitor.startParse();
 
-    if (circomTemplateInputsVisitor.errors.length > 0) {
-      throw new VisitorError(circomTemplateInputsVisitor.errors);
+    const visitorErrors = circomTemplateInputsVisitor.errors.filter(
+      (error) => error.type !== ErrorType.ComplexAccessNotSupported,
+    );
+
+    if (visitorErrors.length > 0) {
+      throw new VisitorError(visitorErrors);
     }
 
     return circomTemplateInputsVisitor.templateInputs;

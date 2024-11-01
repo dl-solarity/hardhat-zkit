@@ -74,7 +74,7 @@ export class CircomFilesVisitor extends CircomVisitor<void> {
     }
 
     this.fileData.templates[ctx.ID().getText()] = {
-      parameters: parseSimpleIdentifierList(ctx._argNames),
+      parameters: ctx._argNames ? parseSimpleIdentifierList(ctx._argNames) : [],
       isCustom: !!ctx.CUSTOM(),
       parallel: !!ctx.PARALLEL(),
       context: ctx,

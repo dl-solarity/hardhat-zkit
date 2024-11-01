@@ -477,7 +477,7 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
         break;
       default:
         this.errors.push({
-          type: ErrorType.ReachedUnkownOperation,
+          type: ErrorType.ReachedUnknownOperation,
           context: ctx,
           fileIdentifier: this.fileIdentifier,
           message: `Invalid operation type ${ctx.ASSIGNMENT_WITH_OP().getText()} (${ctx.start.line}:${ctx.start.column})`,
@@ -538,7 +538,7 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
         break;
       default:
         this.errors.push({
-          type: ErrorType.ReachedUnkownOperation,
+          type: ErrorType.ReachedUnknownOperation,
           context: ctx,
           fileIdentifier: this.fileIdentifier,
           message: `Invalid operation type ${ctx.SELF_OP().getText()} (${ctx.start.line}:${ctx.start.column})`,
