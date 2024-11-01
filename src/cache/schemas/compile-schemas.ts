@@ -1,14 +1,14 @@
-import { BigIntOrNestedArray } from "@distributedlab/circom-parser";
+import { CircomValueType } from "@distributedlab/circom-parser";
 import { z } from "zod";
 
 /**
- * {@link https://github.com/colinhacks/zod | Zod} schema for defining a recursive type {@link BigIntOrNestedArray}.
+ * {@link https://github.com/colinhacks/zod | Zod} schema for defining a recursive type {@link CircomValueType}.
  *
  * This schema allows for either a `BigInt` value or an array that contains
  * other `BigInt` values or nested arrays of `BigInt` values, recursively.
  */
-export const BigIntOrNestedArraySchema: z.ZodType<BigIntOrNestedArray> = z.lazy(() =>
-  z.union([z.bigint(), BigIntOrNestedArraySchema.array()]),
+export const CircomValueTypeSchema: z.ZodType<CircomValueType> = z.lazy(() =>
+  z.union([z.bigint(), CircomValueTypeSchema.array()]),
 );
 
 export const SignalTypeSchema = z.literal("Input").or(z.literal("Output")).or(z.literal("Intermediate"));
@@ -35,7 +35,7 @@ export const TemplatesSchema = z.record(z.string(), TemplateSchema);
 export const MainComponentSchema = z.object({
   templateName: z.union([z.string(), z.null()]),
   publicInputs: z.string().array(),
-  parameters: BigIntOrNestedArraySchema.array(),
+  parameters: CircomValueTypeSchema.array(),
 });
 
 export const ParsedCircomFileDataSchema = z.object({
@@ -53,7 +53,7 @@ export const SignalInfoSchema = z.object({
 });
 
 export const ResolvedMainComponentDataSchema = z.object({
-  parameters: z.record(z.string(), BigIntOrNestedArraySchema),
+  parameters: z.record(z.string(), CircomValueTypeSchema),
   signals: SignalInfoSchema.array(),
 });
 
