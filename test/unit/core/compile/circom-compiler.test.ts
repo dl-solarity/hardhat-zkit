@@ -1,8 +1,9 @@
 import fsExtra from "fs-extra";
+import { execSync } from "child_process";
 
 import { expect } from "chai";
 
-import { getProjectRootPath, useEnvironment } from "@test-helpers";
+import { useEnvironment } from "@test-helpers";
 import { getNormalizedFullPath } from "@src/utils/path-utils";
 import { CircomCompilerFactory, createCircomCompilerFactory, WASMCircomCompiler } from "@src/core";
 
@@ -159,14 +160,15 @@ describe("WASMCircomCompiler", () => {
     });
 
     it("should correctly compile circuit with library include", async function () {
-      const circuitFullPath: string = getNormalizedFullPath(this.hre.config.paths.root, "circuits/hash2.circom");
-      const artifactsFullPath: string = getNormalizedFullPath(
-        this.hre.config.paths.root,
-        "zkit/artifacts/test/hash2.circom",
-      );
+      const root = this.hre.config.paths.root;
+
+      execSync("npm install --no-workspaces", { cwd: root });
+
+      const circuitFullPath: string = getNormalizedFullPath(root, "circuits/hash2.circom");
+      const artifactsFullPath: string = getNormalizedFullPath(root, "zkit/artifacts/test/hash2.circom");
       const errorFileFullPath: string = getNormalizedFullPath(artifactsFullPath, "errors.log");
-      const typesDir: string = getNormalizedFullPath(this.hre.config.paths.root, "generated-types/zkit");
-      const nodeModulesPath: string = getNormalizedFullPath(getProjectRootPath(), NODE_MODULES);
+      const typesDir: string = getNormalizedFullPath(root, "generated-types/zkit");
+      const nodeModulesPath: string = getNormalizedFullPath(root, NODE_MODULES);
 
       fsExtra.rmSync(artifactsFullPath, { recursive: true, force: true });
       fsExtra.mkdirSync(artifactsFullPath, { recursive: true });
@@ -185,6 +187,9 @@ describe("WASMCircomCompiler", () => {
       expect(fsExtra.readdirSync(artifactsFullPath)).to.be.deep.eq(["hash2.r1cs", "hash2.sym", "hash2_js"]);
 
       fsExtra.rmSync(typesDir, { recursive: true, force: true });
+
+      fsExtra.rmSync(`${root}/node_modules`, { recursive: true, force: true });
+      fsExtra.rmSync(`${root}/package-lock.json`, { recursive: true, force: true });
     });
   });
 
