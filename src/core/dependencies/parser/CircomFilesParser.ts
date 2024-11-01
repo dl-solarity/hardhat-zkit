@@ -62,7 +62,7 @@ export class CircomFilesParser {
     circomFilesVisitor.visit(context);
 
     const visitorErrors = circomFilesVisitor.errors.filter(
-      (error) => error.type !== ErrorType.ComplexAccessNotSupported,
+      (error) => error.type === ErrorType.SignalDimensionResolution,
     );
 
     if (visitorErrors.length > 0) {
@@ -102,7 +102,7 @@ export class CircomFilesParser {
     circomTemplateInputsVisitor.startParse();
 
     const visitorErrors = circomTemplateInputsVisitor.errors.filter(
-      (error) => error.type !== ErrorType.ComplexAccessNotSupported,
+      (error) => error.type === ErrorType.SignalDimensionResolution,
     );
 
     if (visitorErrors.length > 0) {
