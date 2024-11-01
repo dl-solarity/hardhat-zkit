@@ -250,7 +250,7 @@ export class CircomFilesResolver {
       );
 
       const parsedInputs = this._parser.parseTemplateInputs(
-        fileWithTemplate.absolutePath,
+        fileWithTemplate,
         templateName,
         mainComponentData.parameters,
       );

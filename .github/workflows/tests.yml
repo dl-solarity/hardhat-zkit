@@ -18,21 +18,14 @@ jobs:
           - 18
           - 20
     steps:
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '${{ matrix.node }}'
+      - name: Checkout the repository
+        uses: actions/checkout@v3
 
-      - uses: actions/checkout@v3
-      - name: 'Cache node_modules'
-        uses: actions/cache@v3
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-v${{ matrix.node }}-${{ hashFiles('**/package.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-v${{ matrix.node }}
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
-      - name: Install Dependencies
-        run: npm install
+      - name: Build Docker image
+        run: docker build --build-arg NODE_VERSION=${{ matrix.node }} -t hardhat-zkit-node${{ matrix.node }} --progress=plain .
 
-      - name: Run All Tests
-        run: npm run test
+      - name: Run tests
+        run: docker run --rm hardhat-zkit-node${{ matrix.node }} test-local

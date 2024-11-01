@@ -1,17 +1,17 @@
 import {
   CircomVisitor,
   ComponentMainDeclarationContext,
-  IncludeDeclarationContext,
-  ParserError,
-  PragmaDeclarationContext,
-  CircomExpressionVisitor,
-  TemplateDeclarationContext,
-  SignalDeclarationContext,
-  parseIdentifier,
-  IdentifierContext,
+  ExpressionListContext,
+  IncludeDefinitionContext,
+  parseSimpleIdentifierList,
+  PragmaInvalidVersionContext,
+  PragmaVersionContext,
+  PublicInputsDefinitionContext,
+  TemplateDefinitionContext,
+  ExpressionHelper,
 } from "@distributedlab/circom-parser";
 
-import { CircomFileData } from "../../../types/core";
+import { CircomFileData, CircuitResolutionError, ErrorType } from "../../../types/core";
 
 /**
  * Class responsible for gathering comprehensive information from a Circom file.
@@ -23,9 +23,9 @@ import { CircomFileData } from "../../../types/core";
  */
 export class CircomFilesVisitor extends CircomVisitor<void> {
   fileData: CircomFileData;
-  currentTemplate: string | null;
+  errors: CircuitResolutionError[] = [];
 
-  constructor() {
+  constructor(public fileIdentifier: string) {
     super();
 
     this.fileData = {
@@ -38,111 +38,96 @@ export class CircomFilesVisitor extends CircomVisitor<void> {
       },
       templates: {},
     };
-    this.currentTemplate = null;
   }
 
-  visitPragmaDeclaration = (ctx: PragmaDeclarationContext) => {
-    let isCustom: boolean = false;
-    let compilerVersion: string = "";
-
-    ctx.CUSTOM_TEMPLATES() ? (isCustom = true) : (isCustom = false);
-
-    if (ctx.VERSION()) {
-      compilerVersion = ctx.VERSION().getText();
-    }
-
-    this.fileData.pragmaInfo = { isCustom, compilerVersion };
+  visitPragmaVersion = (ctx: PragmaVersionContext) => {
+    this.fileData.pragmaInfo.compilerVersion = ctx.VERSION().getText();
   };
 
-  visitIncludeDeclaration = (ctx: IncludeDeclarationContext) => {
+  visitPragmaInvalidVersion = (ctx: PragmaInvalidVersionContext) => {
+    this.errors.push({
+      type: ErrorType.InvalidPragmaVersion,
+      context: ctx,
+      fileIdentifier: this.fileIdentifier,
+    });
+  };
+
+  visitPragmaCustomTemplates = () => {
+    this.fileData.pragmaInfo.isCustom = true;
+  };
+
+  visitIncludeDefinition = (ctx: IncludeDefinitionContext) => {
     this.fileData.includes.push(ctx.STRING().getText().slice(1, -1));
   };
 
-  visitTemplateDeclaration = (ctx: TemplateDeclarationContext) => {
+  visitTemplateDefinition = (ctx: TemplateDefinitionContext) => {
     if (ctx.ID().getText() in this.fileData.templates) {
-      throw new ParserError({
-        message: `Template name ${ctx.ID().getText()} is already in use`,
-        line: ctx.start.line,
-        column: ctx.start.column,
+      this.errors.push({
+        type: ErrorType.TemplateAlreadyUsed,
+        context: ctx,
+        fileIdentifier: this.fileIdentifier,
+        templateIdentifier: ctx.ID().getText(),
+        message: `Template name ${ctx.ID().getText()} (${ctx.start.line}:${ctx.start.column}) is already in use`,
       });
+
+      return;
     }
 
-    this.currentTemplate = ctx.ID().getText();
-
-    const parameters: string[] = [];
-
-    if (ctx.args() && ctx.args().ID_list()) {
-      ctx
-        .args()
-        .ID_list()
-        .forEach((arg) => {
-          parameters.push(arg.getText());
-        });
-    }
-
-    this.fileData.templates[this.currentTemplate] = {
-      inputs: {},
-      parameters: parameters,
+    this.fileData.templates[ctx.ID().getText()] = {
+      parameters: ctx._argNames ? parseSimpleIdentifierList(ctx._argNames) : [],
       isCustom: !!ctx.CUSTOM(),
+      parallel: !!ctx.PARALLEL(),
+      context: ctx,
     };
 
-    ctx
-      .templateBlock()
-      .templateStmt_list()
-      .forEach((stmt) => {
-        this.visitChildren(stmt);
-      });
-
-    this.currentTemplate = null;
+    return;
   };
 
-  visitSignalDeclaration = (ctx: SignalDeclarationContext) => {
-    if (this.currentTemplate) {
-      const signalDefinition = ctx.signalDefinition();
-
-      let signalType = "intermediate";
-
-      if (signalDefinition.SIGNAL_TYPE()) {
-        signalType = signalDefinition.SIGNAL_TYPE().getText();
-      }
-
-      [signalDefinition.identifier(), ...ctx.identifier_list()].forEach((identifier) =>
-        this._saveInputData(identifier, signalType),
-      );
-    }
+  visitBody = () => {
+    return;
   };
 
   visitComponentMainDeclaration = (ctx: ComponentMainDeclarationContext) => {
     this.fileData.mainComponentInfo.templateName = ctx.ID().getText();
 
-    if (ctx.publicInputsList() && ctx.publicInputsList().args() && ctx.publicInputsList().args().ID_list()) {
-      ctx
-        .publicInputsList()
-        .args()
-        .ID_list()
-        .forEach((input) => {
-          this.fileData.mainComponentInfo.publicInputs.push(input.getText());
-        });
-    }
+    if (ctx.publicInputsDefinition()) this.visit(ctx.publicInputsDefinition());
+    if (ctx._argValues) this.visit(ctx._argValues);
+  };
 
-    if (ctx.expressionList() && ctx.expressionList().expression_list()) {
-      const expressionVisitor = new CircomExpressionVisitor(false);
-
-      ctx
-        .expressionList()
-        .expression_list()
-        .forEach((expression) => {
-          this.fileData.mainComponentInfo.parameters.push(expressionVisitor.visitExpression(expression));
-        });
+  visitPublicInputsDefinition = (ctx: PublicInputsDefinitionContext) => {
+    for (const input of ctx._publicInputs.ID_list()) {
+      this.fileData.mainComponentInfo.publicInputs.push(input.getText());
     }
   };
 
-  private _saveInputData(identifier: IdentifierContext, signalType: string) {
-    const parsedData = parseIdentifier(identifier);
+  visitExpressionList = (ctx: ExpressionListContext) => {
+    const expressionHelper = new ExpressionHelper(this.fileIdentifier);
 
-    this.fileData.templates[this.currentTemplate!].inputs[parsedData.name] = {
-      dimension: parsedData.dimension,
-      type: signalType,
-    };
-  }
+    for (let i = 0; i < ctx.expression_list().length; i++) {
+      const [value, errors] = expressionHelper.setExpressionContext(ctx.expression(i)).parseExpression();
+
+      if (value === null) {
+        this.errors.push({
+          type: ErrorType.FailedToResolveMainComponentParameter,
+          context: ctx.expression(i),
+          fileIdentifier: this.fileIdentifier,
+          linkedParserErrors: errors,
+          message: `Failed to parse array parameter with index ${i}. Parameter: ${ctx.expression(i).getText()} (${ctx.expression(i).start.line}:${ctx.expression(i).start.column})`,
+        });
+
+        continue;
+      }
+
+      if (errors.length > 0) {
+        this.errors.push({
+          type: ErrorType.InternalExpressionHelperError,
+          context: ctx.expression(i),
+          fileIdentifier: this.fileIdentifier,
+          linkedParserErrors: errors,
+        });
+      }
+
+      this.fileData.mainComponentInfo.parameters.push(value);
+    }
+  };
 }

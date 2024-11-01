@@ -1,11 +1,12 @@
-import { getCircomParser, ParserError, BigIntOrNestedArray } from "@distributedlab/circom-parser";
+import { CircomValueType, getCircomParser, ParserError } from "@distributedlab/circom-parser";
 
 import { CircomFilesVisitor } from "./CircomFilesVisitor";
 import { CircomTemplateInputsVisitor } from "./CircomTemplateInputsVisitor";
 import { CircuitsCompileCache } from "../../../cache";
 import { Reporter } from "../../../reporter";
 
-import { InputData, ResolvedFileData } from "../../../types/core";
+import { VisitorError } from "../parser/VisitorError";
+import { CircomResolvedFile, ErrorType, InputData, ResolvedFileData } from "../../../types/core";
 
 /**
  * A parser class for handling Circom files and extracting relevant data.
@@ -48,7 +49,7 @@ export class CircomFilesParser {
 
     const parser = getCircomParser(fileContent);
 
-    const circomFilesVisitor = new CircomFilesVisitor();
+    const circomFilesVisitor = new CircomFilesVisitor(absolutePath);
 
     Reporter!.verboseLog("circom-files-parser", "Parsing '%s' file", [absolutePath]);
 
@@ -59,6 +60,17 @@ export class CircomFilesParser {
     }
 
     circomFilesVisitor.visit(context);
+
+    const visitorErrors = circomFilesVisitor.errors.filter(
+      (error) =>
+        error.type === ErrorType.InvalidPragmaVersion ||
+        error.type === ErrorType.TemplateAlreadyUsed ||
+        error.type === ErrorType.FailedToResolveMainComponentParameter,
+    );
+
+    if (visitorErrors.length > 0) {
+      throw new VisitorError(visitorErrors);
+    }
 
     this._cache.set(contentHash, { parsedFileData: circomFilesVisitor.fileData });
 
@@ -73,28 +85,32 @@ export class CircomFilesParser {
    * parsing errors and throws a `ParserError` if any issues are encountered.
    * The structured input data associated with the specified template is then returned.
    *
-   * @param absolutePath The absolute path to the Circom file containing the template
+   * @param circomResolvedFile The resolved Circom file data containing the template to parse
    * @param templateName The name of the template whose inputs are being parsed
    * @param parameterValues A record of parameter values used for template input resolution
    * @returns A structured record of input data for the specified template
    * @throws ParserError If any parsing issues occur while processing the template inputs
    */
   public parseTemplateInputs(
-    absolutePath: string,
+    circomResolvedFile: CircomResolvedFile,
     templateName: string,
-    parameterValues: Record<string, BigIntOrNestedArray>,
+    parameterValues: Record<string, CircomValueType>,
   ): Record<string, InputData> {
-    const parser = getCircomParser(absolutePath);
+    const circomTemplateInputsVisitor = new CircomTemplateInputsVisitor(
+      circomResolvedFile.absolutePath,
+      circomResolvedFile.fileData.parsedFileData.templates[templateName].context,
+      parameterValues,
+    );
 
-    const circomTemplateInputsVisitor = new CircomTemplateInputsVisitor(templateName, parameterValues);
+    circomTemplateInputsVisitor.startParse();
 
-    const context = parser.circuit();
+    const visitorErrors = circomTemplateInputsVisitor.errors.filter(
+      (error) => error.type === ErrorType.SignalDimensionResolution,
+    );
 
-    if (parser.hasAnyErrors()) {
-      throw new ParserError(parser.getAllErrors());
+    if (visitorErrors.length > 0) {
+      throw new VisitorError(visitorErrors);
     }
-
-    circomTemplateInputsVisitor.visit(context);
 
     return circomTemplateInputsVisitor.templateInputs;
   }

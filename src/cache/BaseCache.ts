@@ -115,7 +115,11 @@ export class BaseCache<T> {
   public async writeToFile(cacheFilePath: string) {
     const jsonContent = JSON.stringify(
       this._cache,
-      (_key, value) => {
+      (key, value) => {
+        if (key === "context") {
+          return;
+        }
+
         if (typeof value === "bigint") {
           return { __bigintval__: value.toString() };
         }
