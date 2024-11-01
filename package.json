@@ -23,6 +23,7 @@
     "distributedlab",
     "solarity",
     "circom",
+    "snarkjs",
     "zk",
     "zkit"
   ],
