@@ -1,4 +1,5 @@
 import {
+  BusDeclarationContext,
   CircomValueType,
   CircomVisitor,
   ExpressionContext,
@@ -141,6 +142,10 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
 
     if (!ctx.parentCtx!.parentCtx && !(ctx.parentCtx!.parentCtx! instanceof SignalDeclarationContext)) {
       throw new Error("INTERNAL ERROR: SignalIdentifier should have a SignalDeclarationContext as a parent of parent");
+    }
+
+    if (ctx.parentCtx!.parentCtx instanceof BusDeclarationContext) {
+      return;
     }
 
     const signalDeclarationContext = ctx.parentCtx!.parentCtx as SignalDeclarationContext;

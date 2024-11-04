@@ -8,6 +8,8 @@ import { expect } from "chai";
 import { before } from "mocha";
 import { stub, SinonStub } from "sinon";
 
+import * as snarkjs from "snarkjs";
+
 import { HardhatUserConfig } from "hardhat/config";
 
 import {
@@ -25,7 +27,6 @@ import { cleanUp, useEnvironment } from "@test-helpers";
 import { getNormalizedFullPath } from "@src/utils/path-utils";
 import { getCompileCacheEntry, getSetupCacheEntry } from "../utils";
 
-import { HardhatZKit } from "@src/types/hardhat-zkit";
 import { BaseCircomCompilerFactory } from "@src/core";
 import { CircomCompilerDownloader } from "@src/core/compiler/CircomCompilerDownloader";
 
@@ -58,7 +59,7 @@ describe("ZKit tasks", async function () {
     return circuitFullPaths;
   }
 
-  async function checkMake(config: HardhatUserConfig, zkit: HardhatZKit) {
+  async function checkMake(config: HardhatUserConfig) {
     const cacheFullPath: string = getNormalizedFullPath(config.paths!.root!, "cache");
 
     expect(fsExtra.readdirSync(cacheFullPath)).to.be.deep.eq([
@@ -70,7 +71,9 @@ describe("ZKit tasks", async function () {
       expect(entry).to.be.deep.eq(await getSetupCacheEntry(entry.circuitSourceName, entry.r1csSourcePath));
     });
 
-    getZkitCircuitFullPaths(config).forEach((path, index) => {
+    const circuitFullPaths = getZkitCircuitFullPaths(config);
+
+    circuitFullPaths.forEach((path, index) => {
       expect(fsExtra.readdirSync(path)).to.be.deep.eq([
         `${circuitNames[index]}.r1cs`,
         `${circuitNames[index]}.sym`,
@@ -84,12 +87,15 @@ describe("ZKit tasks", async function () {
     const ptauFullPath: string = getNormalizedFullPath(config.paths!.root!, "zkit/ptau");
     expect(fsExtra.readdirSync(ptauFullPath)).to.be.deep.eq(["powers-of-tau-8.ptau"]);
 
-    const circuit = await zkit.getCircuit("Multiplier2");
-    await expect(circuit).with.witnessInputs({ in1: "3", in2: "7" }).to.have.witnessOutputs(["21"]);
+    const proof = await snarkjs.groth16.fullProve(
+      { in: ["3", "7", "2"] },
+      `${circuitFullPaths[1]}/Multiplier3Arr_js/Multiplier3Arr.wasm`,
+      `${circuitFullPaths[1]}/Multiplier3Arr.zkey`,
+    );
 
-    const proof = await circuit.generateProof({ in1: "4", in2: "2" });
+    const verifier = JSON.parse(fsExtra.readFileSync(`${circuitFullPaths[1]}/Multiplier3Arr.vkey.json`).toString());
 
-    await expect(circuit).to.verifyProof(proof);
+    expect(await snarkjs.groth16.verify(verifier, proof.publicSignals, proof.proof)).to.be.true;
   }
 
   function updateInclude(filePath: string, newIncludePath: string) {
@@ -342,7 +348,7 @@ describe("ZKit tasks", async function () {
       await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
       await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_SETUP });
 
-      await checkMake(this.hre.config, this.hre.zkit);
+      await checkMake(this.hre.config);
     });
   });
 
@@ -352,7 +358,7 @@ describe("ZKit tasks", async function () {
     it("should correctly compile circuits and generate vkey, zkey files", async function () {
       await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_MAKE });
 
-      await checkMake(this.hre.config, this.hre.zkit);
+      await checkMake(this.hre.config);
     });
   });
 
@@ -362,7 +368,7 @@ describe("ZKit tasks", async function () {
     it("should correctly generate verifiers after running the verifiers task", async function () {
       await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_GENERATE_VERIFIERS });
 
-      await checkMake(this.hre.config, this.hre.zkit);
+      await checkMake(this.hre.config);
 
       const verifiersFullPath: string = getNormalizedFullPath(this.hre.config.paths.root, "contracts/verifiers");
       expect(fsExtra.readdirSync(verifiersFullPath)).to.be.deep.eq(circuitNames.map((name) => `${name}Verifier.sol`));
@@ -392,7 +398,7 @@ describe("ZKit tasks", async function () {
       const cacheDir: string = getNormalizedFullPath(this.hre.config.paths.root, "cache");
       const zkitDir: string = getNormalizedFullPath(this.hre.config.paths.root, "zkit");
 
-      await checkMake(this.hre.config, this.hre.zkit);
+      await checkMake(this.hre.config);
 
       await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_ZKIT_CLEAN });
 
