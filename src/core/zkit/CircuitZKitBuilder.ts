@@ -44,14 +44,16 @@ export class CircuitZKitBuilder implements ICircuitZKitBuilder {
     if (this._isTSProject) {
       if (circuitArtifact.baseCircuitInfo.protocol.length > 1 && !provingSystem) {
         throw new HardhatZKitError(
-          "Found several proving systems. Please specify the exact proving system in getCircuit function",
+          "Found several proving systems. Please specify the exact proving system in the getCircuit function.",
         );
-      } else if (circuitArtifact.baseCircuitInfo.protocol.length === 1) {
+      }
+
+      if (circuitArtifact.baseCircuitInfo.protocol.length === 1) {
         const existingProvingSystem: ProvingSystemType = circuitArtifact.baseCircuitInfo.protocol[0];
 
         if (provingSystem && provingSystem !== existingProvingSystem) {
           throw new HardhatZKitError(
-            `Passed invalid proving system. Please pass ${existingProvingSystem} proving system or run make task with needed proving systems`,
+            `Invalid proving system is passed. Please pass ${existingProvingSystem} proving system or recompile the circuits with the needed one.`,
           );
         }
 
@@ -64,7 +66,7 @@ export class CircuitZKitBuilder implements ICircuitZKitBuilder {
     } else {
       if (!provingSystem || !circuitArtifact.baseCircuitInfo.protocol.includes(provingSystem)) {
         throw new HardhatZKitError(
-          "Passed undefined or invalid proving system. Please run make task or change proving system.",
+          "Undefined or invalid proving system is passed. Please recompile the circuits or change the proving system.",
         );
       }
 

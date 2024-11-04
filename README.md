@@ -62,7 +62,7 @@ module.exports = {
     setupSettings: {
       contributionSettings: {
         provingSystem: "groth16",
-        contributions: 1,
+        contributions: 2,
       },
       onlyFiles: [],
       skipFiles: [],

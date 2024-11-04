@@ -3,7 +3,7 @@ import path from "path";
 import fs from "fs";
 
 import { lazyObject } from "hardhat/plugins";
-import { extendConfig, extendEnvironment, scope, task, types } from "hardhat/config";
+import { extendConfig, extendEnvironment, scope, subtask, task, types } from "hardhat/config";
 import { ActionType, HardhatRuntimeEnvironment, RunSuperFunction } from "hardhat/types";
 import { TASK_CLEAN, TASK_COMPILE_SOLIDITY_READ_FILE as TASK_READ_FILE } from "hardhat/builtin-tasks/task-names";
 
@@ -18,6 +18,7 @@ import {
   TASK_CIRCUITS_SETUP,
   TASK_GENERATE_VERIFIERS,
   TASK_ZKIT_CLEAN,
+  SUBTASK_ZKIT_GET_CIRCUIT_ZKIT,
 } from "./task-names";
 
 import { zkitConfigExtender } from "./config/config";
@@ -44,7 +45,13 @@ import { CircuitArtifacts } from "./artifacts/CircuitArtifacts";
 import { CIRCUITS_COMPILE_CACHE_FILENAME, CIRCUITS_SETUP_CACHE_FILENAME } from "./constants";
 import { getNormalizedFullPath, getUniqueProvingSystems } from "./utils";
 
-import { MakeTaskConfig, CompileTaskConfig, GenerateVerifiersTaskConfig, SetupTaskConfig } from "./types/tasks";
+import {
+  MakeTaskConfig,
+  CompileTaskConfig,
+  GenerateVerifiersTaskConfig,
+  SetupTaskConfig,
+  GetCircuitZKitConfig,
+} from "./types/tasks";
 import { CircuitArtifact } from "./types/artifacts/circuit-artifacts";
 import { CompileFlags, CircomResolvedFileInfo, CircuitSetupInfo, SetupContributionSettings } from "./types/core";
 import { ProvingSystemData } from "./types/cache";
@@ -67,7 +74,7 @@ extendEnvironment((hre) => {
         circuitName: string,
         provingSystem?: ProvingSystemType,
       ): Promise<CircuitZKit<ProvingSystemType>> => {
-        return circuitZKitBuilder.getCircuitZKit(circuitName, provingSystem);
+        return hre.run(SUBTASK_ZKIT_GET_CIRCUIT_ZKIT, { circuitName, provingSystem });
       },
     };
   });
@@ -317,6 +324,17 @@ const clean: ActionType<any> = async (_taskArgs: any, env: HardhatRuntimeEnviron
   fs.rmSync(circuitTypesFullPath, { recursive: true, force: true });
 };
 
+const getCircuitZKit: ActionType<GetCircuitZKitConfig> = async (
+  taskArgs: GetCircuitZKitConfig,
+  env: HardhatRuntimeEnvironment,
+): Promise<CircuitZKit<ProvingSystemType>> => {
+  return env.zkit.circuitZKitBuilder.getCircuitZKit(
+    taskArgs.circuitName,
+    taskArgs.provingSystem,
+    taskArgs.verifiersDir,
+  );
+};
+
 task(TASK_CLEAN).setAction(async (_taskArgs: any, env: HardhatRuntimeEnvironment, runSuper: RunSuperFunction<any>) => {
   await runSuper();
 
@@ -370,3 +388,9 @@ zkitScope
   .setAction(generateVerifiers);
 
 zkitScope.task(TASK_ZKIT_CLEAN, "Clean all circuit artifacts, keys, types and etc").setAction(clean);
+
+subtask(SUBTASK_ZKIT_GET_CIRCUIT_ZKIT)
+  .addOptionalParam("verifiersDir", undefined, undefined, types.string)
+  .addOptionalParam("verifierTemplateType", undefined, undefined, types.any)
+  .addParam("circuitName", undefined, undefined, types.string)
+  .setAction(getCircuitZKit);
