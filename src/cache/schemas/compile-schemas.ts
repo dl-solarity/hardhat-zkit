@@ -20,14 +20,14 @@ export const PragmaComponentSchema = z.object({
 });
 
 export const InputDataSchema = z.object({
-  dimension: z.string().array(),
+  dimension: z.number().array(),
   type: z.string(),
 });
 
 export const TemplateSchema = z.object({
-  inputs: z.record(z.string(), InputDataSchema),
   parameters: z.string().array(),
   isCustom: z.boolean(),
+  parallel: z.boolean(),
 });
 
 export const TemplatesSchema = z.record(z.string(), TemplateSchema);
@@ -47,7 +47,7 @@ export const ParsedCircomFileDataSchema = z.object({
 
 export const SignalInfoSchema = z.object({
   name: z.string(),
-  dimension: z.string().array(),
+  dimension: z.number().array(),
   type: SignalTypeSchema,
   visibility: VisibilityTypeSchema,
 });
