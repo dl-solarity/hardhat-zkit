@@ -97,12 +97,12 @@ describe("CircomCompilerFactory", () => {
 
     it("should correctly throw error if pass invalid version", async function () {
       let invalidVersion = "2.1.10";
-      let reason = `Unsupported Circom compiler version - ${invalidVersion}. Please provide another version.`;
+      let reason = `Unsupported WASM version - ${invalidVersion}`;
 
       createCircomCompilerFactory();
       await expect(CircomCompilerFactory!.createCircomCompiler(invalidVersion, true)).to.be.rejectedWith(reason);
 
-      invalidVersion = "2.2.0";
+      invalidVersion = "2.2.1";
       reason = `Unsupported Circom compiler version - ${invalidVersion}. Please provide another version.`;
 
       await expect(CircomCompilerFactory!.createCircomCompiler(invalidVersion, false)).to.be.rejectedWith(reason);
