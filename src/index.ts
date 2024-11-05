@@ -393,6 +393,6 @@ zkitScope.task(TASK_ZKIT_CLEAN, "Clean all circuit artifacts, keys, types and et
 
 subtask(SUBTASK_ZKIT_GET_CIRCUIT_ZKIT)
   .addOptionalParam("verifiersDir", undefined, undefined, types.string)
-  .addOptionalParam("verifierTemplateType", undefined, undefined, types.any)
+  .addOptionalParam("provingSystem", undefined, undefined, types.any)
   .addParam("circuitName", undefined, undefined, types.string)
   .setAction(getCircuitZKit);
