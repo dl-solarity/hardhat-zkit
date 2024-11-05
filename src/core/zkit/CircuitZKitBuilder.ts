@@ -12,7 +12,7 @@ import {
 import { CircuitTypesGenerator } from "@solarity/zktype";
 
 import { HardhatZKitError } from "../../errors";
-import { getNormalizedFullPath } from "../../utils";
+import { getNormalizedFullPath, getUniqueProvingSystems } from "../../utils";
 
 import { ICircuitZKitBuilder } from "../../types/core";
 import { CircuitArtifact } from "../../types/artifacts/circuit-artifacts";
@@ -20,6 +20,7 @@ import { CircuitArtifact } from "../../types/artifacts/circuit-artifacts";
 export class CircuitZKitBuilder implements ICircuitZKitBuilder {
   private readonly _isTSProject: boolean;
   private readonly _typesGenerator: CircuitTypesGenerator;
+  private readonly _provingSystems: ProvingSystemType[];
   private _protocolImplementers = new Map<ProvingSystemType, IProtocolImplementer<ProvingSystemType>>();
 
   constructor(private readonly _hre: HardhatRuntimeEnvironment) {
@@ -27,10 +28,11 @@ export class CircuitZKitBuilder implements ICircuitZKitBuilder {
       basePath: _hre.config.zkit.circuitsDir,
       projectRoot: _hre.config.paths.root,
       outputTypesDir: _hre.config.zkit.typesDir,
-      circuitsArtifactsPaths: [],
+      circuitsArtifacts: [],
     });
 
     this._isTSProject = willRunWithTypescript(_hre.hardhatArguments.config);
+    this._provingSystems = getUniqueProvingSystems(_hre.config.zkit.setupSettings.contributionSettings.provingSystem);
   }
 
   public async getCircuitZKit(
@@ -42,29 +44,23 @@ export class CircuitZKitBuilder implements ICircuitZKitBuilder {
     const circuitZKitConfig: CircuitZKitConfig = this._getCircuitZKitConfig(circuitArtifact, verifiersDir);
 
     if (this._isTSProject) {
-      if (circuitArtifact.baseCircuitInfo.protocol.length > 1 && !provingSystem) {
+      if (this._provingSystems.length > 1 && !provingSystem) {
         throw new HardhatZKitError(
           "Found several proving systems. Please specify the exact proving system in the getCircuit function.",
         );
       }
 
-      if (circuitArtifact.baseCircuitInfo.protocol.length === 1) {
-        const existingProvingSystem: ProvingSystemType = circuitArtifact.baseCircuitInfo.protocol[0];
-
-        if (provingSystem && provingSystem !== existingProvingSystem) {
-          throw new HardhatZKitError(
-            `Invalid proving system is passed. Please pass ${existingProvingSystem} proving system or recompile the circuits with the needed one.`,
-          );
-        }
-
-        provingSystem = undefined;
+      if (this._provingSystems.length === 1 && provingSystem) {
+        throw new HardhatZKitError(
+          `Found single proving system. No need to specify the exact proving system in the getCircuit function.`,
+        );
       }
 
       const module = await this._typesGenerator.getCircuitObject(circuitName, provingSystem);
 
       return new module(circuitZKitConfig);
     } else {
-      if (!provingSystem || !circuitArtifact.baseCircuitInfo.protocol.includes(provingSystem)) {
+      if (!provingSystem || !this._provingSystems.includes(provingSystem)) {
         throw new HardhatZKitError(
           "Undefined or invalid proving system is passed. Please recompile the circuits or change the proving system.",
         );

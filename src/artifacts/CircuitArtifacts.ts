@@ -1,6 +1,7 @@
 import path from "path";
 import fsExtra from "fs-extra";
 
+import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { FileNotFoundError, getAllFilesMatching, getFileTrueCase } from "hardhat/internal/util/fs-utils";
 import { isFullyQualifiedName } from "hardhat/utils/contract-names";
 import { replaceBackslashes } from "hardhat/utils/source-names";
@@ -12,13 +13,13 @@ import { ProvingSystemType } from "@solarity/zkit";
 import { HardhatZKitError } from "../errors";
 import { CIRCUIT_ARTIFACTS_SUFFIX } from "../constants";
 import { Reporter } from "../reporter";
-import { getFileHash } from "../utils/utils";
+import { getFileHash, getNormalizedFullPath } from "../utils";
 
 import {
-  ArtifactsFileType,
-  ArtifactsCache,
   CircuitArtifact,
   ICircuitArtifacts,
+  ArtifactsCache,
+  ArtifactsFileType,
 } from "../types/artifacts/circuit-artifacts";
 
 /**
@@ -29,12 +30,19 @@ import {
  * methods for fetching, generating, and cleaning up artifacts that are no longer needed.
  */
 export class CircuitArtifacts implements ICircuitArtifacts {
+  private readonly _artifactsPath: string;
+
   // Undefined means that the cache is disabled.
   private _cache?: ArtifactsCache = {
     artifactNameToArtifactPathCache: new Map(),
   };
 
-  constructor(private readonly _artifactsPath: string) {}
+  constructor(hre: HardhatRuntimeEnvironment) {
+    this._artifactsPath = getNormalizedFullPath(
+      hre.config.paths.root,
+      hre.config.zkit.compilationSettings.artifactsDir,
+    );
+  }
 
   /**
    * Generates a unique artifact file key using the specified {@link ArtifactsFileType | fileType}
@@ -44,8 +52,12 @@ export class CircuitArtifacts implements ICircuitArtifacts {
    * @param provingSystem The type of the proving system
    * @returns A generated key for the artifact file
    */
-  public static getArtifactOutputFileKey(fileType: ArtifactsFileType, provingSystem: ProvingSystemType): string {
+  public static getArtifactOutputFileKey(fileType: ArtifactsFileType, provingSystem?: ProvingSystemType): string {
     if (fileType === "zkey" || fileType === "vkey") {
+      if (!provingSystem) {
+        throw new HardhatZKitError("Undefined proving system is passed. Please provide valid proving system.");
+      }
+
       return `${provingSystem}.${fileType}`;
     }
 
@@ -187,14 +199,14 @@ export class CircuitArtifacts implements ICircuitArtifacts {
    * @param circuitArtifact The {@link CircuitArtifact} object to be saved
    * @param updatedFileTypes An array of {@link ArtifactsFileType | file types} that have been modified
    *    during the most recent session, such as during compilation
-   * @param provingSystems An array of {@link ProvingSystemType | proving systems} that have been added
+   * @param updatedProvingSystems An array of {@link ProvingSystemType | proving systems} that have been added
    *    during the most recent session
    * @returns A promise that resolves once the save operation is complete
    */
   public async saveCircuitArtifact(
     circuitArtifact: CircuitArtifact,
     updatedFileTypes: ArtifactsFileType[],
-    provingSystems: ProvingSystemType[],
+    updatedProvingSystems: ProvingSystemType[],
   ) {
     const fullyQualifiedName = this.getCircuitFullyQualifiedName(
       circuitArtifact.circuitSourceName,
@@ -203,16 +215,12 @@ export class CircuitArtifacts implements ICircuitArtifacts {
 
     const artifactPath = this.formCircuitArtifactPathFromFullyQualifiedName(fullyQualifiedName);
 
-    const allArtifactProvingSystems = new Set<ProvingSystemType>([
-      ...circuitArtifact.baseCircuitInfo.protocol,
-      ...provingSystems,
-    ]);
-
-    circuitArtifact.baseCircuitInfo.protocol = [...allArtifactProvingSystems];
+    // Create array with one element for the compilation case
+    const provingSystems = updatedProvingSystems.length > 0 ? updatedProvingSystems : [undefined];
 
     // Updates the data for files that have been recently modified
-    for (const provingSystem of provingSystems) {
-      for (const fileType of updatedFileTypes) {
+    for (const fileType of updatedFileTypes) {
+      for (const provingSystem of provingSystems) {
         const fileSourcePath: string = this.getCircuitArtifactFileFullPath(circuitArtifact, fileType, provingSystem);
 
         circuitArtifact.compilerOutputFiles[CircuitArtifacts.getArtifactOutputFileKey(fileType, provingSystem)] = {

@@ -7,8 +7,6 @@ import { v4 as uuid } from "uuid";
 
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
-import { ProvingSystemType } from "@solarity/zkit";
-
 import { CircomCompilerFactory, createCircomCompilerFactory, getHighestVersion, isVersionValid } from "../compiler";
 import { HardhatZKitError } from "../../errors";
 import { CIRCUIT_ARTIFACT_VERSION, NODE_MODULES } from "../../constants";
@@ -67,9 +65,8 @@ export class CompilationProcessor {
    * 6. Saves the artifact information using {@link ICircuitArtifacts | CircuitArtifacts}
    *
    * @param filesInfoToCompile Information about circuit files needed for compilation
-   * @param provingSystems An array of {@link ProvingSystemType | proving systems} from the plugin config
    */
-  public async compile(filesInfoToCompile: CircomResolvedFileInfo[], provingSystems: ProvingSystemType[]) {
+  public async compile(filesInfoToCompile: CircomResolvedFileInfo[]) {
     const tempDir: string = path.join(os.tmpdir(), ".zkit", uuid());
 
     try {
@@ -110,7 +107,7 @@ export class CompilationProcessor {
 
       await this._moveFromTempDirToArtifacts(compilationInfoArr);
 
-      await this._emitArtifacts(compilationInfoArr, provingSystems);
+      await this._emitArtifacts(compilationInfoArr);
 
       Reporter!.reportCompilationResult(compilationInfoArr);
     } finally {
@@ -168,7 +165,7 @@ export class CompilationProcessor {
     }
   }
 
-  private async _emitArtifacts(compilationInfoArr: CompilationInfo[], provingSystems: ProvingSystemType[]) {
+  private async _emitArtifacts(compilationInfoArr: CompilationInfo[]) {
     for (const info of compilationInfoArr) {
       const fullyQualifiedName: string = this._circuitArtifacts.getCircuitFullyQualifiedName(
         info.resolvedFile.sourceName,
@@ -186,7 +183,6 @@ export class CompilationProcessor {
           circuitFileName: info.circuitFileName,
           circuitSourceName: info.resolvedFile.sourceName,
           baseCircuitInfo: {
-            protocol: [],
             constraintsNumber: 0,
             signals: [],
           },
@@ -201,11 +197,7 @@ export class CompilationProcessor {
       circuitArtifact.baseCircuitInfo.constraintsNumber = info.constraintsNumber;
       circuitArtifact.baseCircuitInfo.signals = info.resolvedFile.fileData.mainComponentData.signals;
 
-      await this._circuitArtifacts.saveCircuitArtifact(
-        circuitArtifact,
-        this._getUpdatedArtifactFileTypes(),
-        provingSystems,
-      );
+      await this._circuitArtifacts.saveCircuitArtifact(circuitArtifact, this._getUpdatedArtifactFileTypes(), []);
     }
   }
 

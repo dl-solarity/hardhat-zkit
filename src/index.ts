@@ -62,9 +62,7 @@ extendConfig(zkitConfigExtender);
 
 extendEnvironment((hre) => {
   hre.zkit = lazyObject(() => {
-    const circuitArtifacts: CircuitArtifacts = new CircuitArtifacts(
-      getNormalizedFullPath(hre.config.paths.root, hre.config.zkit.compilationSettings.artifactsDir),
-    );
+    const circuitArtifacts: CircuitArtifacts = new CircuitArtifacts(hre);
     const circuitZKitBuilder: CircuitZKitBuilder = new CircuitZKitBuilder(hre);
 
     return {
@@ -134,13 +132,7 @@ const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfi
       env,
     );
 
-    const provingSystems: ProvingSystemType[] = getUniqueProvingSystems(
-      env.config.zkit.setupSettings.contributionSettings.provingSystem,
-    );
-
-    await compilationProcessor.compile(resolvedFilesInfo, provingSystems);
-
-    await new TypeGenerationProcessor(env).generateAllTypes();
+    await compilationProcessor.compile(resolvedFilesInfo);
 
     for (const fileInfo of resolvedFilesInfo) {
       for (const file of [fileInfo.resolvedFile, ...fileInfo.dependencies]) {
@@ -156,6 +148,8 @@ const compile: ActionType<CompileTaskConfig> = async (taskArgs: CompileTaskConfi
   } else {
     Reporter!.reportNothingToCompile();
   }
+
+  await new TypeGenerationProcessor(env).generateAllTypes();
 
   await CircuitsCompileCache!.writeToFile(circuitsCompileCacheFullPath);
 };
@@ -196,14 +190,13 @@ const setup: ActionType<SetupTaskConfig> = async (taskArgs: SetupTaskConfig, env
 
     await setupProcessor.setup(circuitSetupInfoArr, setupContributionSettings);
 
-    await new TypeGenerationProcessor(env).generateAllTypes();
-
     for (const setupInfo of circuitSetupInfoArr) {
       const currentSetupCacheEntry = CircuitsSetupCache!.getEntry(setupInfo.circuitArtifactFullPath);
 
       let currentProvingSystemsData: ProvingSystemData[] = [];
 
       if (currentSetupCacheEntry) {
+        // Getting untouched proving systems data
         currentProvingSystemsData = currentSetupCacheEntry.provingSystemsData.filter((data: ProvingSystemData) => {
           return !setupInfo.provingSystems.includes(data.provingSystem);
         });
@@ -227,6 +220,8 @@ const setup: ActionType<SetupTaskConfig> = async (taskArgs: SetupTaskConfig, env
   } else {
     Reporter!.reportNothingToSetup();
   }
+
+  await new TypeGenerationProcessor(env).generateAllTypes();
 
   await CircuitsSetupCache!.writeToFile(circuitsSetupCacheFullPath);
 };
@@ -263,6 +258,9 @@ const generateVerifiers: ActionType<GenerateVerifiersTaskConfig> = async (
     taskArgs.verifiersDir ?? env.config.zkit.verifiersSettings.verifiersDir,
   );
   const verifiersType: VerifierLanguageType = taskArgs.verifiersType ?? env.config.zkit.verifiersSettings.verifiersType;
+  const provingSystems: ProvingSystemType[] = getUniqueProvingSystems(
+    env.config.zkit.setupSettings.contributionSettings.provingSystem,
+  );
 
   Reporter!.verboseLog("index", "Verifiers generation dir - %s", [verifiersDirFullPath]);
 
@@ -275,16 +273,20 @@ const generateVerifiers: ActionType<GenerateVerifiersTaskConfig> = async (
     for (const name of allFullyQualifiedNames) {
       const circuitArtifact: CircuitArtifact = await env.zkit.circuitArtifacts.readCircuitArtifact(name);
 
-      for (const provingSystem of circuitArtifact.baseCircuitInfo.protocol) {
+      for (const provingSystem of provingSystems) {
         const spinnerId: string | null = Reporter!.reportVerifierGenerationStartWithSpinner(
           circuitArtifact.circuitTemplateName,
           verifiersType,
           provingSystem,
         );
 
-        (await env.zkit.circuitZKitBuilder.getCircuitZKit(name, provingSystem, taskArgs.verifiersDir)).createVerifier(
-          verifiersType,
-        );
+        (
+          await env.zkit.circuitZKitBuilder.getCircuitZKit(
+            name,
+            provingSystems.length > 1 ? provingSystem : undefined,
+            taskArgs.verifiersDir,
+          )
+        ).createVerifier(verifiersType);
 
         Reporter!.reportVerifierGenerationResult(
           spinnerId,

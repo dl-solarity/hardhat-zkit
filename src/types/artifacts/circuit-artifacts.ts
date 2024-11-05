@@ -25,7 +25,7 @@ export interface ICircuitArtifacts {
   saveCircuitArtifact(
     circuitArtifact: CircuitArtifact,
     updatedFileTypes: ArtifactsFileType[],
-    provingSystems: ProvingSystemType[],
+    updatedProvingSystems: ProvingSystemType[],
   ): Promise<void>;
 
   clearCache(): void;
@@ -45,7 +45,6 @@ export type CircuitArtifact = {
 export type BaseCircuitInfo = {
   constraintsNumber: number;
   signals: SignalInfo[];
-  protocol: ProvingSystemType[];
 };
 
 export type CompilerOutputFileInfo = {
