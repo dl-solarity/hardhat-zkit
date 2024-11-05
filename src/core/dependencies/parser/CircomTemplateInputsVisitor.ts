@@ -145,7 +145,7 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
     }
 
     if (ctx.parentCtx!.parentCtx instanceof BusDeclarationContext) {
-      throw new Error("INTERNAL ERROR: Buses are not supported");
+      throw new Error("Buses are not supported");
     }
 
     const signalDeclarationContext = ctx.parentCtx!.parentCtx as SignalDeclarationContext;
