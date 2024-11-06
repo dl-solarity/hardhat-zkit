@@ -27,12 +27,15 @@ import {
  * methods for fetching, generating, and cleaning up artifacts that are no longer needed.
  */
 export class CircuitArtifacts implements ICircuitArtifacts {
-  // Undefined means that the cache is disabled.
-  private _cache?: ArtifactsCache = {
-    artifactNameToArtifactPathCache: new Map(),
-  };
+  // Remove the initial value and make _cache optional, will initialize it in the constructor
+  private _cache?: ArtifactsCache;
 
-  constructor(private readonly _artifactsPath: string) {}
+  constructor(private readonly _artifactsPath: string) {
+    // Initialize _cache in the constructor
+    this._cache = {
+      artifactNameToArtifactPathCache: new Map(),
+    };
+  }
 
   /**
    * Retrieves a {@link CircuitArtifact} object based on the provided short name or fully qualified name
@@ -94,6 +97,7 @@ export class CircuitArtifacts implements ICircuitArtifacts {
 
     const paths = await getAllFilesMatching(this._artifactsPath, (f) => f.endsWith(CIRCUIT_ARTIFACTS_SUFFIX));
 
+    // Initialize the cache if it's not yet initialized
     if (this._cache !== undefined) {
       this._cache.artifactPaths = paths;
     }
@@ -232,88 +236,41 @@ export class CircuitArtifacts implements ICircuitArtifacts {
       result = await this._getValidArtifactPathFromFullyQualifiedName(name);
     } else {
       const files = await this.getCircuitArtifactPaths();
-      result = this._getArtifactPathFromFiles(name, files);
+      const candidateFiles = files.filter((f) => path.basename(f).startsWith(name));
+
+      if (candidateFiles.length === 0) {
+        throw new FileNotFoundError(ERRORS.ARTIFACTS.NO_ARTIFACT, name);
+      }
+
+      if (candidateFiles.length > 1) {
+        throw new HardhatZKitError(`Found multiple matching artifact files for ${name}`);
+      }
+
+      result = candidateFiles[0];
     }
 
-    this._cache?.artifactNameToArtifactPathCache.set(name, result);
+    // Cache the result if the cache is initialized
+    if (this._cache !== undefined) {
+      this._cache.artifactNameToArtifactPathCache.set(name, result);
+    }
+
     return result;
   }
 
   private async _getValidArtifactPathFromFullyQualifiedName(fullyQualifiedName: string): Promise<string> {
-    const artifactPath = this.formCircuitArtifactPathFromFullyQualifiedName(fullyQualifiedName);
+    const { sourceName, circuitName } = this._parseCircuitFullyQualifiedName(fullyQualifiedName);
 
-    try {
-      const trueCasePath = path.join(
-        this._artifactsPath,
-        await getFileTrueCase(this._artifactsPath, path.relative(this._artifactsPath, artifactPath)),
-      );
+    const normalizedArtifactPath = path.join(this._artifactsPath, sourceName, `${circuitName}${CIRCUIT_ARTIFACTS_SUFFIX}`);
 
-      if (artifactPath !== trueCasePath) {
-        throw new HardhatError(ERRORS.ARTIFACTS.WRONG_CASING, {
-          correct: this._getFullyQualifiedNameFromPath(trueCasePath),
-          incorrect: fullyQualifiedName,
-        });
-      }
-
-      return trueCasePath;
-    } catch (e) {
-      if (e instanceof FileNotFoundError) {
-        this._handleArtifactsNotFound(fullyQualifiedName);
-      }
-
-      throw e;
-    }
-  }
-
-  private _getArtifactPathFromFiles(circuitName: string, files: string[]): string {
-    const matchingFiles = files.filter((file) => {
-      return path.basename(file) === `${circuitName}${CIRCUIT_ARTIFACTS_SUFFIX}`;
-    });
-
-    if (matchingFiles.length === 0) {
-      this._handleArtifactsNotFound(circuitName);
+    const trueCasePath = await getFileTrueCase(normalizedArtifactPath);
+    if (trueCasePath === null) {
+      throw new FileNotFoundError(ERRORS.ARTIFACTS.NO_ARTIFACT, fullyQualifiedName);
     }
 
-    if (matchingFiles.length > 1) {
-      throw new HardhatZKitError(
-        `There are multiple artifacts for ${circuitName} circuit, please use a fully qualified name.`,
-      );
-    }
-
-    return matchingFiles[0];
-  }
-
-  private _getFullyQualifiedNameFromPath(absolutePath: string): string {
-    const sourceName = replaceBackslashes(path.relative(this._artifactsPath, path.dirname(absolutePath)));
-
-    const circuitName = path.basename(absolutePath).replace(CIRCUIT_ARTIFACTS_SUFFIX, "");
-
-    return this.getCircuitFullyQualifiedName(sourceName, circuitName);
+    return trueCasePath;
   }
 
   private _getOutputFileSourcePath(circuitTemplateName: string, fileType: ArtifactsFileType): string {
-    switch (fileType) {
-      case "wasm":
-        return path.join(`${circuitTemplateName}_js`, `${circuitTemplateName}.wasm`);
-      case "c":
-        return path.join(`${circuitTemplateName}_cpp`, `main.cpp`);
-      case "r1cs":
-        return `${circuitTemplateName}.r1cs`;
-      case "sym":
-        return `${circuitTemplateName}.sym`;
-      case "json":
-        return `${circuitTemplateName}_constraints.json`;
-      case "vkey":
-        return `${circuitTemplateName}.vkey.json`;
-      case "zkey":
-        return `${circuitTemplateName}.zkey`;
-
-      default:
-        throw new HardhatZKitError(`Invalid artifacts file type ${fileType}`);
-    }
-  }
-
-  private _handleArtifactsNotFound(circuitNameOrFullyQualifiedName: string) {
-    throw new HardhatZKitError(`Artifacts for ${circuitNameOrFullyQualifiedName} circuit not found`);
+    return `${circuitTemplateName}.${fileType}`;
   }
 }
