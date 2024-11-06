@@ -15,6 +15,7 @@
 This hardhat plugin is a zero-config, one-stop Circom development environment that streamlines circuits management and lets you focus on the important - code.
 
 - Developer-oriented abstractions that simplify `r1cs`, `zkey`, `vkey`, and `witness` generation processes.
+- Supporting of the `groth16` and `plonk` proving systems.
 - Recompilation of only the modified circuits.
 - Full TypeScript typization of signals and ZK proofs.
 - Automatic downloads of phase-1 `ptau` files.
@@ -61,7 +62,7 @@ module.exports = {
     },
     setupSettings: {
       contributionSettings: {
-        provingSystem: "groth16",
+        provingSystem: "groth16", // Or ["groth16", "plonk"]
         contributions: 2,
       },
       onlyFiles: [],
@@ -92,7 +93,7 @@ Where:
   - `optimization` - The flag to set the level of constraint simplification during compilation (`O0`, `O1` or `O2`). 
 - `setupSettings`
   - `contributionSettings`
-    - `provingSystem` - The option to indicate which proving system to use.
+    - `provingSystem` - The option to indicate which proving system to use (`groth16`, `plonk` or `["groth16", "plonk"]`).
     - `contributions` - The number of phase-2 `zkey` contributions to make if `groth16` is chosen.
   - `onlyFiles` - The list of directories (or files) to be considered for the setup phase.
   - `skipFiles` - The list of directories (or files) to be excluded from the setup phase.
@@ -201,6 +202,11 @@ describe("Multiplier", () => {
   it("should test the circuit", async () => {
     const circuit: Multiplier = await zkit.getCircuit("Multiplier");
     // or await zkit.getCircuit("circuits/multiplier.circom:Multiplier");
+    
+    /*
+    * If you set up both proving systems you will need to specify exact proving system in getCircuit function:
+    * const circuit: Multiplier = await zkit.getCircuit("Multiplier", "plonk");
+    */
 
     // witness testing
     await expect(circuit)
@@ -235,25 +241,27 @@ Afterward, copy the provided script to the `test` directory and run the tests vi
 
 ---
 
-- **`async getCircuit(<circuitName|fullCircuitName>) -> zkit`**
+- **`async getCircuit(<circuitName|fullCircuitName>, <provingSystem?>) -> zkit`**
 
-The method accepts the name of the `main` component of the circuit and returns the instantiated zkit object pointing to that circuit.
+The method accepts the name of the `main` component of the circuit, optional proving system and returns the instantiated zkit object pointing to that circuit.
 
 The method works regardless of how the circuit was compiled, however, if `zkit compile` task was used, the zkit methods that utilize proof generation or proof verification would throw an error by design.
 
 In case there are conflicts between circuit file names and `main` component names, you should use the `fullCircuitName`, which has the following form: `circuitSourceName:circuitName`.
 
+`provingSystem` parameter should be specified only if several proving systems have been specified in the config.
+
 Where:
 
 - `circuitSourceName` - Path to the circuit file from the project root.
 - `circuitName` - Circuit `main` component name.
+- `provingSystem` - Optional parameter that can be `groth16` or `plonk`
 
 > [!IMPORTANT]
 > Please note that the method actually returns the [`zktype`](https://github.com/dl-solarity/zktype) typed zkit wrapper objects which enable full TypeScript typization of signals and proofs. Also, check out the [`zkit`](https://github.com/dl-solarity/zkit) documentation to understand zkit object capabilities and how to interact with circuits.
 
 ## Known limitations
 
-- Temporarily, the only available proving system is `groth16`. Support for `plonk` is just behind the corner.
 - Sometimes `hardhat` scripts that generate ZK proofs may run indefinitely. This will be fixed in the next major release.
 - Currently there is minimal support for `var` Circom variables. Some circuits may not work if you are using complex `var`-dependent expressions.
 - Due to current `wasm` memory limitations (address space is 32-bit), the plugin may fail to compile especially large circuits on some platforms.
