@@ -229,7 +229,7 @@ export class SetupProcessor {
 
     const maxConstraintsNumber = Math.max(...circuitsConstraintsNumber);
 
-    const ptauId = Math.max(Math.ceil(Math.log2(maxConstraintsNumber)), 8);
+    const ptauId = Math.max(Math.ceil(Math.log2(maxConstraintsNumber - 1)) + 1, 8);
 
     let entries: fsExtra.Dirent[] = [];
 

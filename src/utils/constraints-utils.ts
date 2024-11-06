@@ -6,7 +6,7 @@ import * as binfileutils from "@iden3/binfileutils";
 
 import { LinearCombination, R1CSConstraint } from "../../src/types/utils";
 
-export async function getGroth16ConstraintsNumber(r1csFilePath: string): Promise<number> {
+export async function getR1CSConstraintsNumber(r1csFilePath: string): Promise<number> {
   return (await snarkjs.r1cs.info(r1csFilePath)).nConstraints;
 }
 
@@ -19,10 +19,13 @@ export async function getPlonkConstraintsNumber(r1csFilePath: string, Fr: any): 
 
   const join = (lc1: LinearCombination, k: bigint, lc2: LinearCombination) => {
     const res = { ...lc1 };
+
     Object.keys(lc2).forEach((s) => {
       res[s] = res[s] ? Fr.add(res[s], Fr.mul(k, lc2[s])) : lc2[s];
     });
+
     normalize(res);
+
     return res;
   };
 
@@ -45,12 +48,14 @@ export async function getPlonkConstraintsNumber(r1csFilePath: string, Fr: any): 
     let n = 0;
 
     Object.keys(lc).forEach((key) => {
-      if (lc[key] !== 0n) {
-        if (key === "0") {
-          k = Fr.add(k, lc[key]);
-        } else {
-          n++;
-        }
+      if (lc[key] === 0n) {
+        return;
+      }
+
+      if (key === "0") {
+        k = Fr.add(k, lc[key]);
+      } else {
+        n++;
       }
     });
 

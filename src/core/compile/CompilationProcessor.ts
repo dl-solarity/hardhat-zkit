@@ -11,8 +11,13 @@ import { HardhatZKitError } from "../../errors";
 import { CIRCUIT_ARTIFACT_VERSION, NODE_MODULES } from "../../constants";
 import { Reporter } from "../../reporter";
 
-import { getGroth16ConstraintsNumber } from "../../utils/constraints-utils";
-import { getNormalizedFullPath, renameFilesRecursively, readDirRecursively } from "../../utils/path-utils";
+import {
+  getNormalizedFullPath,
+  renameFilesRecursively,
+  readDirRecursively,
+  getR1CSConstraintsNumber,
+  terminateCurve,
+} from "../../utils";
 
 import { ZKitConfig } from "../../types/zkit-config";
 import { ArtifactsFileType, CircuitArtifact, ICircuitArtifacts } from "../../types/artifacts/circuit-artifacts";
@@ -104,8 +109,10 @@ export class CompilationProcessor {
 
       for (const info of compilationInfoArr) {
         const r1csFilePath = getNormalizedFullPath(info.tempArtifactsPath, `${info.circuitName}.r1cs`);
-        info.constraintsNumber = await getGroth16ConstraintsNumber(r1csFilePath);
+        info.constraintsNumber = await getR1CSConstraintsNumber(r1csFilePath);
       }
+
+      await terminateCurve();
 
       await this._moveFromTempDirToArtifacts(compilationInfoArr);
 
