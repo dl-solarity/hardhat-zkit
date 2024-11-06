@@ -8,11 +8,12 @@ import * as snarkjs from "snarkjs";
 import { ProvingSystemType } from "@solarity/zkit";
 
 import { HardhatZKitError } from "../../errors";
-import { PROVING_SYSTEM_CONSTRAINTS_MULTIPLIERS, PTAU_FILE_REG_EXP } from "../../constants";
+import { BN128_CURVE_NAME, PTAU_FILE_REG_EXP } from "../../constants";
 import { Reporter } from "../../reporter";
 import { PtauDownloader } from "../utils/PtauDownloader";
 import { terminateCurve } from "../../utils/utils";
 import { getNormalizedFullPath } from "../../utils/path-utils";
+import { getPlonkConstraintsNumber } from "../../utils/constraints-utils";
 
 import { ICircuitArtifacts } from "../../types/artifacts/circuit-artifacts";
 import { CircuitSetupInfo, SetupContributionSettings } from "../../types/core";
@@ -212,24 +213,23 @@ export class SetupProcessor {
     circuitSetupInfoArr: CircuitSetupInfo[],
     provingSystems: ProvingSystemType[],
   ): Promise<string> {
+    const usePlonk = provingSystems.includes("plonk");
+
+    const curve = await (snarkjs as any).curves.getCurveFromName(BN128_CURVE_NAME);
+
     const circuitsConstraintsNumber: number[] = await Promise.all(
       circuitSetupInfoArr.map(async (setupInfo: CircuitSetupInfo) => {
-        return setupInfo.circuitArtifact.baseCircuitInfo.constraintsNumber;
+        return usePlonk
+          ? getPlonkConstraintsNumber(setupInfo.r1csSourcePath, curve.Fr)
+          : setupInfo.circuitArtifact.baseCircuitInfo.constraintsNumber;
       }),
     );
 
+    await curve.terminate();
+
     const maxConstraintsNumber = Math.max(...circuitsConstraintsNumber);
-    let provingSystemMultiplier = 1;
 
-    for (const provingSystem of provingSystems) {
-      const currentMultiplier = PROVING_SYSTEM_CONSTRAINTS_MULTIPLIERS[provingSystem];
-
-      if (currentMultiplier && currentMultiplier > provingSystemMultiplier) {
-        provingSystemMultiplier = currentMultiplier;
-      }
-    }
-
-    const ptauId = Math.max(Math.ceil(Math.log2(maxConstraintsNumber * provingSystemMultiplier)), 8);
+    const ptauId = Math.max(Math.ceil(Math.log2(maxConstraintsNumber)), 8);
 
     let entries: fsExtra.Dirent[] = [];
 

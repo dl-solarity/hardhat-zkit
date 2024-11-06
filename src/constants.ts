@@ -18,11 +18,6 @@ export const BYTES_IN_MB = 1048576;
 export const MAX_PTAU_ID = 27;
 export const PTAU_FILE_REG_EXP = /^(?:.+-|)(\d{1,2}).ptau$/;
 
-export const PROVING_SYSTEM_CONSTRAINTS_MULTIPLIERS: { [key: string]: number } = {
-  groth16: 1,
-  plonk: 11,
-};
-
 export const CIRCOM_FILE_REG_EXP = /\w+\.circom/;
 
 export const NODE_MODULES_REG_EXP = /^node_modules\//;

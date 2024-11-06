@@ -1,6 +1,5 @@
 import path from "path";
 import os from "os";
-import fs from "fs";
 import semver from "semver";
 import fsExtra from "fs-extra";
 import { v4 as uuid } from "uuid";
@@ -11,6 +10,8 @@ import { CircomCompilerFactory, createCircomCompilerFactory, getHighestVersion, 
 import { HardhatZKitError } from "../../errors";
 import { CIRCUIT_ARTIFACT_VERSION, NODE_MODULES } from "../../constants";
 import { Reporter } from "../../reporter";
+
+import { getGroth16ConstraintsNumber } from "../../utils/constraints-utils";
 import { getNormalizedFullPath, renameFilesRecursively, readDirRecursively } from "../../utils/path-utils";
 
 import { ZKitConfig } from "../../types/zkit-config";
@@ -101,9 +102,10 @@ export class CompilationProcessor {
 
       await this._compileCircuits(compiler, compilationInfoArr);
 
-      compilationInfoArr.forEach((info: CompilationInfo) => {
-        info.constraintsNumber = this._getConstraintsNumber(info);
-      });
+      for (const info of compilationInfoArr) {
+        const r1csFilePath = getNormalizedFullPath(info.tempArtifactsPath, `${info.circuitName}.r1cs`);
+        info.constraintsNumber = await getGroth16ConstraintsNumber(r1csFilePath);
+      }
 
       await this._moveFromTempDirToArtifacts(compilationInfoArr);
 
@@ -256,40 +258,6 @@ export class CompilationProcessor {
     this._config.compileFlags.json && fileTypes.push("json");
 
     return fileTypes;
-  }
-
-  private _getConstraintsNumber(compilationInfo: CompilationInfo): number {
-    const r1csFileName = `${compilationInfo.circuitName}.r1cs`;
-    const r1csFile = getNormalizedFullPath(compilationInfo.tempArtifactsPath, r1csFileName);
-    const r1csDescriptor = fs.openSync(r1csFile, "r");
-
-    const readBytes = (position: number, length: number): bigint => {
-      const buffer = Buffer.alloc(length);
-
-      fs.readSync(r1csDescriptor, buffer, { length, position });
-
-      return BigInt(`0x${buffer.reverse().toString("hex")}`);
-    };
-
-    // https://github.com/iden3/r1csfile/blob/d82959da1f88fbd06db0407051fde94afbf8824a/doc/r1cs_bin_format.md#format-of-the-file
-    const numberOfSections = readBytes(8, 4);
-    let sectionStart = 12;
-
-    for (let i = 0; i < numberOfSections; ++i) {
-      const sectionType = Number(readBytes(sectionStart, 4));
-      const sectionSize = Number(readBytes(sectionStart + 4, 8));
-
-      // Reading header section
-      if (sectionType == 1) {
-        const totalConstraintsOffset = 4 + 8 + 4 + 32 + 4 + 4 + 4 + 4 + 8;
-
-        return Number(readBytes(sectionStart + totalConstraintsOffset, 4));
-      }
-
-      sectionStart += 4 + 8 + sectionSize;
-    }
-
-    throw new HardhatZKitError(`Header section in ${r1csFileName} file is not found.`);
   }
 
   private _getLinkLibraries(): string[] {
