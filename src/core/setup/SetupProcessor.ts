@@ -11,9 +11,13 @@ import { HardhatZKitError } from "../../errors";
 import { BN128_CURVE_NAME, PTAU_FILE_REG_EXP } from "../../constants";
 import { Reporter } from "../../reporter";
 import { PtauDownloader } from "../utils/PtauDownloader";
-import { terminateCurve } from "../../utils/utils";
-import { getNormalizedFullPath } from "../../utils/path-utils";
-import { getPlonkConstraintsNumber } from "../../utils/constraints-utils";
+
+import {
+  terminateCurve,
+  getNormalizedFullPath,
+  getGroth16ConstraintsNumber,
+  getPlonkConstraintsNumber,
+} from "../../utils";
 
 import { ICircuitArtifacts } from "../../types/artifacts/circuit-artifacts";
 import { CircuitSetupInfo, SetupContributionSettings } from "../../types/core";
@@ -221,7 +225,7 @@ export class SetupProcessor {
       circuitSetupInfoArr.map(async (setupInfo: CircuitSetupInfo) => {
         return usePlonk
           ? getPlonkConstraintsNumber(setupInfo.r1csSourcePath, curve.Fr)
-          : setupInfo.circuitArtifact.baseCircuitInfo.constraintsNumber;
+          : getGroth16ConstraintsNumber(setupInfo.r1csSourcePath);
       }),
     );
 
@@ -229,7 +233,7 @@ export class SetupProcessor {
 
     const maxConstraintsNumber = Math.max(...circuitsConstraintsNumber);
 
-    const ptauId = Math.max(Math.ceil(Math.log2(maxConstraintsNumber - 1)) + 1, 8);
+    const ptauId = Math.max(Math.floor(Math.log2(maxConstraintsNumber - (usePlonk ? 1 : 0))) + 1, 8);
 
     let entries: fsExtra.Dirent[] = [];
 

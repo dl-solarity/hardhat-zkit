@@ -1,13 +1,15 @@
 import * as snarkjs from "snarkjs";
-// @ts-expect-error: No type definitions available for the "r1csfile" package
-import * as r1csfile from "r1csfile";
-// @ts-expect-error: No type definitions available for the "@iden3/binfileutils" package
-import * as binfileutils from "@iden3/binfileutils";
 
 import { LinearCombination, R1CSConstraint } from "../../src/types/utils";
 
 export async function getR1CSConstraintsNumber(r1csFilePath: string): Promise<number> {
   return (await snarkjs.r1cs.info(r1csFilePath)).nConstraints;
+}
+
+export async function getGroth16ConstraintsNumber(r1csFilePath: string): Promise<number> {
+  const r1cs = await snarkjs.r1cs.info(r1csFilePath);
+
+  return r1cs.nConstraints + r1cs.nPubInputs + r1cs.nOutputs;
 }
 
 export async function getPlonkConstraintsNumber(r1csFilePath: string, Fr: any): Promise<number> {
@@ -79,20 +81,11 @@ export async function getPlonkConstraintsNumber(r1csFilePath: string, Fr: any): 
     }
   };
 
-  const { fd: fdR1cs, sections: sectionsR1cs } = await binfileutils.readBinFile(
-    r1csFilePath,
-    "r1cs",
-    1,
-    1 << 22,
-    1 << 24,
-  );
-  const r1cs = await r1csfile.readR1csFd(fdR1cs, sectionsR1cs, { loadConstraints: true, loadCustomGates: true });
+  const r1cs = await snarkjs.r1cs.info(r1csFilePath);
 
   let plonkConstraintsCount = r1cs.nOutputs + r1cs.nPubInputs;
 
   r1cs.constraints.forEach((constraint: R1CSConstraint) => process(...constraint));
-
-  await fdR1cs.fd.close();
 
   return plonkConstraintsCount;
 }
