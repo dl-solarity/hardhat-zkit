@@ -2,18 +2,19 @@ import fsExtra from "fs-extra";
 
 import { expect } from "chai";
 
-import { useEnvironment } from "@test-helpers";
-import { getSetupCacheEntry } from "../../utils";
 import { getFileHash } from "@src/utils/utils";
 import { getNormalizedFullPath } from "@src/utils/path-utils";
-
-import { defaultContributionSettings } from "../../constants";
-import { SetupCacheEntry } from "@src/types/cache";
-import { CircuitArtifact } from "@src/types/artifacts/circuit-artifacts";
+import { CircuitsSetupCache, createCircuitsSetupCache, resetCircuitsSetupCache } from "@src/cache";
 import { TASK_CIRCUITS_MAKE, ZKIT_SCOPE_NAME } from "@src/task-names";
 import { CIRCUITS_SETUP_CACHE_FILENAME, CIRCUIT_SETUP_CACHE_VERSION } from "@src/constants";
 
-import { CircuitsSetupCache, createCircuitsSetupCache, resetCircuitsSetupCache } from "@src/cache";
+import { SetupContributionSettings } from "@src/types/core";
+import { SetupCacheEntry } from "@src/types/cache";
+import { CircuitArtifact } from "@src/types/artifacts/circuit-artifacts";
+
+import { useEnvironment } from "@test-helpers";
+import { getSetupCacheEntry } from "../../utils";
+import { defaultContributionSettings } from "../../constants";
 
 describe("CircuitsSetupCache", () => {
   describe("createEmpty", () => {
@@ -115,6 +116,15 @@ describe("CircuitsSetupCache", () => {
           contributions: 1,
         }),
       ).to.be.deep.eq(defaultContributionSettings.provingSystems);
+
+      const newContributionSettings: SetupContributionSettings = {
+        provingSystems: ["plonk"],
+        contributions: 2,
+      };
+
+      expect(
+        CircuitsSetupCache!.hasFileChanged(mul2ArtifactFullPath, contentHash, newContributionSettings),
+      ).to.be.deep.eq(newContributionSettings.provingSystems);
 
       expect(
         CircuitsSetupCache!.hasFileChanged(mul2ArtifactFullPath, contentHash, defaultContributionSettings),

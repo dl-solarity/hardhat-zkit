@@ -1,5 +1,7 @@
 import fsExtra from "fs-extra";
 
+import { ProvingSystemType } from "@solarity/zkit";
+
 import { CircomFilesParser } from "../src/core";
 import { getFileHash } from "../src/utils/utils";
 import { getNormalizedFullPath } from "../src/utils/path-utils";
@@ -55,4 +57,38 @@ export async function getSetupCacheEntry(
     provingSystemsData,
     contributionsNumber: defaultContributionSettings.contributions,
   };
+}
+
+export function updateInclude(filePath: string, newIncludePath: string) {
+  const fileContent = fsExtra.readFileSync(filePath, "utf-8");
+
+  const updatedContent = fileContent.replace(/include\s*".*";/, `include "${newIncludePath}";`);
+
+  fsExtra.writeFileSync(filePath, updatedContent, "utf-8");
+}
+
+export function updateProvingSystems(filePath: string, newProvingSystems: ProvingSystemType[]) {
+  const fileContent = fsExtra.readFileSync(filePath, "utf-8");
+
+  const provingSystemsStr: string = newProvingSystems
+    .map((provingSystem: ProvingSystemType) => {
+      return `"${provingSystem}"`;
+    })
+    .join(",");
+
+  const updatedContent = fileContent.replace(
+    /provingSystem: \[("\w+"|, *)+\],/,
+    `provingSystem: [${provingSystemsStr}],`,
+  );
+
+  fsExtra.writeFileSync(filePath, updatedContent, "utf-8");
+}
+
+export function updateTypesDir(filePath: string, prevTypesDir: string, newTypesDir: string) {
+  const fileContent = fsExtra.readFileSync(filePath, "utf-8");
+
+  const updatedContent = fileContent.replace(/typesDir: "[\w\-/]+",/, `typesDir: "${newTypesDir}",`);
+
+  fsExtra.writeFileSync(filePath, updatedContent, "utf-8");
+  fsExtra.rmSync(prevTypesDir, { force: true, recursive: true });
 }

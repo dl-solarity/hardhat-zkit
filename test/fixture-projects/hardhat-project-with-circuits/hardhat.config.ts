@@ -21,6 +21,7 @@ const defaultConfig: HardhatUserConfig = {
     verifiersSettings: {
       verifiersDir: "contracts/verifiers",
     },
+    typesDir: "generated-types/zkit",
   },
 };
 

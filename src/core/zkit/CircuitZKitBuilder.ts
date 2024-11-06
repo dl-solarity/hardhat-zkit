@@ -52,7 +52,7 @@ export class CircuitZKitBuilder implements ICircuitZKitBuilder {
 
       if (this._provingSystems.length === 1 && provingSystem) {
         throw new HardhatZKitError(
-          `Found single proving system. No need to specify the exact proving system in the getCircuit function.`,
+          "Found single proving system. No need to specify the exact proving system in the getCircuit function.",
         );
       }
 
