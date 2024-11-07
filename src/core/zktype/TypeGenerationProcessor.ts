@@ -1,9 +1,12 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { localPathToSourceName } from "hardhat/utils/source-names";
+import { willRunWithTypescript } from "hardhat/internal/core/typescript-support";
 
+import { ProvingSystemType } from "@solarity/zkit";
 import { CircuitTypesGenerator } from "@solarity/zktype";
 
 import { Reporter } from "../../reporter";
+import { getUniqueProvingSystems } from "../../utils";
 
 import { ZKitConfig } from "../../types/zkit-config";
 import { ICircuitArtifacts } from "../../types/artifacts/circuit-artifacts";
@@ -24,11 +27,15 @@ export class TypeGenerationProcessor {
   private readonly _zkitConfig: ZKitConfig;
   private readonly _circuitArtifacts: ICircuitArtifacts;
   private readonly _root: string;
+  private readonly _isTSProject: boolean;
+  private readonly _provingSystems: ProvingSystemType[];
 
   constructor(hre: HardhatRuntimeEnvironment) {
     this._circuitArtifacts = hre.zkit.circuitArtifacts;
     this._zkitConfig = hre.config.zkit;
     this._root = hre.config.paths.root;
+    this._isTSProject = willRunWithTypescript(hre.hardhatArguments.config);
+    this._provingSystems = getUniqueProvingSystems(hre.config.zkit.setupSettings.contributionSettings.provingSystem);
   }
 
   /**
@@ -42,6 +49,10 @@ export class TypeGenerationProcessor {
    * 4. Generate the types based on the provided circuit artifacts
    */
   public async generateAllTypes() {
+    if (!this._isTSProject) {
+      return;
+    }
+
     const circuitsArtifactsPaths: string[] = await Promise.all(
       (await this._circuitArtifacts.getCircuitArtifactPaths()).map(async (fullPath: string) => {
         return localPathToSourceName(this._root, fullPath);
@@ -52,7 +63,12 @@ export class TypeGenerationProcessor {
       basePath: this._zkitConfig.circuitsDir,
       projectRoot: this._root,
       outputTypesDir: this._zkitConfig.typesDir,
-      circuitsArtifactsPaths,
+      circuitsArtifacts: circuitsArtifactsPaths.map((path: string) => {
+        return {
+          artifactPath: path,
+          circuitProtocolType: this._provingSystems,
+        };
+      }),
     });
 
     await typesGenerator.generateTypes();

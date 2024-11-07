@@ -33,7 +33,7 @@ describe("config", () => {
         setupSettings: {
           contributionSettings: {
             provingSystem: "groth16",
-            contributions: 1,
+            contributions: 2,
           },
           ptauDir: "zkit/ptau",
           ptauDownload: true,
@@ -77,7 +77,7 @@ describe("config", () => {
         setupSettings: {
           contributionSettings: {
             provingSystem: "groth16",
-            contributions: 1,
+            contributions: 2,
           },
           ptauDir: undefined,
           ptauDownload: true,
