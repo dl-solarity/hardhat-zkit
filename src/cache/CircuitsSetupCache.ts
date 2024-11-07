@@ -1,12 +1,12 @@
-import { isEqual } from "lodash";
+import { ProvingSystemType } from "@solarity/zkit";
 
 import { SetupCacheSchema } from "./schemas";
 import { CIRCUIT_SETUP_CACHE_VERSION } from "../constants";
 
 import { BaseCache } from "../cache/BaseCache";
 
-import { SetupCacheEntry } from "../types/cache";
-import { ContributionSettings } from "../types/core";
+import { ProvingSystemData, SetupCacheEntry } from "../types/cache";
+import { SetupContributionSettings } from "../types/core";
 
 /**
  * Class that implements the caching logic for setting up circuits.
@@ -31,29 +31,42 @@ class BaseCircuitsSetupCache extends BaseCache<SetupCacheEntry> {
    *
    * @param artifactAbsolutePath The absolute path of the artifact file to check
    * @param r1csContentHash The content hash of the R1CS file to compare
-   * @param contributionSettings The contribution settings to compare
-   * @returns True if the file has changed, false otherwise.
+   * @param contributionSettings The setup contribution settings to compare
+   * @returns An array of {@link ProvingSystemType | proving systems} that were modified or required for setup
    */
   public hasFileChanged(
     artifactAbsolutePath: string,
     r1csContentHash: string,
-    contributionSettings: ContributionSettings,
-  ): boolean {
+    contributionSettings: SetupContributionSettings,
+  ): ProvingSystemType[] {
     const cacheEntry = this.getEntry(artifactAbsolutePath);
 
     if (cacheEntry === undefined) {
-      return true;
+      return contributionSettings.provingSystems;
     }
 
-    if (cacheEntry.r1csContentHash !== r1csContentHash) {
-      return true;
+    const obsoleteProvingSystems: ProvingSystemType[] = [];
+
+    for (const provingSystem of contributionSettings.provingSystems) {
+      const provingSystemData: ProvingSystemData | undefined = cacheEntry.provingSystemsData.find(
+        (data: ProvingSystemData) => data.provingSystem === provingSystem,
+      );
+
+      if (!provingSystemData) {
+        obsoleteProvingSystems.push(provingSystem);
+
+        continue;
+      }
+
+      if (
+        provingSystemData.lastR1CSFileHash !== r1csContentHash ||
+        (provingSystem === "groth16" && cacheEntry.contributionsNumber !== contributionSettings.contributions)
+      ) {
+        obsoleteProvingSystems.push(provingSystem);
+      }
     }
 
-    if (!isEqual(cacheEntry.contributionSettings, contributionSettings)) {
-      return true;
-    }
-
-    return false;
+    return obsoleteProvingSystems;
   }
 }
 

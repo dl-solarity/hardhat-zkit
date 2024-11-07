@@ -1,6 +1,6 @@
-export type ProvingSystemType = "groth16";
+import { ProvingSystemType } from "@solarity/zkit";
 
-export type ContributionSettings = {
-  provingSystem: ProvingSystemType;
+export type SetupContributionSettings = {
+  provingSystems: ProvingSystemType[];
   contributions: number;
 };
