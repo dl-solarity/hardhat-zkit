@@ -15,7 +15,7 @@
 This hardhat plugin is a zero-config, one-stop Circom development environment that streamlines circuits management and lets you focus on the important - code.
 
 - Developer-oriented abstractions that simplify `r1cs`, `zkey`, `vkey`, and `witness` generation processes.
-- Supporting of the `groth16` and `plonk` proving systems.
+- Support of `groth16` and `plonk` proving systems.
 - Recompilation of only the modified circuits.
 - Full TypeScript typization of signals and ZK proofs.
 - Automatic downloads of phase-1 `ptau` files.
@@ -62,7 +62,7 @@ module.exports = {
     },
     setupSettings: {
       contributionSettings: {
-        provingSystem: "groth16", // Or ["groth16", "plonk"]
+        provingSystem: "groth16", // or ["groth16", "plonk"]
         contributions: 2,
       },
       onlyFiles: [],
@@ -202,11 +202,6 @@ describe("Multiplier", () => {
   it("should test the circuit", async () => {
     const circuit: Multiplier = await zkit.getCircuit("Multiplier");
     // or await zkit.getCircuit("circuits/multiplier.circom:Multiplier");
-    
-    /*
-    * If you set up both proving systems you will need to specify exact proving system in getCircuit function:
-    * const circuit: Multiplier = await zkit.getCircuit("Multiplier", "plonk");
-    */
 
     // witness testing
     await expect(circuit)
@@ -249,19 +244,18 @@ The method works regardless of how the circuit was compiled, however, if `zkit c
 
 In case there are conflicts between circuit file names and `main` component names, you should use the `fullCircuitName`, which has the following form: `circuitSourceName:circuitName`.
 
-`provingSystem` parameter should be specified only if several proving systems have been specified in the config.
+The optional `provingSystem` parameter should be specified only if multiple proving systems were set in the config.
 
 Where:
 
 - `circuitSourceName` - Path to the circuit file from the project root.
 - `circuitName` - Circuit `main` component name.
-- `provingSystem` - Optional parameter that can be `groth16` or `plonk`
+- `provingSystem` - Optional parameter that can either be `groth16` or `plonk`.
 
 > [!IMPORTANT]
 > Please note that the method actually returns the [`zktype`](https://github.com/dl-solarity/zktype) typed zkit wrapper objects which enable full TypeScript typization of signals and proofs. Also, check out the [`zkit`](https://github.com/dl-solarity/zkit) documentation to understand zkit object capabilities and how to interact with circuits.
 
 ## Known limitations
 
-- Sometimes `hardhat` scripts that generate ZK proofs may run indefinitely. This will be fixed in the next major release.
 - Currently there is minimal support for `var` Circom variables. Some circuits may not work if you are using complex `var`-dependent expressions.
 - Due to current `wasm` memory limitations (address space is 32-bit), the plugin may fail to compile especially large circuits on some platforms.
