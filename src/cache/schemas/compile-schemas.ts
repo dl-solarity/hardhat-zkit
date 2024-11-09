@@ -28,6 +28,7 @@ export const TemplateSchema = z.object({
   parameters: z.string().array(),
   isCustom: z.boolean(),
   parallel: z.boolean(),
+  parsedInputs: z.record(z.string(), InputDataSchema).optional(),
 });
 
 export const TemplatesSchema = z.record(z.string(), TemplateSchema);

@@ -9,7 +9,7 @@ import { getNormalizedFullPath } from "@src/utils/path-utils";
 
 import { defaultCompileFlags } from "../../constants";
 import { CompileCacheEntry } from "@src/types/cache";
-import { TASK_CIRCUITS_COMPILE, ZKIT_SCOPE_NAME } from "@src/task-names";
+import { TASK_CIRCUITS_COMPILE, TASK_CIRCUITS_MAKE, ZKIT_SCOPE_NAME } from "@src/task-names";
 import { CIRCUITS_COMPILE_CACHE_FILENAME, CIRCUIT_COMPILE_CACHE_VERSION } from "@src/constants";
 
 import { CircuitsCompileCache, createCircuitsCompileCache, resetCircuitsCompileCache } from "@src/cache";
@@ -105,6 +105,23 @@ describe("CircuitsCompileCache", () => {
       const typesDir: string = getNormalizedFullPath(this.hre.config.paths.root, "generated-types/zkit");
 
       fsExtra.rmSync(typesDir, { recursive: true, force: true });
+    });
+  });
+
+  describe("context-caching", () => {
+    useEnvironment("with-circuits", true);
+
+    it("should correctly cache the context", async function () {
+      await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_MAKE });
+
+      const mockCircuitSourcePath = getNormalizedFullPath(this.hre.config.paths.root, "mock-circuits/newMul2.circom");
+      const mockCircuitDestinationPath = getNormalizedFullPath(this.hre.config.paths.root, "circuits/newMul2.circom");
+
+      fsExtra.copyFileSync(mockCircuitSourcePath, mockCircuitDestinationPath);
+
+      await expect(this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_MAKE })).to.be.fulfilled;
+
+      fsExtra.rmSync(mockCircuitDestinationPath);
     });
   });
 });

@@ -379,6 +379,7 @@ describe("ZKit tasks", async function () {
         "contracts",
         "generated-types",
         "hardhat.config.ts",
+        "mock-circuits",
         "package.json",
       ]);
 
