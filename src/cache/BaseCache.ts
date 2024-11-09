@@ -113,22 +113,21 @@ export class BaseCache<T> {
    * @param cacheFilePath The full path to the cache file where the state will be written.
    */
   public async writeToFile(cacheFilePath: string) {
-    const seen = new WeakSet();
-
-    const jsonContent = JSON.stringify(this._cache, (key, value) => {
-      if (typeof value === "bigint") {
-        return { __bigintval__: value.toString() };
-      }
-
-      if (typeof value === "object" && value !== null) {
-        if (seen.has(value)) {
-          return "[Circular]";
+    const jsonContent = JSON.stringify(
+      this._cache,
+      (key, value) => {
+        if (key === "context") {
+          return;
         }
-        seen.add(value);
-      }
 
-      return value;
-    });
+        if (typeof value === "bigint") {
+          return { __bigintval__: value.toString() };
+        }
+
+        return value;
+      },
+      2,
+    );
 
     await fsExtra.outputFile(cacheFilePath, jsonContent);
   }

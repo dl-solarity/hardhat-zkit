@@ -59,6 +59,7 @@ export type Template = {
   isCustom: boolean;
   parallel: boolean;
   context: TemplateDefinitionContext;
+  parsedInputs?: Record<string, InputData>;
 };
 
 export type Templates = {
