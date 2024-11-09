@@ -376,6 +376,7 @@ describe("ZKit tasks", async function () {
       expect(fsExtra.readdirSync(this.hre.config.paths.root)).to.be.deep.eq([
         ".gitignore",
         "circuits",
+        "mock-circuits",
         "contracts",
         "generated-types",
         "hardhat.config.ts",
