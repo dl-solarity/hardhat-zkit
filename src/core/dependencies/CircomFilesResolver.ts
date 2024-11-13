@@ -13,7 +13,7 @@ import {
   validateSourceNameFormat,
 } from "hardhat/utils/source-names";
 
-import { HardhatError, assertHardhatInvariant } from "hardhat/internal/core/errors";
+import { assertHardhatInvariant, HardhatError } from "hardhat/internal/core/errors";
 import { ERRORS } from "hardhat/internal/core/errors-list";
 import { getRealPath } from "hardhat/internal/util/fs-utils";
 import { createNonCryptographicHashBasedIdentifier } from "hardhat/internal/util/hash";
@@ -24,8 +24,8 @@ import { HardhatZKitError } from "../../errors";
 
 import {
   CircomResolvedFile as ICircomResolvedFile,
-  ResolvedMainComponentData,
   ResolvedFileData,
+  ResolvedMainComponentData,
   SignalType,
   VisibilityType,
 } from "../../types/core";
@@ -249,11 +249,12 @@ export class CircomFilesResolver {
         },
       );
 
-      const parsedInputs = this._parser.parseTemplateInputs(
-        fileWithTemplate,
-        templateName,
-        mainComponentData.parameters,
-      );
+      if (!fileWithTemplate.fileData.parsedFileData.templates[templateName].parsedInputs) {
+        fileWithTemplate.fileData.parsedFileData.templates[templateName].parsedInputs =
+          this._parser.parseTemplateInputs(fileWithTemplate, templateName, mainComponentData.parameters);
+      }
+
+      const parsedInputs = fileWithTemplate.fileData.parsedFileData.templates[templateName].parsedInputs!;
 
       for (const key of Object.keys(parsedInputs)) {
         const signalType: SignalType = this._getSignalType(parsedInputs[key].type);
