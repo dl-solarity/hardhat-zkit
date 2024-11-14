@@ -1,8 +1,13 @@
-import { ContributionSettings } from "../core";
+import { ProvingSystemType } from "@solarity/zkit";
+
+export type ProvingSystemData = {
+  provingSystem: ProvingSystemType;
+  lastR1CSFileHash: string;
+};
 
 export type SetupCacheEntry = {
   circuitSourceName: string;
-  r1csContentHash: string;
   r1csSourcePath: string;
-  contributionSettings: ContributionSettings;
+  provingSystemsData: ProvingSystemData[];
+  contributionsNumber: number;
 };

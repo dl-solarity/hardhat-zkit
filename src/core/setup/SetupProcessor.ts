@@ -5,15 +5,22 @@ import { randomBytes } from "crypto";
 import { v4 as uuid } from "uuid";
 import * as snarkjs from "snarkjs";
 
-import { PtauDownloader } from "../utils/PtauDownloader";
-import { HardhatZKitError } from "../../errors";
-import { PTAU_FILE_REG_EXP } from "../../constants";
-import { Reporter } from "../../reporter";
-import { terminateCurve } from "../../utils/utils";
-import { getNormalizedFullPath } from "../../utils/path-utils";
+import { ProvingSystemType } from "@solarity/zkit";
 
-import { CircuitArtifact, ICircuitArtifacts } from "../../types/artifacts/circuit-artifacts";
-import { ContributionSettings, ProvingSystemType } from "../../types/core";
+import { HardhatZKitError } from "../../errors";
+import { BN128_CURVE_NAME, PTAU_FILE_REG_EXP } from "../../constants";
+import { Reporter } from "../../reporter";
+import { PtauDownloader } from "../utils/PtauDownloader";
+
+import {
+  terminateCurve,
+  getNormalizedFullPath,
+  getGroth16ConstraintsNumber,
+  getPlonkConstraintsNumber,
+} from "../../utils";
+
+import { ICircuitArtifacts } from "../../types/artifacts/circuit-artifacts";
+import { CircuitSetupInfo, SetupContributionSettings } from "../../types/core";
 
 /**
  * Class responsible for processing the setup of circuit artifacts.
@@ -43,10 +50,12 @@ export class SetupProcessor {
    * 4. Generates VKey files for the circuit artifacts
    * 5. Saves the circuit artifacts with the generated ZKey and VKey files
    *
-   * @param circuitArtifacts An array of circuit artifacts that need to be set up
-   * @param contributionSettings The contribution settings to be used during the setup process
+   * @param circuitSetupInfoArr An array of {@link CircuitSetupInfo} objects,
+   *    each containing the information required to set up specific circuits
+   * @param contributionSettings The settings for the setup process, specifying the necessary proving systems
+   *    and the number of contributions for the `Groth16` proving system
    */
-  public async setup(circuitArtifacts: CircuitArtifact[], contributionSettings: ContributionSettings) {
+  public async setup(circuitSetupInfoArr: CircuitSetupInfo[], contributionSettings: SetupContributionSettings) {
     const tempDir: string = path.join(os.tmpdir(), ".zkit", uuid());
 
     try {
@@ -54,117 +63,177 @@ export class SetupProcessor {
 
       Reporter!.reportSetupProcessHeader();
 
-      const ptauFilePath: string = await this._getPtauFile(circuitArtifacts);
+      const ptauFilePath: string = await this._getPtauFile(circuitSetupInfoArr, contributionSettings.provingSystems);
 
-      await this._generateZKeyFiles(circuitArtifacts, contributionSettings, ptauFilePath);
-      await this._generateVKeyFiles(circuitArtifacts);
+      await this._generateZKeyFiles(circuitSetupInfoArr, contributionSettings, ptauFilePath);
+      await this._generateVKeyFiles(circuitSetupInfoArr);
 
       await Promise.all(
-        circuitArtifacts.map(async (circuitArtifact: CircuitArtifact) => {
-          await this._circuitArtifacts.saveCircuitArtifact(circuitArtifact, ["zkey", "vkey"]);
+        circuitSetupInfoArr.map(async (setupInfo: CircuitSetupInfo) => {
+          await this._circuitArtifacts.saveCircuitArtifact(
+            setupInfo.circuitArtifact,
+            ["zkey", "vkey"],
+            setupInfo.provingSystems,
+          );
         }),
       );
 
-      Reporter!.reportSetupResult(circuitArtifacts);
+      Reporter!.reportSetupResult(circuitSetupInfoArr);
     } finally {
       fsExtra.rmSync(tempDir, { recursive: true, force: true });
     }
   }
 
   private async _generateZKeyFiles(
-    circuitArtifacts: CircuitArtifact[],
-    contributionSettings: ContributionSettings,
+    circuitSetupInfoArr: CircuitSetupInfo[],
+    contributionSettings: SetupContributionSettings,
     ptauFilePath: string,
   ) {
-    const contributions: number = contributionSettings.contributions;
-    const provingSystem: ProvingSystemType = contributionSettings.provingSystem;
-
-    Reporter!.reportZKeyFilesGenerationHeader(contributions);
+    Reporter!.reportZKeyFilesGenerationHeader(contributionSettings);
 
     try {
-      for (const circuitArtifact of circuitArtifacts) {
-        const r1csFilePath = circuitArtifact.compilerOutputFiles.r1cs?.fileSourcePath;
-        const zkeyFilePath = this._circuitArtifacts.getCircuitArtifactFileFullPath(circuitArtifact, "zkey");
+      for (const setupInfo of circuitSetupInfoArr) {
+        const r1csFilePath = setupInfo.circuitArtifact.compilerOutputFiles.r1cs!.fileSourcePath;
 
-        if (!r1csFilePath) {
-          throw new HardhatZKitError(`R1CS file for ${name} circuit not found. Compile circuits and try again.`);
-        }
+        for (const provingSystem of setupInfo.provingSystems) {
+          const spinnerId: string | null = Reporter!.reportZKeyFileGenerationStartWithSpinner(
+            setupInfo.circuitArtifact.circuitTemplateName,
+            provingSystem,
+          );
 
-        Reporter!.verboseLog("setup-processor:zkey", "Generating ZKey file for %s circuit with params %o", [
-          circuitArtifact.circuitTemplateName,
-          { r1csFilePath, zkeyFilePath },
-        ]);
+          const zkeyFilePath = this._circuitArtifacts.getCircuitArtifactFileFullPath(
+            setupInfo.circuitArtifact,
+            "zkey",
+            provingSystem,
+          );
 
-        const spinnerId: string | null = Reporter!.reportZKeyFileGenerationStartWithSpinner(
-          circuitArtifact.circuitTemplateName,
-        );
+          Reporter!.verboseLog(
+            "setup-processor:zkey",
+            "Generating ZKey file for %s circuit with %s proving system and params %o",
+            [setupInfo.circuitArtifact.circuitTemplateName, provingSystem, { r1csFilePath, zkeyFilePath }],
+          );
 
-        if (provingSystem === "groth16") {
-          await snarkjs.zKey.newZKey(r1csFilePath, ptauFilePath, zkeyFilePath);
-
-          const zKeyFileNext = `${zkeyFilePath}.next.zkey`;
-
-          for (let i = 0; i < contributions; ++i) {
-            await snarkjs.zKey.contribute(
-              zkeyFilePath,
-              zKeyFileNext,
-              `${zkeyFilePath}_contribution_${i}`,
-              randomBytes(32).toString("hex"),
-            );
-
-            fsExtra.rmSync(zkeyFilePath);
-            fsExtra.renameSync(zKeyFileNext, zkeyFilePath);
+          switch (provingSystem) {
+            case "groth16":
+              await this._generateGroth16ZKeyFile(
+                r1csFilePath,
+                ptauFilePath,
+                zkeyFilePath,
+                contributionSettings.contributions,
+              );
+              break;
+            case "plonk":
+              await this._generatePlonkZKeyFile(r1csFilePath, ptauFilePath, zkeyFilePath);
+              break;
+            default:
+              throw new HardhatZKitError(`Unsupported proving system - ${provingSystem}`);
           }
-        } else {
-          throw new HardhatZKitError(`Unsupported proving system - ${provingSystem}`);
-        }
 
-        Reporter!.reportZKeyFileGenerationResult(spinnerId, circuitArtifact.circuitTemplateName, contributions);
+          Reporter!.reportZKeyFileGenerationResult(
+            spinnerId,
+            setupInfo.circuitArtifact.circuitTemplateName,
+            provingSystem,
+            contributionSettings.contributions,
+          );
+        }
       }
     } finally {
       await terminateCurve();
     }
-
-    return circuitArtifacts;
   }
 
-  private async _generateVKeyFiles(circuitArtifacts: CircuitArtifact[]) {
+  private async _generateVKeyFiles(circuitSetupInfoArr: CircuitSetupInfo[]) {
     Reporter!.reportVKeyFilesGenerationHeader();
 
     try {
-      for (const circuitArtifact of circuitArtifacts) {
-        const zkeyFilePath = this._circuitArtifacts.getCircuitArtifactFileFullPath(circuitArtifact, "zkey");
-        const vkeyFilePath = this._circuitArtifacts.getCircuitArtifactFileFullPath(circuitArtifact, "vkey");
+      for (const setupInfo of circuitSetupInfoArr) {
+        for (const provingSystem of setupInfo.provingSystems) {
+          const spinnerId: string | null = Reporter!.reportVKeyFileGenerationStartWithSpinner(
+            setupInfo.circuitArtifact.circuitTemplateName,
+            provingSystem,
+          );
 
-        Reporter!.verboseLog("setup-processor:vkey", "Generating VKey file for %s circuit with params %o", [
-          circuitArtifact.circuitTemplateName,
-          { zkeyFilePath, vkeyFilePath },
-        ]);
+          const zkeyFilePath = this._circuitArtifacts.getCircuitArtifactFileFullPath(
+            setupInfo.circuitArtifact,
+            "zkey",
+            provingSystem,
+          );
+          const vkeyFilePath = this._circuitArtifacts.getCircuitArtifactFileFullPath(
+            setupInfo.circuitArtifact,
+            "vkey",
+            provingSystem,
+          );
 
-        const spinnerId: string | null = Reporter!.reportVKeyFileGenerationStartWithSpinner(
-          circuitArtifact.circuitTemplateName,
-        );
+          Reporter!.verboseLog(
+            "setup-processor:vkey",
+            "Generating VKey file for %s circuit with %s proving system and params %o",
+            [setupInfo.circuitArtifact.circuitTemplateName, provingSystem, { zkeyFilePath, vkeyFilePath }],
+          );
 
-        const vKeyData = await snarkjs.zKey.exportVerificationKey(zkeyFilePath);
+          const vKeyData = await snarkjs.zKey.exportVerificationKey(zkeyFilePath);
 
-        fsExtra.outputFileSync(vkeyFilePath, JSON.stringify(vKeyData));
+          fsExtra.outputFileSync(vkeyFilePath, JSON.stringify(vKeyData));
 
-        Reporter!.reportVKeyFileGenerationResult(spinnerId, circuitArtifact.circuitTemplateName);
+          Reporter!.reportVKeyFileGenerationResult(
+            spinnerId,
+            setupInfo.circuitArtifact.circuitTemplateName,
+            provingSystem,
+          );
+        }
       }
     } finally {
       await terminateCurve();
     }
   }
 
-  private async _getPtauFile(circuitArtifacts: CircuitArtifact[]): Promise<string> {
+  private async _generateGroth16ZKeyFile(
+    r1csFilePath: string,
+    ptauFilePath: string,
+    zkeyFilePath: string,
+    contributions: number,
+  ) {
+    await snarkjs.zKey.newZKey(r1csFilePath, ptauFilePath, zkeyFilePath);
+
+    const zKeyFileNext = `${zkeyFilePath}.next.zkey`;
+
+    for (let i = 0; i < contributions; ++i) {
+      await snarkjs.zKey.contribute(
+        zkeyFilePath,
+        zKeyFileNext,
+        `${zkeyFilePath}_contribution_${i}`,
+        randomBytes(32).toString("hex"),
+      );
+
+      fsExtra.rmSync(zkeyFilePath);
+      fsExtra.renameSync(zKeyFileNext, zkeyFilePath);
+    }
+  }
+
+  private async _generatePlonkZKeyFile(r1csFilePath: string, ptauFilePath: string, zkeyFilePath: string) {
+    await snarkjs.plonk.setup(r1csFilePath, ptauFilePath, zkeyFilePath);
+  }
+
+  private async _getPtauFile(
+    circuitSetupInfoArr: CircuitSetupInfo[],
+    provingSystems: ProvingSystemType[],
+  ): Promise<string> {
+    const usePlonk = provingSystems.includes("plonk");
+
+    const curve = await (snarkjs as any).curves.getCurveFromName(BN128_CURVE_NAME);
+
     const circuitsConstraintsNumber: number[] = await Promise.all(
-      circuitArtifacts.map(async (circuitArtifact: CircuitArtifact) => {
-        return circuitArtifact.baseCircuitInfo.constraintsNumber;
+      circuitSetupInfoArr.map(async (setupInfo: CircuitSetupInfo) => {
+        return usePlonk
+          ? getPlonkConstraintsNumber(setupInfo.r1csSourcePath, curve.Fr)
+          : getGroth16ConstraintsNumber(setupInfo.r1csSourcePath);
       }),
     );
 
+    await curve.terminate();
+
     const maxConstraintsNumber = Math.max(...circuitsConstraintsNumber);
-    const ptauId = Math.max(Math.ceil(Math.log2(maxConstraintsNumber)), 8);
+
+    const ptauId = Math.max(Math.floor(Math.log2(maxConstraintsNumber - (usePlonk ? 1 : 0))) + 1, 8);
 
     let entries: fsExtra.Dirent[] = [];
 

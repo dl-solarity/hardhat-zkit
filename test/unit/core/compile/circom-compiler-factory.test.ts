@@ -38,7 +38,7 @@ describe("CircomCompilerFactory", () => {
   });
 
   async function checkPlatformSpecificCompiler(osType: NodeJS.Platform) {
-    const compilerDir = path.join(os.homedir(), ".zkit", "compilers", LATEST_SUPPORTED_CIRCOM_VERSION);
+    const compilerDir = path.join(os.homedir(), ".zkit", "compilers");
     fsExtra.rmSync(compilerDir, { recursive: true, force: true });
 
     const platformStub = stub(os, "platform").callsFake(() => {
@@ -55,7 +55,7 @@ describe("CircomCompilerFactory", () => {
       expect(compiler).to.be.instanceof(BinaryCircomCompiler);
     }
 
-    expect(fsExtra.readdirSync(compilerDir)).to.be.deep.equal([platform]);
+    expect(fsExtra.readdirSync(path.join(compilerDir, LATEST_SUPPORTED_CIRCOM_VERSION))).to.be.deep.equal([platform]);
 
     fsExtra.rmSync(compilerDir, { recursive: true, force: true });
     platformStub.restore();
@@ -97,12 +97,12 @@ describe("CircomCompilerFactory", () => {
 
     it("should correctly throw error if pass invalid version", async function () {
       let invalidVersion = "2.1.10";
-      let reason = `Unsupported Circom compiler version - ${invalidVersion}. Please provide another version.`;
+      let reason = `Unsupported WASM version - ${invalidVersion}`;
 
       createCircomCompilerFactory();
       await expect(CircomCompilerFactory!.createCircomCompiler(invalidVersion, true)).to.be.rejectedWith(reason);
 
-      invalidVersion = "2.2.0";
+      invalidVersion = "2.2.1";
       reason = `Unsupported Circom compiler version - ${invalidVersion}. Please provide another version.`;
 
       await expect(CircomCompilerFactory!.createCircomCompiler(invalidVersion, false)).to.be.rejectedWith(reason);

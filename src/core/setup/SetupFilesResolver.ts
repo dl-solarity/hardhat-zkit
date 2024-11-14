@@ -2,14 +2,16 @@ import fsExtra from "fs-extra";
 
 import { HardhatConfig } from "hardhat/types";
 
+import { ProvingSystemType } from "@solarity/zkit";
+
 import { Reporter } from "../../reporter";
 import { HardhatZKitError } from "../../errors";
 import { CircuitsSetupCache } from "../../cache";
 import { filterCircuitFiles, getNormalizedFullPath } from "../../utils/path-utils";
 
-import { FileFilterSettings, SetupSettings, ZKitConfig } from "../../types/zkit-config";
+import { FileFilterSettings, ZKitConfig } from "../../types/zkit-config";
 import { CircuitArtifact, CompilerOutputFileInfo, ICircuitArtifacts } from "../../types/artifacts/circuit-artifacts";
-import { CircuitSetupInfo } from "../../types/core";
+import { CircuitSetupInfo, SetupContributionSettings } from "../../types/core";
 
 /**
  * Class responsible for resolving setup files for circuits in a given project.
@@ -43,32 +45,45 @@ export class SetupFilesResolver {
    * 4. Applies additional filtering based on the provided setup settings to finalize the list of circuits
    * 5. Returns an array of {@link CircuitSetupInfo} objects
    *
-   * @param setupSettings The settings that dictate how the circuit setup should be performed
+   * @param contributionSettings The setup configuration settings, including the required proving systems
+   *    and the number of contributions for the `Groth16` proving system
+   * @param setupFilterSettings The file filtering settings to be applied during the setup procedure
    * @param force A boolean flag that, when true, skips filtering by file changes during setup
    * @returns An array of {@link CircuitSetupInfo} objects containing information about the circuits to be set up
    */
-  public async getCircuitsInfoToSetup(setupSettings: SetupSettings, force: boolean): Promise<CircuitSetupInfo[]> {
+  public async getCircuitsInfoToSetup(
+    contributionSettings: SetupContributionSettings,
+    setupFilterSettings: FileFilterSettings,
+    force: boolean,
+  ): Promise<CircuitSetupInfo[]> {
     const allFullyQualifiedNames: string[] = await this._circuitArtifacts.getAllCircuitFullyQualifiedNames();
 
-    let circuitSetupInfoArr: CircuitSetupInfo[] = await this._getCircuitSetupInfoArr(allFullyQualifiedNames);
+    let circuitSetupInfoArr: CircuitSetupInfo[] = await this._getCircuitSetupInfoArr(
+      allFullyQualifiedNames,
+      contributionSettings.provingSystems,
+    );
 
-    this._invalidateCacheMissingArtifacts(circuitSetupInfoArr);
+    this._invalidateCacheMissingArtifacts(circuitSetupInfoArr, contributionSettings.provingSystems);
 
     if (!force) {
       Reporter!.verboseLog("setup-file-resolver", "Force flag disabled. Start filtering circuits to setup...");
 
-      circuitSetupInfoArr = circuitSetupInfoArr.filter((setupInfo) =>
-        CircuitsSetupCache!.hasFileChanged(
+      circuitSetupInfoArr = circuitSetupInfoArr.filter((setupInfo, index) => {
+        const changedProvingSystems: ProvingSystemType[] = CircuitsSetupCache!.hasFileChanged(
           setupInfo.circuitArtifactFullPath,
           setupInfo.r1csContentHash,
-          setupSettings.contributionSettings,
-        ),
-      );
+          contributionSettings,
+        );
+
+        circuitSetupInfoArr[index].provingSystems = changedProvingSystems;
+
+        return changedProvingSystems.length > 0;
+      });
     }
 
     const filteredCircuitsSetupInfo: CircuitSetupInfo[] = await this._filterCircuitSetupInfoArr(
       circuitSetupInfoArr,
-      setupSettings,
+      setupFilterSettings,
     );
 
     Reporter!.reportCircuitListToSetup(circuitSetupInfoArr, filteredCircuitsSetupInfo);
@@ -76,7 +91,10 @@ export class SetupFilesResolver {
     return filteredCircuitsSetupInfo;
   }
 
-  private async _getCircuitSetupInfoArr(fullyQualifiedNames: string[]): Promise<CircuitSetupInfo[]> {
+  private async _getCircuitSetupInfoArr(
+    fullyQualifiedNames: string[],
+    provingSystems: ProvingSystemType[],
+  ): Promise<CircuitSetupInfo[]> {
     return Promise.all(
       fullyQualifiedNames.map(async (name: string): Promise<CircuitSetupInfo> => {
         const circuitArtifact: CircuitArtifact = await this._circuitArtifacts.readCircuitArtifact(name);
@@ -91,6 +109,7 @@ export class SetupFilesResolver {
           r1csSourcePath: r1csInfo.fileSourcePath,
           r1csContentHash: r1csInfo.fileHash,
           circuitArtifactFullPath: this._circuitArtifacts.formCircuitArtifactPathFromFullyQualifiedName(name),
+          provingSystems,
         };
       }),
     );
@@ -112,7 +131,10 @@ export class SetupFilesResolver {
     );
   }
 
-  protected _invalidateCacheMissingArtifacts(circuitSetupInfoArr: CircuitSetupInfo[]) {
+  protected _invalidateCacheMissingArtifacts(
+    circuitSetupInfoArr: CircuitSetupInfo[],
+    provingSystems: ProvingSystemType[],
+  ) {
     for (const setupInfo of circuitSetupInfoArr) {
       const cacheEntry = CircuitsSetupCache!.getEntry(setupInfo.circuitArtifactFullPath);
 
@@ -120,10 +142,28 @@ export class SetupFilesResolver {
         continue;
       }
 
-      if (
-        !fsExtra.existsSync(this._circuitArtifacts.getCircuitArtifactFileFullPath(setupInfo.circuitArtifact, "zkey")) ||
-        !fsExtra.existsSync(this._circuitArtifacts.getCircuitArtifactFileFullPath(setupInfo.circuitArtifact, "vkey"))
-      ) {
+      const provingSystemsToRemove: ProvingSystemType[] = [];
+
+      for (const provingSystem of provingSystems) {
+        if (
+          !fsExtra.existsSync(
+            this._circuitArtifacts.getCircuitArtifactFileFullPath(setupInfo.circuitArtifact, "zkey", provingSystem),
+          ) ||
+          !fsExtra.existsSync(
+            this._circuitArtifacts.getCircuitArtifactFileFullPath(setupInfo.circuitArtifact, "vkey", provingSystem),
+          )
+        ) {
+          provingSystemsToRemove.push(provingSystem);
+        }
+      }
+
+      cacheEntry.provingSystemsData = cacheEntry.provingSystemsData.filter(
+        (data) => !provingSystemsToRemove.includes(data.provingSystem),
+      );
+
+      if (cacheEntry.provingSystemsData.length > 0) {
+        CircuitsSetupCache!.addFile(setupInfo.circuitArtifactFullPath, cacheEntry);
+      } else {
         CircuitsSetupCache!.removeEntry(setupInfo.circuitArtifactFullPath);
       }
     }

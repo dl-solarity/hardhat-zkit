@@ -23,16 +23,19 @@ export const CIRCOM_FILE_REG_EXP = /\w+\.circom/;
 export const NODE_MODULES_REG_EXP = /^node_modules\//;
 export const URI_SCHEME_REG_EXP = /([a-zA-Z]+):\/\//;
 
+export const MAKEFILE_NAME = "Makefile";
+
 export const CIRCUIT_ARTIFACTS_SUFFIX = "_artifacts.json";
 
 export const COMPILER_AMD_REPOSITORY_URL = "https://github.com/iden3/circom/releases/download";
 export const COMPILER_ARM_REPOSITORY_URL = "https://github.com/distributed-lab/circom/releases/download";
 export const COMPILER_WASM_REPOSITORY_URL = "https://github.com/distributed-lab/circom-wasm/releases/download";
 
-export const LATEST_SUPPORTED_CIRCOM_VERSION = "2.1.9";
+export const LATEST_SUPPORTED_CIRCOM_VERSION = "2.2.0";
 export const OLDEST_SUPPORTED_CIRCOM_VERSION = "2.0.5";
 
 export const WASM_COMPILER_VERSIONING: { [key: string]: string } = {
   "2.1.8": "0.2.18-rc.3",
   "2.1.9": "0.2.19-rc.0",
+  "2.2.0": "0.2.20-rc.0",
 };

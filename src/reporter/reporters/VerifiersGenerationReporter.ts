@@ -1,9 +1,12 @@
 /* eslint-disable no-console */
 import chalk from "chalk";
+import { capitalize } from "lodash";
+
+import { ProvingSystemType, VerifierLanguageType } from "@solarity/zkit";
+
 import { BaseReporter } from "./BaseReporter";
 import { SpinnerProcessor } from "../SpinnerProcessor";
 import { HardhatZKitError } from "../../errors";
-import { VerifierLanguageType } from "@solarity/zkit";
 
 export class VerifiersGenerationReporter extends BaseReporter {
   public reportHeader(verifiersType: VerifierLanguageType) {
@@ -16,15 +19,24 @@ export class VerifiersGenerationReporter extends BaseReporter {
     console.log(output);
   }
 
-  public reportStartWithSpinner(circuitName: string, verifiersType: VerifierLanguageType): string | null {
+  public reportStartWithSpinner(
+    circuitName: string,
+    verifiersType: VerifierLanguageType,
+    provingSystem: ProvingSystemType,
+  ): string | null {
     return this._startSpinner(
       circuitName,
       "verifier-generation",
-      `Generating ${this._getVerifierLanguageMessage(verifiersType)} verifier contract for ${circuitName} circuit`,
+      `Generating ${capitalize(provingSystem)} ${this._getVerifierLanguageMessage(verifiersType)} verifier contract for ${circuitName} circuit`,
     );
   }
 
-  public reportResult(spinnerId: string | null, circuitName: string, verifiersType: VerifierLanguageType) {
+  public reportResult(
+    spinnerId: string | null,
+    circuitName: string,
+    verifiersType: VerifierLanguageType,
+    provingSystem: ProvingSystemType,
+  ) {
     if (this.isQuiet() || !spinnerId) return;
 
     const generationTimeMessage: string = this._getSpinnerWorkingTimeMessage(
@@ -33,7 +45,7 @@ export class VerifiersGenerationReporter extends BaseReporter {
 
     SpinnerProcessor!.succeedSpinner(
       spinnerId,
-      `Generated ${this._getVerifierLanguageMessage(verifiersType)} verifier contract for ${chalk.italic(circuitName)} circuit ${generationTimeMessage}`,
+      `Generated ${capitalize(provingSystem)} ${this._getVerifierLanguageMessage(verifiersType)} verifier contract for ${chalk.italic(circuitName)} circuit ${generationTimeMessage}`,
     );
   }
 

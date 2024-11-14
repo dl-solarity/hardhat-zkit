@@ -4,10 +4,16 @@ import fsExtra from "fs-extra";
 import { resetHardhatContext } from "hardhat/plugins-testing";
 import { TASK_COMPILE } from "hardhat/builtin-tasks/task-names";
 
-import { getNormalizedFullPath } from "../src/utils/path-utils";
+import { createReporter, Reporter } from "../src/reporter";
 import { resetCircuitsCompileCache, resetCircuitsSetupCache } from "../src/cache";
+import { getNormalizedFullPath } from "../src/utils/path-utils";
 
-export function useEnvironment(fixtureProjectName: string, withCleanUp: boolean = false, networkName = "hardhat") {
+export function useEnvironment(
+  fixtureProjectName: string,
+  withCleanUp: boolean = false,
+  withLogging: boolean = true,
+  networkName = "hardhat",
+) {
   beforeEach("Loading hardhat environment", async function () {
     const prefix = "hardhat-project-";
     process.chdir(join(__dirname, "fixture-projects", prefix + fixtureProjectName));
@@ -19,6 +25,12 @@ export function useEnvironment(fixtureProjectName: string, withCleanUp: boolean 
       cleanUp(this.hre.config.paths.root);
 
       return;
+    }
+
+    if (!Reporter) {
+      createReporter(!withLogging);
+    } else {
+      Reporter!.setQuiet(!withLogging);
     }
 
     await this.hre.run(TASK_COMPILE, { quiet: true });

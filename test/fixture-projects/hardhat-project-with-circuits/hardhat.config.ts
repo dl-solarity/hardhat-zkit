@@ -11,6 +11,9 @@ const defaultConfig: HardhatUserConfig = {
       skipFiles: ["vendor"],
     },
     setupSettings: {
+      contributionSettings: {
+        provingSystem: ["groth16"],
+      },
       ptauDir: "zkit/ptau",
       ptauDownload: true,
     },
@@ -18,6 +21,7 @@ const defaultConfig: HardhatUserConfig = {
     verifiersSettings: {
       verifiersDir: "contracts/verifiers",
     },
+    typesDir: "generated-types/zkit",
   },
 };
 

@@ -14,13 +14,14 @@
 
 This hardhat plugin is a zero-config, one-stop Circom development environment that streamlines circuits management and lets you focus on the important - code.
 
-- Developer-oriented abstractions that simplify `r1cs`, `zkey`, `vkey`, and `witness` generation processes.
-- Recompilation of only the modified circuits.
+- Developer-oriented abstractions that simplify `r1cs`, `witness`, `zkey`, and `vkey` generation processes.
+- Support of `groth16` and `plonk` proving systems.
+- Recompilation and resetup of only the modified circuits.
 - Full TypeScript typization of signals and ZK proofs.
 - Automatic downloads of phase-1 `ptau` files.
 - Convenient phase-2 contributions to `zkey` files.
-- Available `witness` testing via chai assertions.
-- Invisible platform-specific and fallback `wasm`-based Circom compiler management.
+- Practical `witness` and proof testing via chai assertions.
+- Invisible platform-specific and `wasm`-based Circom compiler management.
 - Simplified `node_modules` libraries resolution.
 - Rich plugin configuration.
 - And much more!
@@ -40,7 +41,7 @@ require("@solarity/hardhat-zkit"); // JavaScript
 ```
 
 > [!TIP]
-> There is no need to download the Circom compiler separately. The plugin automatically installs missing compilers under the hood.
+> There is no need to download the Circom compiler separately. The plugin automatically installs required compilers under the hood.
 
 ## Usage
 
@@ -61,8 +62,8 @@ module.exports = {
     },
     setupSettings: {
       contributionSettings: {
-        provingSystem: "groth16",
-        contributions: 1,
+        provingSystem: "groth16", // or "plonk"
+        contributions: 2,
       },
       onlyFiles: [],
       skipFiles: [],
@@ -71,7 +72,7 @@ module.exports = {
     },
     verifiersSettings: {
       verifiersDir: "contracts/verifiers",
-      verifiersType: "sol",  
+      verifiersType: "sol", // or "vy"
     },
     typesDir: "generated-types/zkit",
     quiet: false,
@@ -89,18 +90,18 @@ Where:
   - `skipFiles` - The list of directories (or files) to be excluded from the compilation.
   - `c` - The flag to generate the c-based witness generator (generates wasm by default).
   - `json` - The flag to output the constraints in json format.
-  - `optimization` - The flag to set the level of constraint simplification during compilation (`O0`, `O1` or `O2`). 
+  - `optimization` - The flag to set the level of constraint simplification during compilation (`"O0"`, `"O1"` or `"O2"`). 
 - `setupSettings`
   - `contributionSettings`
-    - `provingSystem` - The option to indicate which proving system to use.
+    - `provingSystem` - The option to indicate which proving system to use (`"groth16"`, `"plonk"` or `["groth16", "plonk"]`).
     - `contributions` - The number of phase-2 `zkey` contributions to make if `groth16` is chosen.
   - `onlyFiles` - The list of directories (or files) to be considered for the setup phase.
   - `skipFiles` - The list of directories (or files) to be excluded from the setup phase.
   - `ptauDir` - The directory where to look for the `ptau` files. `$HOME/.zkit/ptau/` by default.
   - `ptauDownload` - The flag to allow automatic download of required `ptau` files.
 - `verifiersSettings`
-    - `verifiersDir` - The directory where to generate the Solidity verifiers.
-    - `verifiersType` - The option (`sol` or `vy`) to indicate which language to use for verifiers generation.
+    - `verifiersDir` - The directory where to generate the Solidity | Vyper verifiers.
+    - `verifiersType` - The option (`"sol"` or `"vy"`) to indicate which language to use for verifiers generation.
 - `typesDir` - The directory where to save the generated typed circuits wrappers.
 - `quiet` - The flag indicating whether to suppress the output.
 
@@ -122,7 +123,7 @@ npx hardhat help zkit <zkit task name>
 
 ### Typization
 
-The plugin provides full TypeScript typization of Circom circuits leveraging [`zktype`](https://github.com/dl-solarity/zktype) library.
+The plugin provides full TypeScript typization of Circom circuits leveraging [`zktype`](https://github.com/dl-solarity/zktype) library. Both `groth16` and `plonk` proving systems are supported.
 
 The following config may be added to `tsconfig.json` file to allow for a better development experience:
 
@@ -155,7 +156,7 @@ require("@solarity/chai-zkit"); // JavaScript
 The package extends `expect` chai assertion to recognize typed `zktype` objects for frictionless testing experience.
 
 > [!NOTE]
-> Please note that for witness testing purposes it is sufficient to compile the circuit just with `zkit compile` task, without generating the keys.
+> Please note that for witness testing purposes it is sufficient to compile circuits just with `zkit compile` task, without generating the keys.
 
 ### Example
 
@@ -225,7 +226,7 @@ To see the plugin in action, place the `Multiplier` circuit in the `circuits` di
 npx hardhat zkit make
 ```
 
-This command will install the newest compatible Circom compiler, compile the provided circuit, download the necessary `ptau` file regarding the number of circuit's constraints, build the required `zkey` and `vkey` files, and generate TypeScript object wrappers to enable full typization of signals and ZK proofs.
+This command will install the newest compatible Circom compiler, compile the provided circuit, download the necessary `ptau` file regarding the number of circuit's constraints and the proving system of choice, build the required `zkey` and `vkey` files, and generate TypeScript object wrappers to enable full typization of signals and ZK proofs.
 
 Afterward, copy the provided script to the `test` directory and run the tests via `npx hardhat test`. You will see that all the tests are passing!
 
@@ -235,9 +236,9 @@ Afterward, copy the provided script to the `test` directory and run the tests vi
 
 ---
 
-- **`async getCircuit(<circuitName|fullCircuitName>) -> zkit`**
+- **`async getCircuit(<circuitName|fullCircuitName>, <provingSystem?>) -> zkit`**
 
-The method accepts the name of the `main` component of the circuit and returns the instantiated zkit object pointing to that circuit.
+The method accepts the name of the `main` component of the circuit, optional proving system and returns the instantiated zkit object pointing to that circuit.
 
 The method works regardless of how the circuit was compiled, however, if `zkit compile` task was used, the zkit methods that utilize proof generation or proof verification would throw an error by design.
 
@@ -248,12 +249,13 @@ Where:
 - `circuitSourceName` - Path to the circuit file from the project root.
 - `circuitName` - Circuit `main` component name.
 
+The optional `provingSystem` parameter should only be specified if multiple proving systems were set in the config. Otherwise, leave it as `undefined`.
+
 > [!IMPORTANT]
 > Please note that the method actually returns the [`zktype`](https://github.com/dl-solarity/zktype) typed zkit wrapper objects which enable full TypeScript typization of signals and proofs. Also, check out the [`zkit`](https://github.com/dl-solarity/zkit) documentation to understand zkit object capabilities and how to interact with circuits.
 
 ## Known limitations
 
-- Temporarily, the only available proving system is `groth16`. Support for `plonk` is just behind the corner.
-- Sometimes `hardhat` scripts that generate ZK proofs may run indefinitely. This will be fixed in the next major release.
 - Currently there is minimal support for `var` Circom variables. Some circuits may not work if you are using complex `var`-dependent expressions.
+- Even though the plugin provides support of Circom `v2.2.0`, its newest feature `bus` is not supported.
 - Due to current `wasm` memory limitations (address space is 32-bit), the plugin may fail to compile especially large circuits on some platforms.

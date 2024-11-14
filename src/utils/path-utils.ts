@@ -2,34 +2,13 @@ import fs from "fs";
 import path from "path";
 
 import { normalizeSourceName, localSourceNameToPath } from "hardhat/utils/source-names";
-import { FileSystemAccessError, InvalidDirectoryError } from "hardhat/internal/util/fs-utils";
+
+import { MAKEFILE_NAME } from "../constants";
 
 import { FileFilterSettings } from "../types/zkit-config";
 
 export function getNormalizedFullPath(projectRoot: string, dirPath: string): string {
   return localSourceNameToPath(projectRoot, normalizeSourceName(dirPath));
-}
-
-export function getAllDirsMatchingSync(
-  absolutePathToDir: string,
-  matches?: (absolutePath: string) => boolean,
-): string[] {
-  const dir = readdirSync(absolutePathToDir);
-
-  const results = dir.map((file) => {
-    const absolutePath = path.join(absolutePathToDir, file);
-    const stats = fs.statSync(absolutePath);
-
-    if (stats.isDirectory() && (matches === undefined || matches(absolutePath))) {
-      return absolutePath;
-    } else if (stats.isDirectory()) {
-      return getAllDirsMatchingSync(absolutePath, matches).flat();
-    } else {
-      return [];
-    }
-  });
-
-  return results.flat();
 }
 
 /**
@@ -71,27 +50,15 @@ export function renameFilesRecursively(dir: string, searchValue: string, replace
       newEntryPath = path.join(dir, entry.name.replace(searchValue, replaceValue));
 
       fs.renameSync(oldEntryPath, newEntryPath);
+    } else if (dir.endsWith("_cpp") && entry.name === MAKEFILE_NAME) {
+      const makefileContent: string = fs.readFileSync(oldEntryPath, "utf-8");
+
+      fs.writeFileSync(oldEntryPath, makefileContent.replaceAll(searchValue, replaceValue));
     }
 
     if (entry.isDirectory()) {
       renameFilesRecursively(newEntryPath, searchValue, replaceValue);
     }
-  }
-}
-
-function readdirSync(absolutePathToDir: string) {
-  try {
-    return fs.readdirSync(absolutePathToDir);
-  } catch (e: any) {
-    if (e.code === "ENOENT") {
-      return [];
-    }
-
-    if (e.code === "ENOTDIR") {
-      throw new InvalidDirectoryError(absolutePathToDir, e);
-    }
-
-    throw new FileSystemAccessError(e.message, e);
   }
 }
 
