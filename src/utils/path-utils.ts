@@ -3,6 +3,8 @@ import path from "path";
 
 import { normalizeSourceName, localSourceNameToPath } from "hardhat/utils/source-names";
 
+import { MAKEFILE_NAME } from "../constants";
+
 import { FileFilterSettings } from "../types/zkit-config";
 
 export function getNormalizedFullPath(projectRoot: string, dirPath: string): string {
@@ -48,6 +50,10 @@ export function renameFilesRecursively(dir: string, searchValue: string, replace
       newEntryPath = path.join(dir, entry.name.replace(searchValue, replaceValue));
 
       fs.renameSync(oldEntryPath, newEntryPath);
+    } else if (dir.endsWith("_cpp") && entry.name === MAKEFILE_NAME) {
+      const makefileContent: string = fs.readFileSync(oldEntryPath, "utf-8");
+
+      fs.writeFileSync(oldEntryPath, makefileContent.replaceAll(searchValue, replaceValue));
     }
 
     if (entry.isDirectory()) {

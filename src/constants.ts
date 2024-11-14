@@ -23,6 +23,8 @@ export const CIRCOM_FILE_REG_EXP = /\w+\.circom/;
 export const NODE_MODULES_REG_EXP = /^node_modules\//;
 export const URI_SCHEME_REG_EXP = /([a-zA-Z]+):\/\//;
 
+export const MAKEFILE_NAME = "Makefile";
+
 export const CIRCUIT_ARTIFACTS_SUFFIX = "_artifacts.json";
 
 export const COMPILER_AMD_REPOSITORY_URL = "https://github.com/iden3/circom/releases/download";
