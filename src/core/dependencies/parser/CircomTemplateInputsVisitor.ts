@@ -533,12 +533,12 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
     switch (ctx.SELF_OP().getText()) {
       case "++":
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
+        // @ts-ignore
         this._vars[assigneeName]++;
         break;
       case "--":
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
+        // @ts-ignore
         this._vars[assigneeName]--;
         break;
       default:
