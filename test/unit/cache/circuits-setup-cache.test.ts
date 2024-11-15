@@ -105,7 +105,7 @@ describe("CircuitsSetupCache", () => {
         "r1cs",
       );
 
-      const contentHash = getFileHash(mul2R1CSFilePath);
+      const contentHash = await getFileHash(mul2R1CSFilePath);
 
       expect(
         CircuitsSetupCache!.hasFileChanged(mul2ArtifactFullPath, contentHash + "1", defaultContributionSettings),

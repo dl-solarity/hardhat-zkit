@@ -94,7 +94,7 @@ describe("CircuitsCompileCache", () => {
       expect(CircuitsCompileCache!.hasFileChanged("invalid-path", "", defaultCompileFlags)).to.be.true;
 
       const circuitPath = getNormalizedFullPath(this.hre.config.paths.root, "circuits/main/mul2.circom");
-      const contentHash = getFileHash(circuitPath);
+      const contentHash = await getFileHash(circuitPath);
 
       expect(CircuitsCompileCache!.hasFileChanged(circuitPath, contentHash + "1", defaultCompileFlags)).to.be.true;
       expect(CircuitsCompileCache!.hasFileChanged(circuitPath, contentHash, { ...defaultCompileFlags, c: true })).to.be

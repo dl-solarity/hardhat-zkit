@@ -16,10 +16,10 @@ import {
 import { assertHardhatInvariant, HardhatError } from "hardhat/internal/core/errors";
 import { ERRORS } from "hardhat/internal/core/errors-list";
 import { getRealPath } from "hardhat/internal/util/fs-utils";
-import { createNonCryptographicHashBasedIdentifier } from "hardhat/internal/util/hash";
 
 import { CircomFilesParser } from "./parser/CircomFilesParser";
 import { CIRCOM_FILE_REG_EXP, NODE_MODULES, NODE_MODULES_REG_EXP, URI_SCHEME_REG_EXP } from "../../constants";
+import { getFileHash } from "../../utils";
 import { HardhatZKitError } from "../../errors";
 
 import {
@@ -385,7 +385,7 @@ export class CircomFilesResolver {
     const stats = await fsExtra.stat(absolutePath);
     const lastModificationDate = new Date(stats.ctime);
 
-    const contentHash = createNonCryptographicHashBasedIdentifier(Buffer.from(rawContent)).toString("hex");
+    const contentHash = await getFileHash(absolutePath);
 
     const fileData = this._parser.parse(rawContent, absolutePath, contentHash);
 

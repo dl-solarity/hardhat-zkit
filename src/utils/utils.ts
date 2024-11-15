@@ -1,18 +1,17 @@
 import fsExtra from "fs-extra";
 import https from "https";
+import { createHash } from "crypto";
 import { exec } from "child_process";
 
 import * as snarkjs from "snarkjs";
 
-import { createNonCryptographicHashBasedIdentifier } from "hardhat/internal/util/hash";
-
 import { ProvingSystemType } from "@solarity/zkit";
 
 import { Reporter } from "../reporter";
+import { HardhatZKitError } from "../errors";
+import { BN128_CURVE_NAME } from "../constants";
 
 import { ExecCallResult } from "../types/utils";
-
-import { BN128_CURVE_NAME } from "../constants";
 
 /**
  * Downloads a file from the specified URL
@@ -104,8 +103,24 @@ export async function execCall(execFile: string, callArgs: string[]): Promise<Ex
   });
 }
 
-export function getFileHash(filePath: string): string {
-  return createNonCryptographicHashBasedIdentifier(Buffer.from(fsExtra.readFileSync(filePath))).toString("hex");
+export async function getFileHash(filePath: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const hash = createHash("sha1");
+    const stream = fsExtra.createReadStream(filePath);
+
+    stream.on("data", (data: Buffer) => {
+      // Add data chunk to the hash object
+      hash.update(data);
+    });
+
+    stream.on("end", () => {
+      resolve(hash.digest("hex"));
+    });
+
+    stream.on("error", () => {
+      reject(new HardhatZKitError(`Failed to read ${filePath} file`));
+    });
+  });
 }
 
 export function getUniqueProvingSystems(provingSystems: ProvingSystemType | ProvingSystemType[]): ProvingSystemType[] {
