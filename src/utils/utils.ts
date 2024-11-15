@@ -110,7 +110,7 @@ export function getFileHash(filePath: string): string {
 export function getSHA256Hash(rawFileData: string): string {
   const fileData: Buffer = Buffer.from(rawFileData);
 
-  return createHash("sha256").update(fileData).digest().toString("hex");
+  return createHash("sha1").update(fileData).digest().toString("hex");
 }
 
 export function getUniqueProvingSystems(provingSystems: ProvingSystemType | ProvingSystemType[]): ProvingSystemType[] {
