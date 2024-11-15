@@ -19,11 +19,15 @@ export async function getCompileCacheEntry(
   const circuitPath = getNormalizedFullPath(projectRoot, sourceName);
 
   if (!contentHash) {
-    contentHash = getFileHash(circuitPath);
+    contentHash = await getFileHash(circuitPath);
   }
 
   const parser: CircomFilesParser = new CircomFilesParser();
-  const fileData: ResolvedFileData = parser.parse(fsExtra.readFileSync(circuitPath, "utf-8"), circuitPath, contentHash);
+  const fileData: ResolvedFileData = parser.parse(
+    fsExtra.readFileSync(circuitPath, "utf-8"),
+    circuitPath,
+    await contentHash,
+  );
 
   const stats = await fsExtra.stat(circuitPath);
   const lastModificationDate: Date = new Date(stats.ctime);
@@ -43,12 +47,14 @@ export async function getSetupCacheEntry(
   provingSystemsData?: ProvingSystemData[],
 ): Promise<SetupCacheEntry> {
   if (!provingSystemsData) {
-    provingSystemsData = defaultContributionSettings.provingSystems.map((provingSystem) => {
-      return {
-        provingSystem: provingSystem,
-        lastR1CSFileHash: getFileHash(r1csSourcePath),
-      };
-    });
+    provingSystemsData = await Promise.all(
+      defaultContributionSettings.provingSystems.map(async (provingSystem) => {
+        return {
+          provingSystem: provingSystem,
+          lastR1CSFileHash: await getFileHash(r1csSourcePath),
+        };
+      }),
+    );
   }
 
   return {

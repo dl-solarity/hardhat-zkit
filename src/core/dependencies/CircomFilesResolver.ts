@@ -19,7 +19,7 @@ import { getRealPath } from "hardhat/internal/util/fs-utils";
 
 import { CircomFilesParser } from "./parser/CircomFilesParser";
 import { CIRCOM_FILE_REG_EXP, NODE_MODULES, NODE_MODULES_REG_EXP, URI_SCHEME_REG_EXP } from "../../constants";
-import { getSHA256Hash } from "../../utils";
+import { getSHA1Hash } from "../../utils";
 import { HardhatZKitError } from "../../errors";
 
 import {
@@ -385,7 +385,8 @@ export class CircomFilesResolver {
     const stats = await fsExtra.stat(absolutePath);
     const lastModificationDate = new Date(stats.ctime);
 
-    const contentHash = getSHA256Hash(rawContent);
+    // Add await here
+    const contentHash = await getSHA1Hash(fsExtra.readFileSync(absolutePath));
 
     const fileData = this._parser.parse(rawContent, absolutePath, contentHash);
 
