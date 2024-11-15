@@ -225,7 +225,7 @@ export class CircuitArtifacts implements ICircuitArtifacts {
 
         circuitArtifact.compilerOutputFiles[CircuitArtifacts.getArtifactOutputFileKey(fileType, provingSystem)] = {
           fileSourcePath,
-          fileHash: getFileHash(fileSourcePath),
+          fileHash: await getFileHash(fileSourcePath),
         };
       }
     }

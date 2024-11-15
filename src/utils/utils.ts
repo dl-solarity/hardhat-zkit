@@ -103,14 +103,19 @@ export async function execCall(execFile: string, callArgs: string[]): Promise<Ex
   });
 }
 
-export function getFileHash(filePath: string): string {
-  return getSHA256Hash(fsExtra.readFileSync(filePath, "utf-8"));
+export async function getFileHash(filePath: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const hash = createHash("sha1");
+    const stream = fsExtra.createReadStream(filePath);
+
+    stream.on("data", (data) => hash.update(data));
+    stream.on("end", () => resolve(hash.digest("hex")));
+    stream.on("error", reject);
+  });
 }
 
-export function getSHA256Hash(rawFileData: string): string {
-  const fileData: Buffer = Buffer.from(rawFileData);
-
-  return createHash("sha1").update(fileData).digest().toString("hex");
+export function getSHA1Hash(rawFileData: Buffer): string {
+  return createHash("sha1").update(rawFileData).digest().toString("hex");
 }
 
 export function getUniqueProvingSystems(provingSystems: ProvingSystemType | ProvingSystemType[]): ProvingSystemType[] {
