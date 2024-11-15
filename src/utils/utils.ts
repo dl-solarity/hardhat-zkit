@@ -1,10 +1,9 @@
 import fsExtra from "fs-extra";
 import https from "https";
+import { createHash } from "crypto";
 import { exec } from "child_process";
 
 import * as snarkjs from "snarkjs";
-
-import { createNonCryptographicHashBasedIdentifier } from "hardhat/internal/util/hash";
 
 import { ProvingSystemType } from "@solarity/zkit";
 
@@ -105,7 +104,13 @@ export async function execCall(execFile: string, callArgs: string[]): Promise<Ex
 }
 
 export function getFileHash(filePath: string): string {
-  return createNonCryptographicHashBasedIdentifier(Buffer.from(fsExtra.readFileSync(filePath))).toString("hex");
+  return getSHA256Hash(fsExtra.readFileSync(filePath, "utf-8"));
+}
+
+export function getSHA256Hash(rawFileData: string): string {
+  const fileData: Buffer = Buffer.from(rawFileData);
+
+  return createHash("sha256").update(fileData).digest().toString("hex");
 }
 
 export function getUniqueProvingSystems(provingSystems: ProvingSystemType | ProvingSystemType[]): ProvingSystemType[] {
