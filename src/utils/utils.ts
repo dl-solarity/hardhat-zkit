@@ -8,10 +8,10 @@ import * as snarkjs from "snarkjs";
 import { ProvingSystemType } from "@solarity/zkit";
 
 import { Reporter } from "../reporter";
+import { HardhatZKitError } from "../errors";
+import { BN128_CURVE_NAME } from "../constants";
 
 import { ExecCallResult } from "../types/utils";
-
-import { BN128_CURVE_NAME } from "../constants";
 
 /**
  * Downloads a file from the specified URL
@@ -108,14 +108,19 @@ export async function getFileHash(filePath: string): Promise<string> {
     const hash = createHash("sha1");
     const stream = fsExtra.createReadStream(filePath);
 
-    stream.on("data", (data) => hash.update(data));
-    stream.on("end", () => resolve(hash.digest("hex")));
-    stream.on("error", reject);
-  });
-}
+    stream.on("data", (data: Buffer) => {
+      // Add data chunk to the hash object
+      hash.update(data);
+    });
 
-export function getSHA1Hash(rawFileData: Buffer): string {
-  return createHash("sha1").update(rawFileData).digest().toString("hex");
+    stream.on("end", () => {
+      resolve(hash.digest("hex"));
+    });
+
+    stream.on("error", () => {
+      reject(new HardhatZKitError(`Failed to read ${filePath} file`));
+    });
+  });
 }
 
 export function getUniqueProvingSystems(provingSystems: ProvingSystemType | ProvingSystemType[]): ProvingSystemType[] {
