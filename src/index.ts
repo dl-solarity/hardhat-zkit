@@ -380,7 +380,7 @@ zkitScope
   )
   .addOptionalParam(
     "verifiersType",
-    "Verifier contracts laguage to generate. Use 'sol' for Solidity and 'vy' for Vyper",
+    "Verifier contracts language to generate. Use 'sol' for Solidity and 'vy' for Vyper",
     undefined,
     types.string,
   )
