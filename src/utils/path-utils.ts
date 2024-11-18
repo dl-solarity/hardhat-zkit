@@ -85,7 +85,7 @@ export function filterCircuitFiles<T>(
     const circuitFullPath: string = getCircuitPath(circuitInfo);
 
     return (
-      (filterSettings.onlyFiles.length == 0 || contains(circuitsRoot, filterSettings.onlyFiles, circuitFullPath)) &&
+      (filterSettings.onlyFiles.length === 0 || contains(circuitsRoot, filterSettings.onlyFiles, circuitFullPath)) &&
       !contains(circuitsRoot, filterSettings.skipFiles, circuitFullPath)
     );
   });
