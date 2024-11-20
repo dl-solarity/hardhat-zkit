@@ -450,9 +450,11 @@ describe("ZKit tasks", async function () {
       await checkMake(this.hre.config, this.hre.zkit, ["groth16"]);
 
       const verifiersFullPath: string = getNormalizedFullPath(this.hre.config.paths.root, "contracts/verifiers");
-      expect(fsExtra.readdirSync(verifiersFullPath)).to.be.deep.eq(
-        circuitNames.map((name) => `${name}Groth16Verifier.sol`),
-      );
+      expect(fsExtra.readdirSync(verifiersFullPath)).to.be.deep.eq([
+        ...circuitNames.map((name) => `${name}Groth16Verifier.sol`),
+        "Test_10_Groth16Verifier.sol",
+        "Test_20_Groth16Verifier.sol",
+      ]);
 
       updateProvingSystems(this.hre.config.paths.configFile, ["plonk"]);
       updateTypesDir(this.hre.config.paths.configFile, defaultTypesDir, plonkTypesDir);
@@ -464,9 +466,11 @@ describe("ZKit tasks", async function () {
       await checkMake(this.hre.config, this.hre.zkit, ["plonk"]);
 
       const verifiersFullPath: string = getNormalizedFullPath(this.hre.config.paths.root, "contracts/verifiers");
-      expect(fsExtra.readdirSync(verifiersFullPath)).to.be.deep.eq(
-        circuitNames.map((name) => `${name}PlonkVerifier.sol`),
-      );
+      expect(fsExtra.readdirSync(verifiersFullPath)).to.be.deep.eq([
+        ...circuitNames.map((name) => `${name}PlonkVerifier.sol`),
+        "Test_10_PlonkVerifier.sol",
+        "Test_20_PlonkVerifier.sol",
+      ]);
 
       updateProvingSystems(this.hre.config.paths.configFile, ["groth16", "plonk"]);
       updateTypesDir(this.hre.config.paths.configFile, plonkTypesDir, groth16PlonkTypesDir);
@@ -482,7 +486,7 @@ describe("ZKit tasks", async function () {
       const verifiersFullPath: string = getNormalizedFullPath(this.hre.config.paths.root, "contracts/verifiers");
       const verifiersNameArr: string[] = [];
 
-      for (const circuitName of circuitNames) {
+      for (const circuitName of [...circuitNames, "Test_10_", "Test_20_"]) {
         verifiersNameArr.push(
           ...provingSystemsArr.map((provingSystem) => `${circuitName}${capitalize(provingSystem)}Verifier.sol`),
         );

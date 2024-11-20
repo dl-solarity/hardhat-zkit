@@ -1,4 +1,7 @@
+import { CircomValueType } from "@distributedlab/circom-parser";
+
 import { ProvingSystemType } from "@solarity/zkit";
+
 import { SignalInfo } from "../core";
 
 export interface ICircuitArtifacts {
@@ -45,6 +48,7 @@ export type CircuitArtifact = {
 export type BaseCircuitInfo = {
   constraintsNumber: number;
   signals: SignalInfo[];
+  parameters: Record<string, CircomValueType>;
 };
 
 export type CompilerOutputFileInfo = {

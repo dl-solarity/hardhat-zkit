@@ -270,27 +270,50 @@ const generateVerifiers: ActionType<GenerateVerifiersTaskConfig> = async (
   if (allFullyQualifiedNames.length > 0) {
     Reporter!.reportVerifiersGenerationHeader(verifiersType);
 
-    for (const name of allFullyQualifiedNames) {
-      const circuitArtifact: CircuitArtifact = await env.zkit.circuitArtifacts.readCircuitArtifact(name);
+    const templateNamesCount: { [key: string]: number } = {};
+    const circuitArtifactsInfo = await Promise.all(
+      allFullyQualifiedNames.map(async (name: string) => {
+        const circuitArtifact: CircuitArtifact = await env.zkit.circuitArtifacts.readCircuitArtifact(name);
+        templateNamesCount[circuitArtifact.circuitTemplateName] =
+          (templateNamesCount[circuitArtifact.circuitTemplateName] || 0) + 1;
 
+        return { name, circuitArtifact };
+      }),
+    );
+
+    for (const circuitArtifactInfo of circuitArtifactsInfo) {
       for (const provingSystem of provingSystems) {
         const spinnerId: string | null = Reporter!.reportVerifierGenerationStartWithSpinner(
-          circuitArtifact.circuitTemplateName,
+          circuitArtifactInfo.circuitArtifact.circuitTemplateName,
           verifiersType,
           provingSystem,
         );
 
-        (
-          await env.zkit.circuitZKitBuilder.getCircuitZKit(
-            name,
-            provingSystems.length > 1 ? provingSystem : undefined,
-            taskArgs.verifiersDir,
-          )
-        ).createVerifier(verifiersType);
+        let verifierNameSuffix: string = "";
+
+        if (templateNamesCount[circuitArtifactInfo.circuitArtifact.circuitTemplateName] > 1) {
+          Object.values(circuitArtifactInfo.circuitArtifact.baseCircuitInfo.parameters).forEach(
+            (param, index, values) => {
+              if (Array.isArray(param)) {
+                throw new HardhatZKitError("Arrays in main component parameters not supported");
+              }
+
+              verifierNameSuffix += `_${param.toString()}${index === values.length - 1 ? "_" : ""}`;
+            },
+          );
+        }
+
+        const currentCircuit = await env.zkit.circuitZKitBuilder.getCircuitZKit(
+          circuitArtifactInfo.name,
+          provingSystems.length > 1 ? provingSystem : undefined,
+          taskArgs.verifiersDir,
+        );
+
+        currentCircuit.createVerifier(verifiersType, verifierNameSuffix);
 
         Reporter!.reportVerifierGenerationResult(
           spinnerId,
-          circuitArtifact.circuitTemplateName,
+          `${circuitArtifactInfo.circuitArtifact.circuitTemplateName}${verifierNameSuffix.slice(0, verifierNameSuffix.length - 1)}`,
           verifiersType,
           provingSystem,
         );

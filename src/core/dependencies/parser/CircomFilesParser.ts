@@ -1,3 +1,5 @@
+import { cloneDeep } from "lodash";
+
 import { CircomValueType, getCircomParser, ParserError } from "@distributedlab/circom-parser";
 
 import { CircomFilesVisitor } from "./CircomFilesVisitor";
@@ -99,7 +101,7 @@ export class CircomFilesParser {
     const circomTemplateInputsVisitor = new CircomTemplateInputsVisitor(
       circomResolvedFile.absolutePath,
       circomResolvedFile.fileData.parsedFileData.templates[templateName].context,
-      parameterValues,
+      cloneDeep(parameterValues),
     );
 
     circomTemplateInputsVisitor.startParse();
