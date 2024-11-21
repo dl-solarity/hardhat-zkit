@@ -10,8 +10,9 @@ import { getNormalizedFullPath } from "@src/utils/path-utils";
 import { CIRCUITS_COMPILE_CACHE_FILENAME } from "@src/constants";
 import { createCircuitsCompileCache } from "@src/cache";
 import { createReporter } from "@src/reporter";
-import { ResolvedFileData } from "@src/types/core";
+import { CircomResolvedFile, ResolvedFileData } from "@src/types/core";
 import { getCircomParser, VariableContext } from "@distributedlab/circom-parser";
+import { BaseCacheType } from "@src/types/cache/base-cache";
 
 describe("CircomFilesParser", () => {
   describe("parse", () => {
@@ -35,6 +36,24 @@ describe("CircomFilesParser", () => {
       contentHash = createNonCryptographicHashBasedIdentifier(Buffer.from(fileContent)).toString("hex");
 
       await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
+    });
+
+    it("should correctly resolve the arguments for the main component", async function () {
+      circuitPath = getNormalizedFullPath(this.hre.config.paths.root, "circuits/base/SomeCircuit.circom");
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const cache: BaseCacheType<CircomResolvedFile> = require(
+        getNormalizedFullPath(this.hre.config.paths.root, "cache/circuits-compile-cache.json"),
+      );
+
+      const signals = cache.files[circuitPath].fileData.mainComponentData!.signals;
+
+      const signalIn1 = signals.find((signal) => signal.name === "in1")!;
+      const signalIn2 = signals.find((signal) => signal.name === "in2")!;
+      const signalOut = signals.find((signal) => signal.name === "out")!;
+
+      expect(signalIn1.dimension).to.deep.equal([]);
+      expect(signalIn2.dimension).to.deep.equal([15, 30]);
+      expect(signalOut.dimension).to.deep.equal([]);
     });
 
     it("should correctly parse file with empty circuit files cahce", async function () {

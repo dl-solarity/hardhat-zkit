@@ -1,4 +1,4 @@
-import { CircomValueType, getCircomParser, ParserError } from "@distributedlab/circom-parser";
+import { buildVariableContext, CircomValueType, getCircomParser, ParserError } from "@distributedlab/circom-parser";
 
 import { CircomFilesVisitor } from "./CircomFilesVisitor";
 import { CircomTemplateInputsVisitor } from "./CircomTemplateInputsVisitor";
@@ -96,10 +96,18 @@ export class CircomFilesParser {
     templateName: string,
     parameterValues: Record<string, CircomValueType>,
   ): Record<string, InputData> {
+    const parsedFileData = circomResolvedFile.fileData.parsedFileData;
+
     const circomTemplateInputsVisitor = new CircomTemplateInputsVisitor(
       circomResolvedFile.absolutePath,
-      circomResolvedFile.fileData.parsedFileData.templates[templateName].context,
-      parameterValues,
+      parsedFileData.templates[templateName].context,
+      {
+        ...parameterValues,
+        ...buildVariableContext(
+          parsedFileData.templates[parsedFileData.mainComponentInfo.templateName!].parameters,
+          parsedFileData.mainComponentInfo.parameters,
+        ),
+      },
     );
 
     circomTemplateInputsVisitor.startParse();
