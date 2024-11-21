@@ -48,6 +48,9 @@ export const generateVerifiers: ActionType<GenerateVerifiersTaskConfig> = async 
     const circuitArtifactsInfo = await Promise.all(
       allFullyQualifiedNames.map(async (name: string) => {
         const circuitArtifact: CircuitArtifact = await env.zkit.circuitArtifacts.readCircuitArtifact(name);
+
+        // Count the number of uses of templates to determine whether a verifier file
+        // will need a suffix in case of non-uniqueness
         templateNamesCount[circuitArtifact.circuitTemplateName] =
           (templateNamesCount[circuitArtifact.circuitTemplateName] || 0) + 1;
 

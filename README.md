@@ -257,5 +257,6 @@ The optional `provingSystem` parameter should only be specified if multiple prov
 ## Known limitations
 
 - Currently there is minimal support for `var` Circom variables. Some circuits may not work if you are using complex `var`-dependent expressions.
+- Currentrly there is no support for arrays as parameters of the main component.
 - Even though the plugin provides support of Circom `v2.2.0`, its newest feature `bus` is not supported.
 - Due to current `wasm` memory limitations (address space is 32-bit), the plugin may fail to compile especially large circuits on some platforms.
