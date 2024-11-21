@@ -64,7 +64,7 @@ export class CircomFilesParser {
     const visitorErrors = circomFilesVisitor.errors.filter(
       (error) =>
         error.type === ErrorType.InvalidPragmaVersion ||
-        error.type === ErrorType.TemplateAlreadyUsed ||
+        error.type === ErrorType.TemplateAlreadyVisited ||
         error.type === ErrorType.FailedToResolveMainComponentParameter,
     );
 
