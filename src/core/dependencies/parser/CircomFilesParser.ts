@@ -98,23 +98,11 @@ export class CircomFilesParser {
   ): Record<string, InputData> {
     const parsedFileData = circomResolvedFile.fileData.parsedFileData;
 
-    if (
-      parsedFileData.mainComponentInfo.templateName &&
-      parsedFileData.templates[parsedFileData.mainComponentInfo.templateName]
-    ) {
-      parameterValues = {
-        ...parameterValues,
-        ...buildVariableContext(
-          parsedFileData.templates[parsedFileData.mainComponentInfo.templateName].parameters,
-          parsedFileData.mainComponentInfo.parameters,
-        ),
-      };
-    }
-
+    const values: CircomValueType[] = Object.keys(parameterValues).map((key) => parameterValues[key]);
     const circomTemplateInputsVisitor = new CircomTemplateInputsVisitor(
       circomResolvedFile.absolutePath,
       parsedFileData.templates[templateName].context,
-      parameterValues,
+      buildVariableContext(parsedFileData.templates[templateName].parameters, values),
     );
 
     circomTemplateInputsVisitor.startParse();
