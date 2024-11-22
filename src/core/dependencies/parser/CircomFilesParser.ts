@@ -1,4 +1,4 @@
-import { CircomValueType, getCircomParser, ParserError } from "@distributedlab/circom-parser";
+import { buildVariableContext, CircomValueType, getCircomParser, ParserError } from "@distributedlab/circom-parser";
 
 import { CircomFilesVisitor } from "./CircomFilesVisitor";
 import { CircomTemplateInputsVisitor } from "./CircomTemplateInputsVisitor";
@@ -64,7 +64,7 @@ export class CircomFilesParser {
     const visitorErrors = circomFilesVisitor.errors.filter(
       (error) =>
         error.type === ErrorType.InvalidPragmaVersion ||
-        error.type === ErrorType.TemplateAlreadyUsed ||
+        error.type === ErrorType.TemplateAlreadyVisited ||
         error.type === ErrorType.FailedToResolveMainComponentParameter,
     );
 
@@ -96,10 +96,13 @@ export class CircomFilesParser {
     templateName: string,
     parameterValues: Record<string, CircomValueType>,
   ): Record<string, InputData> {
+    const parsedFileData = circomResolvedFile.fileData.parsedFileData;
+
+    const values: CircomValueType[] = Object.keys(parameterValues).map((key) => parameterValues[key]);
     const circomTemplateInputsVisitor = new CircomTemplateInputsVisitor(
       circomResolvedFile.absolutePath,
-      circomResolvedFile.fileData.parsedFileData.templates[templateName].context,
-      parameterValues,
+      parsedFileData.templates[templateName].context,
+      buildVariableContext(parsedFileData.templates[templateName].parameters, values),
     );
 
     circomTemplateInputsVisitor.startParse();
