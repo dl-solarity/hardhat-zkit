@@ -65,17 +65,17 @@ task(TASK_CLEAN).setAction(async (_taskArgs: any, env: HardhatRuntimeEnvironment
 });
 
 zkitScope
-  .task(TASK_CIRCUITS_MAKE, "Compile Circom circuits and generate all necessary artifacts")
-  .addFlag("json", "Outputs constraints in json file in the compilation artifacts directory.")
-  .addFlag("c", "Enables the generation of cpp files in the compilation artifacts directory.")
-  .addFlag("force", "Force compilation ignoring cache.")
-  .addFlag("quiet", "Suppresses logs during the compilation process.")
+  .task(TASK_CIRCUITS_MAKE, "Compile Circom circuits and setup proving and verification keys.")
+  .addFlag("json", "Output constraints in the 'json' file in the compilation artifacts directory.")
+  .addFlag("c", "Enable the generation of 'cpp' files in the compilation artifacts directory.")
+  .addFlag("force", "Force compilation and setup ignoring cache.")
+  .addFlag("quiet", "Suppress logs during the compilation and setup processes.")
   .setAction(make);
 
 zkitScope
-  .task(TASK_CIRCUITS_COMPILE, "Compile Circom circuits")
-  .addFlag("json", "Outputs constraints in json file in the compilation artifacts directory.")
-  .addFlag("c", "Enables the generation of cpp files in the compilation artifacts directory.")
+  .task(TASK_CIRCUITS_COMPILE, "Compile Circom circuits.")
+  .addFlag("json", "Output constraints in the 'json' file in the compilation artifacts directory.")
+  .addFlag("c", "Enable the generation of 'cpp' files in the compilation artifacts directory.")
   .addFlag("force", "Force compilation ignoring cache.")
   .addOptionalParam(
     "optimization",
@@ -86,31 +86,31 @@ zkitScope
   .setAction(compile);
 
 zkitScope
-  .task(TASK_CIRCUITS_SETUP, "Create ZKey and Vkey files for compiled circuits")
-  .addFlag("force", "Force compilation ignoring cache.")
-  .addFlag("quiet", "Suppresses logs during the compilation process.")
+  .task(TASK_CIRCUITS_SETUP, "Setup ZKey and VKey keys for previously compiled circuits.")
+  .addFlag("force", "Force setup ignoring cache.")
+  .addFlag("quiet", "Suppress logs during the setup process.")
   .setAction(setup);
 
 zkitScope
-  .task(TASK_GENERATE_VERIFIERS, "Generate Solidity | Vyper verifier contracts for Circom circuits")
+  .task(TASK_GENERATE_VERIFIERS, "Generate Solidity | Vyper verifier contracts for Circom circuits.")
   .addOptionalParam(
     "verifiersDir",
-    "Relative path to the directory where the generated verifier contracts will be saved.",
+    "Relative path to the directory where to save the generated verifier contracts.",
     undefined,
     types.string,
   )
   .addOptionalParam(
     "verifiersType",
-    "Verifier contracts laguage to generate. Use 'sol' for Solidity and 'vy' for Vyper",
+    "Verifier contracts language to generate. Use 'sol' for Solidity and 'vy' for Vyper.",
     undefined,
     types.string,
   )
   .addFlag("noCompile", "Disable compilation before verifiers generation.")
   .addFlag("force", "Force compilation ignoring cache.")
-  .addFlag("quiet", "Suppresses logs during the verifier generation process.")
+  .addFlag("quiet", "Suppress logs during the verifier generation process.")
   .setAction(generateVerifiers);
 
-zkitScope.task(TASK_ZKIT_CLEAN, "Clean all circuit artifacts, keys, types and etc").setAction(clean);
+zkitScope.task(TASK_ZKIT_CLEAN, "Clean all zkit artifacts, circom generated files, keys, types, etc.").setAction(clean);
 
 subtask(SUBTASK_ZKIT_GET_CIRCUIT_ZKIT)
   .addOptionalParam("verifiersDir", undefined, undefined, types.string)
