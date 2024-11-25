@@ -194,6 +194,7 @@ export class CompilationProcessor {
           baseCircuitInfo: {
             constraintsNumber: 0,
             signals: [],
+            parameters: {},
           },
           compilerOutputFiles: {},
         };
@@ -205,6 +206,7 @@ export class CompilationProcessor {
 
       circuitArtifact.baseCircuitInfo.constraintsNumber = info.constraintsNumber;
       circuitArtifact.baseCircuitInfo.signals = info.resolvedFile.fileData.mainComponentData.signals;
+      circuitArtifact.baseCircuitInfo.parameters = info.resolvedFile.fileData.mainComponentData.parameters;
 
       await this._circuitArtifacts.saveCircuitArtifact(circuitArtifact, this._getUpdatedArtifactFileTypes(), []);
     }

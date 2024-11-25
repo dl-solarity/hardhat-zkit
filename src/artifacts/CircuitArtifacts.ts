@@ -75,7 +75,13 @@ export class CircuitArtifacts implements ICircuitArtifacts {
     const artifactPath = await this._getArtifactPath(circuitNameOrFullyQualifiedName);
     const fileContent = fsExtra.readFileSync(artifactPath, "utf-8");
 
-    return JSON.parse(fileContent) as CircuitArtifact;
+    return JSON.parse(fileContent, (_key: string, value: any): any => {
+      if (value != null && typeof value === "object" && "__bigintval__" in value) {
+        return BigInt(value["__bigintval__"]);
+      }
+
+      return value;
+    }) as CircuitArtifact;
   }
 
   /**
@@ -233,7 +239,16 @@ export class CircuitArtifacts implements ICircuitArtifacts {
     Reporter!.verboseLog("circuit-artifacts", "Saving circuit artifact: %o", [circuitArtifact]);
 
     await fsExtra.ensureDir(path.dirname(artifactPath));
-    await fsExtra.writeJSON(artifactPath, circuitArtifact, { spaces: 2 });
+    await fsExtra.writeJSON(artifactPath, circuitArtifact, {
+      spaces: 2,
+      replacer: (_, value: any) => {
+        if (typeof value === "bigint") {
+          return { __bigintval__: value.toString() };
+        }
+
+        return value;
+      },
+    });
   }
 
   /**
