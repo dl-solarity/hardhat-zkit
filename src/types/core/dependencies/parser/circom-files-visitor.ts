@@ -7,7 +7,7 @@ import {
 
 export enum ErrorType {
   SignalDimensionResolution,
-  TemplateAlreadyUsed,
+  TemplateAlreadyVisited,
   InvalidPragmaVersion,
   FailedToResolveMainComponentParameter,
   InternalExpressionHelperError,

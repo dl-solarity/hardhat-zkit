@@ -63,7 +63,7 @@ export class CircomFilesVisitor extends CircomVisitor<void> {
   visitTemplateDefinition = (ctx: TemplateDefinitionContext) => {
     if (ctx.ID().getText() in this.fileData.templates) {
       this.errors.push({
-        type: ErrorType.TemplateAlreadyUsed,
+        type: ErrorType.TemplateAlreadyVisited,
         context: ctx,
         fileIdentifier: this.fileIdentifier,
         templateIdentifier: ctx.ID().getText(),
