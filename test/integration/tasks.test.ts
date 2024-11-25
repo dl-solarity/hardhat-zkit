@@ -442,60 +442,77 @@ describe("ZKit tasks", async function () {
     const plonkTypesDir = "zkit/types-plonk";
     const groth16PlonkTypesDir = "zkit/types-groth16-plonk";
 
-    useEnvironment("with-circuits", true);
+    describe("with simple circuits", async function () {
+      useEnvironment("with-circuits", true);
 
-    it("should correctly generate 'groth16' verifiers after running the verifiers task", async function () {
-      await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_GENERATE_VERIFIERS });
+      it("should correctly generate 'groth16' verifiers after running the verifiers task", async function () {
+        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_GENERATE_VERIFIERS });
 
-      await checkMake(this.hre.config, this.hre.zkit, ["groth16"]);
+        await checkMake(this.hre.config, this.hre.zkit, ["groth16"]);
 
-      const verifiersFullPath: string = getNormalizedFullPath(this.hre.config.paths.root, "contracts/verifiers");
-      expect(fsExtra.readdirSync(verifiersFullPath)).to.be.deep.eq([
-        ...circuitNames.map((name) => `${name}Groth16Verifier.sol`),
-        "Test_10_Groth16Verifier.sol",
-        "Test_20_Groth16Verifier.sol",
-      ]);
+        const verifiersFullPath: string = getNormalizedFullPath(this.hre.config.paths.root, "contracts/verifiers");
+        expect(fsExtra.readdirSync(verifiersFullPath)).to.be.deep.eq([
+          ...circuitNames.map((name) => `${name}Groth16Verifier.sol`),
+          "Test_10_Groth16Verifier.sol",
+          "Test_20_Groth16Verifier.sol",
+        ]);
 
-      updateProvingSystems(this.hre.config.paths.configFile, ["plonk"]);
-      updateTypesDir(this.hre.config.paths.configFile, defaultTypesDir, plonkTypesDir);
+        updateProvingSystems(this.hre.config.paths.configFile, ["plonk"]);
+        updateTypesDir(this.hre.config.paths.configFile, defaultTypesDir, plonkTypesDir);
+      });
+
+      it("should correctly generate 'plonk' verifiers after running the verifiers task", async function () {
+        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_GENERATE_VERIFIERS });
+
+        await checkMake(this.hre.config, this.hre.zkit, ["plonk"]);
+
+        const verifiersFullPath: string = getNormalizedFullPath(this.hre.config.paths.root, "contracts/verifiers");
+        expect(fsExtra.readdirSync(verifiersFullPath)).to.be.deep.eq([
+          ...circuitNames.map((name) => `${name}PlonkVerifier.sol`),
+          "Test_10_PlonkVerifier.sol",
+          "Test_20_PlonkVerifier.sol",
+        ]);
+
+        updateProvingSystems(this.hre.config.paths.configFile, ["groth16", "plonk"]);
+        updateTypesDir(this.hre.config.paths.configFile, plonkTypesDir, groth16PlonkTypesDir);
+      });
+
+      it("should correctly generate 'groth16' and 'plonk' verifiers after running the verifiers task", async function () {
+        const provingSystemsArr: ProvingSystemType[] = ["groth16", "plonk"];
+
+        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_GENERATE_VERIFIERS });
+
+        await checkMake(this.hre.config, this.hre.zkit, provingSystemsArr);
+
+        const verifiersFullPath: string = getNormalizedFullPath(this.hre.config.paths.root, "contracts/verifiers");
+        const verifiersNameArr: string[] = [];
+
+        for (const circuitName of [...circuitNames, "Test_10_", "Test_20_"]) {
+          verifiersNameArr.push(
+            ...provingSystemsArr.map((provingSystem) => `${circuitName}${capitalize(provingSystem)}Verifier.sol`),
+          );
+        }
+
+        expect(fsExtra.readdirSync(verifiersFullPath)).to.be.deep.eq(verifiersNameArr);
+
+        updateProvingSystems(this.hre.config.paths.configFile, ["groth16"]);
+        updateTypesDir(this.hre.config.paths.configFile, groth16PlonkTypesDir, defaultTypesDir);
+      });
     });
 
-    it("should correctly generate 'plonk' verifiers after running the verifiers task", async function () {
-      await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_GENERATE_VERIFIERS });
+    describe("with complex main components", async function () {
+      useEnvironment("with-circuits-main-component", true);
 
-      await checkMake(this.hre.config, this.hre.zkit, ["plonk"]);
+      it("should correctly generate verifiers with custom verifier names", async function () {
+        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_GENERATE_VERIFIERS });
 
-      const verifiersFullPath: string = getNormalizedFullPath(this.hre.config.paths.root, "contracts/verifiers");
-      expect(fsExtra.readdirSync(verifiersFullPath)).to.be.deep.eq([
-        ...circuitNames.map((name) => `${name}PlonkVerifier.sol`),
-        "Test_10_PlonkVerifier.sol",
-        "Test_20_PlonkVerifier.sol",
-      ]);
+        const expectedCircuitNames: string[] = ["SomeCircuit_5_3_2_5_3_", "SomeCircuit_5_3_2_5_4_"];
 
-      updateProvingSystems(this.hre.config.paths.configFile, ["groth16", "plonk"]);
-      updateTypesDir(this.hre.config.paths.configFile, plonkTypesDir, groth16PlonkTypesDir);
-    });
-
-    it("should correctly generate 'groth16' and 'plonk' verifiers after running the verifiers task", async function () {
-      const provingSystemsArr: ProvingSystemType[] = ["groth16", "plonk"];
-
-      await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_GENERATE_VERIFIERS });
-
-      await checkMake(this.hre.config, this.hre.zkit, provingSystemsArr);
-
-      const verifiersFullPath: string = getNormalizedFullPath(this.hre.config.paths.root, "contracts/verifiers");
-      const verifiersNameArr: string[] = [];
-
-      for (const circuitName of [...circuitNames, "Test_10_", "Test_20_"]) {
-        verifiersNameArr.push(
-          ...provingSystemsArr.map((provingSystem) => `${circuitName}${capitalize(provingSystem)}Verifier.sol`),
-        );
-      }
-
-      expect(fsExtra.readdirSync(verifiersFullPath)).to.be.deep.eq(verifiersNameArr);
-
-      updateProvingSystems(this.hre.config.paths.configFile, ["groth16"]);
-      updateTypesDir(this.hre.config.paths.configFile, groth16PlonkTypesDir, defaultTypesDir);
+        const verifiersFullPath: string = getNormalizedFullPath(this.hre.config.paths.root, "contracts/verifiers");
+        expect(fsExtra.readdirSync(verifiersFullPath)).to.be.deep.eq([
+          ...expectedCircuitNames.map((name) => `${name}Groth16Verifier.sol`),
+        ]);
+      });
     });
   });
 

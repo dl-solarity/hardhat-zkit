@@ -1,10 +1,11 @@
 import { ActionType, HardhatRuntimeEnvironment } from "hardhat/types";
 
+import { CircomValueType } from "@distributedlab/circom-parser";
+
 import { VerifierLanguageType, ProvingSystemType } from "@solarity/zkit";
 
 import { ZKIT_SCOPE_NAME, TASK_CIRCUITS_MAKE } from "../task-names";
 
-import { HardhatZKitError } from "../errors";
 import { Reporter, createReporter } from "../reporter";
 import { getNormalizedFullPath, getUniqueProvingSystems } from "../utils";
 
@@ -69,15 +70,13 @@ export const generateVerifiers: ActionType<GenerateVerifiersTaskConfig> = async 
         let verifierNameSuffix: string = "";
 
         if (templateNamesCount[circuitArtifactInfo.circuitArtifact.circuitTemplateName] > 1) {
-          Object.values(circuitArtifactInfo.circuitArtifact.baseCircuitInfo.parameters).forEach(
-            (param, index, values) => {
-              if (Array.isArray(param)) {
-                throw new HardhatZKitError("Arrays in main component parameters not supported");
-              }
-
-              verifierNameSuffix += `_${param.toString()}${index === values.length - 1 ? "_" : ""}`;
-            },
+          const flattenParametersArr: bigint[] = flattenParameters(
+            circuitArtifactInfo.circuitArtifact.baseCircuitInfo.parameters,
           );
+
+          flattenParametersArr.forEach((param: bigint, index: number) => {
+            verifierNameSuffix += `_${param.toString()}${index === flattenParametersArr.length - 1 ? "_" : ""}`;
+          });
         }
 
         const currentCircuit = await env.zkit.circuitZKitBuilder.getCircuitZKit(
@@ -104,3 +103,21 @@ export const generateVerifiers: ActionType<GenerateVerifiersTaskConfig> = async 
     Reporter!.reportNothingToGenerate();
   }
 };
+
+function flattenParameters(parameters: Record<string, CircomValueType>): bigint[] {
+  const flattenParametersArr: bigint[] = [];
+
+  for (const parameterKey of Object.keys(parameters)) {
+    flattenParametersArr.push(...flattenParameter(parameters[parameterKey]));
+  }
+
+  return flattenParametersArr;
+}
+
+function flattenParameter(parameter: CircomValueType): bigint[] {
+  const flatValue = Array.isArray(parameter)
+    ? parameter.flatMap((parameter) => flattenParameter(parameter))
+    : parameter;
+
+  return Array.isArray(flatValue) ? flatValue : [flatValue];
+}
