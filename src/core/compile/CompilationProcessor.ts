@@ -258,15 +258,9 @@ export class CompilationProcessor {
   }
 
   private _getUpdatedArtifactFileTypes(): ArtifactsFileType[] {
-    const fileTypes: ArtifactsFileType[] = [];
-
-    this._config.compileFlags.wasm && fileTypes.push("wasm");
-    this._config.compileFlags.c && fileTypes.push("c");
-    this._config.compileFlags.r1cs && fileTypes.push("r1cs");
-    this._config.compileFlags.sym && fileTypes.push("sym");
-    this._config.compileFlags.json && fileTypes.push("json");
-
-    return fileTypes;
+    return Object.entries(this._config.compileFlags)
+      .filter(([_, value]) => value)
+      .map(([key]) => key as ArtifactsFileType);
   }
 
   private _getLinkLibraries(): string[] {
