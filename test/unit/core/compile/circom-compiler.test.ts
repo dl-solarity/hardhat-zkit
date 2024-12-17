@@ -138,6 +138,46 @@ describe("WASMCircomCompiler", () => {
 
       fsExtra.rmSync(artifactsFullPath, { recursive: true, force: true });
     });
+
+    it("should correctly throw error if file path contains double quotes", async function () {
+      let circuitFullPath: string = getNormalizedFullPath(this.hre.config.paths.root, 'circuits/bas"e/mul2Base.circom');
+      let artifactsFullPath: string = getNormalizedFullPath(
+        this.hre.config.paths.root,
+        "zkit/artifacts/test/mul2.circom",
+      );
+      const errorFileFullPath: string = getNormalizedFullPath(artifactsFullPath, "errors.log");
+
+      fsExtra.mkdirSync(artifactsFullPath, { recursive: true });
+
+      const reason: string = "Circuit file path must not contain double quotes.";
+
+      await expect(
+        circomCompiler.compile({
+          circuitFullPath,
+          artifactsFullPath,
+          errorFileFullPath,
+          linkLibraries: [],
+          compileFlags: defaultCompileFlags,
+          quiet: false,
+        }),
+      ).to.be.rejectedWith(reason);
+
+      circuitFullPath = getNormalizedFullPath(this.hre.config.paths.root, "circuits/base/mul2Base.circom");
+      artifactsFullPath = getNormalizedFullPath(this.hre.config.paths.root, 'zkit/artifacts/tes"t/mul2.circom');
+
+      await expect(
+        circomCompiler.compile({
+          circuitFullPath,
+          artifactsFullPath,
+          errorFileFullPath,
+          linkLibraries: [],
+          compileFlags: defaultCompileFlags,
+          quiet: false,
+        }),
+      ).to.be.rejectedWith(reason);
+
+      fsExtra.rmSync(artifactsFullPath, { recursive: true, force: true });
+    });
   });
 
   describe("compile:with-libraries", () => {

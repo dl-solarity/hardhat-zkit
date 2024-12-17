@@ -46,6 +46,8 @@ abstract class BaseCircomCompiler implements ICircomCompiler {
    * @returns An array of strings representing the compilation parameters that will be passed to the compiler
    */
   public getCompilationArgs(config: CompileConfig): string[] {
+    this._validateCompileConfig(config);
+
     const args: string[] = this._getBaseCompilationArgs(config);
 
     for (const [key, value] of Object.entries(config.compileFlags)) {
@@ -70,6 +72,19 @@ abstract class BaseCircomCompiler implements ICircomCompiler {
     }
 
     return args;
+  }
+
+  /**
+   * Validates the provided compilation configuration to ensure that file paths do not contain invalid characters
+   *
+   * @param config The configuration object containing paths for the circuit file and artifacts
+   * @throws HardhatZKitError If the `circuitFullPath` or `artifactsFullPath` contains double quotes,
+   * as they can cause issues during the compilation process
+   */
+  protected _validateCompileConfig(config: CompileConfig) {
+    if (config.circuitFullPath.includes('"') || config.artifactsFullPath.includes('"')) {
+      throw new HardhatZKitError("Circuit file path must not contain double quotes.");
+    }
   }
 }
 
@@ -117,7 +132,7 @@ export class BinaryCircomCompiler extends BaseCircomCompiler {
     const args = [`"${baseConfig.circuitFullPath}"`, "-o", `"${baseConfig.artifactsFullPath}"`];
 
     for (const linkLibrary of baseConfig.linkLibraries) {
-      args.push("-l", linkLibrary);
+      args.push("-l", `"${linkLibrary}"`);
     }
 
     return args;
