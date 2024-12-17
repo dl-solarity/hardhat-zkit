@@ -65,8 +65,8 @@ describe("CompilationFilesResolver", () => {
       const expectedSourceNames: string[] = [
         "circuits/main/Multiplier3Arr.circom",
         "circuits/main/mul2.circom",
-        "circuits/main/test.circom",
-        "circuits/main/test_2.circom",
+        "circuits/test folder/test.circom",
+        "circuits/test folder/test_2.circom",
         "circuits/vendor/SumMul.circom",
       ];
       const expectedCircuitNames: string[] = ["Multiplier3Arr", "Multiplier2", "Test", "Test", "SumMul"];

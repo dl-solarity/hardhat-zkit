@@ -107,6 +107,21 @@ export class BinaryCircomCompiler extends BaseCircomCompiler {
       throw new HardhatZKitError(`Compilation failed.\n${err}`);
     }
   }
+
+  /**
+   * Overrides the {@link BaseCircomCompiler._getBaseCompilationArgs | _getBaseCompilationArgs} method
+   * of the {@link BaseCircomCompiler} base class to construct the compilation arguments for the Circom compiler,
+   * ensuring that file paths containing spaces are handled correctly by wrapping them in quotes.
+   */
+  protected _getBaseCompilationArgs(baseConfig: BaseCompileConfig): string[] {
+    const args = [`"${baseConfig.circuitFullPath}"`, "-o", `"${baseConfig.artifactsFullPath}"`];
+
+    for (const linkLibrary of baseConfig.linkLibraries) {
+      args.push("-l", linkLibrary);
+    }
+
+    return args;
+  }
 }
 
 /**
