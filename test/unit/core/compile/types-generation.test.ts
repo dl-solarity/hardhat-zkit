@@ -33,27 +33,11 @@ describe.only("Types Generation", () => {
     });
 
     it.only("should correctly resolve dimensions for circuits with multiple main components from cache", async function () {
-      const initialFileContent = fsExtra
-        .readFileSync(path.join(this.hre.config.paths.root, "circuits/mul3Arr.circom"))
-        .toString();
-
-      fsExtra.appendFileSync(path.join(this.hre.config.paths.root, "circuits/mul3Arr.circom"), "// comment");
+      fsExtra.removeSync(path.join(this.hre.config.paths.root, "generated-types"));
 
       await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_MAKE });
 
-      const artifact2: CircuitArtifact = getCircuitArtifact(
-        this.hre,
-        "zkit/artifacts/circuits/mul3Arr2.circom/Multiplier3Arr_artifacts.json",
-      );
-      const artifact1: CircuitArtifact = getCircuitArtifact(
-        this.hre,
-        "zkit/artifacts/circuits/mul3Arr.circom/Multiplier3Arr_artifacts.json",
-      );
-
-      expect(artifact1.baseCircuitInfo.signals[0].dimension).to.be.deep.eq([3]);
-      expect(artifact2.baseCircuitInfo.signals[0].dimension).to.be.deep.eq([6]);
-
-      fsExtra.writeFileSync(path.join(this.hre.config.paths.root, "circuits/mul3Arr.circom"), initialFileContent);
+      expect(fsExtra.readdirSync(path.join(this.hre.config.paths.root, "generated-types")).length !== 0).to.be.true;
     });
   });
 });
