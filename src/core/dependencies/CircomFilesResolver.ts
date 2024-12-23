@@ -21,7 +21,6 @@ import { CircomFilesParser } from "./parser/CircomFilesParser";
 import { CIRCOM_FILE_REG_EXP, NODE_MODULES, NODE_MODULES_REG_EXP, URI_SCHEME_REG_EXP } from "../../constants";
 import { getFileHash } from "../../utils";
 import { HardhatZKitError } from "../../errors";
-import { deepClone } from "../../core/dependencies/utils";
 import {
   CircomResolvedFile as ICircomResolvedFile,
   ResolvedFileData,
@@ -250,9 +249,7 @@ export class CircomFilesResolver {
       );
 
       if (!resolvedFile.fileData.parsedFileData.templates[templateName]) {
-        resolvedFile.fileData.parsedFileData.templates[templateName] = deepClone(
-          fileWithTemplate.fileData.parsedFileData.templates[templateName],
-        );
+        resolvedFile.fileData.parsedFileData.templates[templateName] = {} as any;
       }
 
       if (!resolvedFile.fileData.parsedFileData.templates[templateName].parsedInputs) {

@@ -9,7 +9,7 @@ import { useEnvironment } from "@test-helpers";
 import { CircuitArtifact } from "../../../../src/types/artifacts/circuit-artifacts";
 import { TASK_CIRCUITS_MAKE, ZKIT_SCOPE_NAME } from "../../../../src/task-names";
 
-describe.only("Types Generation", () => {
+describe("Types Generation", () => {
   describe("types generation:with duplicated main components", () => {
     useEnvironment("with-duplicated-circuits");
 
