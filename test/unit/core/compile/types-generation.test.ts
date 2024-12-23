@@ -1,10 +1,13 @@
-import { useEnvironment } from "@test-helpers";
-import { TASK_CIRCUITS_MAKE, ZKIT_SCOPE_NAME } from "../../../../src/task-names";
-import fsExtra from "fs-extra";
 import path from "path";
-import { CircuitArtifact } from "../../../../src/types/artifacts/circuit-artifacts";
 import { expect } from "chai";
+import fsExtra from "fs-extra";
+
 import { HardhatRuntimeEnvironment } from "hardhat/types";
+
+import { useEnvironment } from "@test-helpers";
+
+import { CircuitArtifact } from "../../../../src/types/artifacts/circuit-artifacts";
+import { TASK_CIRCUITS_MAKE, ZKIT_SCOPE_NAME } from "../../../../src/task-names";
 
 describe.only("Types Generation", () => {
   describe("types generation:with duplicated main components", () => {
@@ -32,7 +35,7 @@ describe.only("Types Generation", () => {
       expect(artifact2.baseCircuitInfo.signals[0].dimension).to.be.deep.eq([6]);
     });
 
-    it.only("should correctly resolve dimensions for circuits with multiple main components from cache", async function () {
+    it("should correctly resolve dimensions for circuits with multiple main components from cache", async function () {
       fsExtra.removeSync(path.join(this.hre.config.paths.root, "generated-types"));
 
       await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_MAKE });
