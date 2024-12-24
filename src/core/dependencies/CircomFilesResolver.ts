@@ -98,7 +98,7 @@ export class CircomFilesResolver {
 
   /**
    * Resolves an import from an already resolved file.
-   * @param from The file were the import statement is present.
+   * @param from The file where the import statement is present.
    * @param importName The path in the import statement.
    */
   public async resolveImport(from: CircomResolvedFile, importName: string): Promise<CircomResolvedFile> {
