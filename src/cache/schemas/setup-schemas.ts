@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const ProvingSystemTypeSchema = z.literal("groth16").or(z.literal("plonk"));
+export const ProvingSystemTypeSchema = z.enum(["groth16", "plonk"]);
 
 export const ProvingSystemDataSchema = z.object({
   provingSystem: ProvingSystemTypeSchema,

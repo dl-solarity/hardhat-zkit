@@ -11,8 +11,8 @@ export const CircomValueTypeSchema: z.ZodType<CircomValueType> = z.lazy(() =>
   z.union([z.bigint(), CircomValueTypeSchema.array()]),
 );
 
-export const SignalTypeSchema = z.literal("Input").or(z.literal("Output")).or(z.literal("Intermediate"));
-export const VisibilityTypeSchema = z.literal("Public").or(z.literal("Private"));
+export const SignalTypeSchema = z.enum(["Input", "Output", "Intermediate"]);
+export const VisibilityTypeSchema = z.enum(["Public", "Private"]);
 
 export const PragmaComponentSchema = z.object({
   isCustom: z.boolean(),
