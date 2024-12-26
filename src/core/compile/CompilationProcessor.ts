@@ -263,6 +263,7 @@ export class CompilationProcessor {
       .filter(([key, value]) => value && validFileTypes.has(key))
       .map(([key]) => key as ArtifactsFileType);
   }
+  
   private _getLinkLibraries(): string[] {
     return [this._nodeModulesPath];
   }
