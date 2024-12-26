@@ -259,6 +259,7 @@ export class CompilationProcessor {
 
   private _getUpdatedArtifactFileTypes(): ArtifactsFileType[] {
     const validFileTypes: Set<string> = new Set(["wasm", "c", "r1cs", "sym", "json"]);
+    
     return Object.entries(this._config.compileFlags)
       .filter(([key, value]) => value && validFileTypes.has(key))
       .map(([key]) => key as ArtifactsFileType);
