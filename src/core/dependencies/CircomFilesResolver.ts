@@ -21,7 +21,6 @@ import { CircomFilesParser } from "./parser/CircomFilesParser";
 import { CIRCOM_FILE_REG_EXP, NODE_MODULES, NODE_MODULES_REG_EXP, URI_SCHEME_REG_EXP } from "../../constants";
 import { getFileHash } from "../../utils";
 import { HardhatZKitError } from "../../errors";
-
 import {
   CircomResolvedFile as ICircomResolvedFile,
   ResolvedFileData,
@@ -249,12 +248,19 @@ export class CircomFilesResolver {
         },
       );
 
-      if (!fileWithTemplate.fileData.parsedFileData.templates[templateName].parsedInputs) {
-        fileWithTemplate.fileData.parsedFileData.templates[templateName].parsedInputs =
-          this._parser.parseTemplateInputs(fileWithTemplate, templateName, mainComponentData.parameters);
+      if (!resolvedFile.fileData.parsedFileData.templates[templateName]) {
+        resolvedFile.fileData.parsedFileData.templates[templateName] = {} as any;
       }
 
-      const parsedInputs = fileWithTemplate.fileData.parsedFileData.templates[templateName].parsedInputs!;
+      if (!resolvedFile.fileData.parsedFileData.templates[templateName].parsedInputs) {
+        resolvedFile.fileData.parsedFileData.templates[templateName].parsedInputs = this._parser.parseTemplateInputs(
+          fileWithTemplate,
+          templateName,
+          mainComponentData.parameters,
+        );
+      }
+
+      const parsedInputs = resolvedFile.fileData.parsedFileData.templates[templateName].parsedInputs!;
 
       for (const key of Object.keys(parsedInputs)) {
         const signalType: SignalType = this._getSignalType(parsedInputs[key].type);
