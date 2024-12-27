@@ -47,9 +47,10 @@ export type CircuitResolutionError = {
 };
 
 export type MainComponent = {
-  templateName: string | null;
+  templateName: string;
   publicInputs: string[];
   parameters: CircomValueType[];
+  parsedInputs?: Record<string, InputData>;
 };
 
 export type PragmaComponent = { isCustom: boolean; compilerVersion: string };
@@ -59,7 +60,6 @@ export type Template = {
   isCustom: boolean;
   parallel: boolean;
   context: TemplateDefinitionContext;
-  parsedInputs?: Record<string, InputData>;
 };
 
 export type Templates = {
@@ -69,8 +69,8 @@ export type Templates = {
 export type CircomFileData = {
   pragmaInfo: PragmaComponent;
   includes: string[];
-  mainComponentInfo: MainComponent;
   templates: Templates;
+  mainComponentInfo?: MainComponent;
 };
 
 export interface Token {

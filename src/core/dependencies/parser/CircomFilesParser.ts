@@ -2,7 +2,6 @@ import { buildVariableContext, CircomValueType, getCircomParser, ParserError } f
 
 import { CircomFilesVisitor } from "./CircomFilesVisitor";
 import { CircomTemplateInputsVisitor } from "./CircomTemplateInputsVisitor";
-import { CircuitsCompileCache } from "../../../cache";
 import { Reporter } from "../../../reporter";
 
 import { VisitorError } from "../parser/VisitorError";
@@ -41,10 +40,10 @@ export class CircomFilesParser {
    * @throws `ParserError` if the parser encounters any issues while parsing the file, such as syntax errors
    */
   public parse(fileContent: string, absolutePath: string, contentHash: string): ResolvedFileData {
-    const cacheResult = this._getFromCache(absolutePath, contentHash);
+    const internalCacheEntry = this._cache.get(contentHash);
 
-    if (cacheResult !== null) {
-      return cacheResult;
+    if (internalCacheEntry !== undefined) {
+      return internalCacheEntry;
     }
 
     const parser = getCircomParser(fileContent);
@@ -116,25 +115,5 @@ export class CircomFilesParser {
     }
 
     return circomTemplateInputsVisitor.templateInputs;
-  }
-
-  private _getFromCache(absolutePath: string, contentHash: string): ResolvedFileData | null {
-    const internalCacheEntry = this._cache.get(contentHash);
-
-    if (internalCacheEntry !== undefined) {
-      return internalCacheEntry;
-    }
-
-    const circuitsFilesCacheEntry = CircuitsCompileCache!.getEntry(absolutePath);
-
-    if (circuitsFilesCacheEntry === undefined) {
-      return null;
-    }
-
-    if (circuitsFilesCacheEntry.contentHash !== contentHash) {
-      return null;
-    }
-
-    return circuitsFilesCacheEntry.fileData;
   }
 }

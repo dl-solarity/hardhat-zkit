@@ -31,11 +31,6 @@ export class CircomFilesVisitor extends CircomVisitor<void> {
     this.fileData = {
       pragmaInfo: { isCustom: false, compilerVersion: "" },
       includes: [],
-      mainComponentInfo: {
-        templateName: null,
-        publicInputs: [],
-        parameters: [],
-      },
       templates: {},
     };
   }
@@ -88,7 +83,11 @@ export class CircomFilesVisitor extends CircomVisitor<void> {
   };
 
   visitComponentMainDeclaration = (ctx: ComponentMainDeclarationContext) => {
-    this.fileData.mainComponentInfo.templateName = ctx.ID().getText();
+    this.fileData.mainComponentInfo = {
+      templateName: ctx.ID().getText(),
+      publicInputs: [],
+      parameters: [],
+    };
 
     if (ctx.publicInputsDefinition()) this.visit(ctx.publicInputsDefinition());
     if (ctx._argValues) this.visit(ctx._argValues);
@@ -96,7 +95,7 @@ export class CircomFilesVisitor extends CircomVisitor<void> {
 
   visitPublicInputsDefinition = (ctx: PublicInputsDefinitionContext) => {
     for (const input of ctx._publicInputs.ID_list()) {
-      this.fileData.mainComponentInfo.publicInputs.push(input.getText());
+      this.fileData.mainComponentInfo!.publicInputs.push(input.getText());
     }
   };
 
@@ -127,7 +126,7 @@ export class CircomFilesVisitor extends CircomVisitor<void> {
         });
       }
 
-      this.fileData.mainComponentInfo.parameters.push(value);
+      this.fileData.mainComponentInfo!.parameters.push(value);
     }
   };
 }

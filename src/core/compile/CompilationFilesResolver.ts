@@ -147,7 +147,7 @@ export class CompilationFilesResolver {
     const resolvedFilesInfo: CircomResolvedFileInfo[] = [];
 
     for (const file of circomResolvedFiles) {
-      if (file.fileData.parsedFileData.mainComponentInfo.templateName && sourceNames.includes(file.sourceName)) {
+      if (file.fileData.parsedFileData.mainComponentInfo && sourceNames.includes(file.sourceName)) {
         resolvedFilesInfo.push({
           circuitName: file.fileData.parsedFileData.mainComponentInfo.templateName,
           circuitFullyQualifiedName: this._circuitArtifacts.getCircuitFullyQualifiedName(
