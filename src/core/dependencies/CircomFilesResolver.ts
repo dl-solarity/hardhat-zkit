@@ -18,6 +18,7 @@ import { ERRORS } from "hardhat/internal/core/errors-list";
 import { getRealPath } from "hardhat/internal/util/fs-utils";
 
 import { CircomFilesParser } from "./parser/CircomFilesParser";
+import { CircuitsCompileCache } from "../../cache";
 import { CIRCOM_FILE_REG_EXP, NODE_MODULES, NODE_MODULES_REG_EXP, URI_SCHEME_REG_EXP } from "../../constants";
 import { getFileHash } from "../../utils";
 import { HardhatZKitError } from "../../errors";
@@ -219,13 +220,14 @@ export class CircomFilesResolver {
   }
 
   public async resolveMainComponentData(resolvedFile: CircomResolvedFile, dependencies: CircomResolvedFile[]) {
-    const templateName = resolvedFile.fileData.parsedFileData.mainComponentInfo.templateName;
+    const resolvedMainComponent = resolvedFile.fileData.parsedFileData.mainComponentInfo;
 
-    if (!templateName) {
+    if (!resolvedMainComponent) {
       throw new HardhatZKitError(`Unable to resolve main component data for ${resolvedFile.sourceName} circuit`);
     }
 
     if (!resolvedFile.fileData.mainComponentData) {
+      const templateName = resolvedMainComponent.templateName;
       const mainComponentData: ResolvedMainComponentData = {
         parameters: {},
         signals: [],
@@ -243,37 +245,38 @@ export class CircomFilesResolver {
 
       fileWithTemplate.fileData.parsedFileData.templates[templateName].parameters.forEach(
         (param: string, index: number) => {
-          mainComponentData.parameters[param] =
-            resolvedFile.fileData.parsedFileData.mainComponentInfo.parameters[index];
+          mainComponentData.parameters[param] = resolvedMainComponent.parameters[index];
         },
       );
 
-      if (!resolvedFile.fileData.parsedFileData.templates[templateName]) {
-        resolvedFile.fileData.parsedFileData.templates[templateName] = {} as any;
-      }
+      if (!resolvedMainComponent.parsedInputs) {
+        const template = fileWithTemplate.fileData.parsedFileData.templates[templateName];
 
-      if (!resolvedFile.fileData.parsedFileData.templates[templateName].parsedInputs) {
-        resolvedFile.fileData.parsedFileData.templates[templateName].parsedInputs = this._parser.parseTemplateInputs(
+        // forcing the parsing of context if it is missing for vars resolution
+        if (!template.context) {
+          const rawContent = await this._readFile(fileWithTemplate.absolutePath);
+          const fileData = this._parser.parse(rawContent, fileWithTemplate.absolutePath, fileWithTemplate.contentHash);
+
+          template.context = fileData.parsedFileData.templates[templateName].context;
+        }
+
+        resolvedMainComponent.parsedInputs = this._parser.parseTemplateInputs(
           fileWithTemplate,
           templateName,
           mainComponentData.parameters,
         );
       }
 
-      const parsedInputs = resolvedFile.fileData.parsedFileData.templates[templateName].parsedInputs!;
-
-      for (const key of Object.keys(parsedInputs)) {
-        const signalType: SignalType = this._getSignalType(parsedInputs[key].type);
+      for (const key of Object.keys(resolvedMainComponent.parsedInputs)) {
+        const signalType: SignalType = this._getSignalType(resolvedMainComponent.parsedInputs[key].type);
 
         if (signalType != "Intermediate") {
           const visibilityType: VisibilityType =
-            signalType == "Output" || resolvedFile.fileData.parsedFileData.mainComponentInfo.publicInputs.includes(key)
-              ? "Public"
-              : "Private";
+            signalType == "Output" || resolvedMainComponent.publicInputs.includes(key) ? "Public" : "Private";
 
           mainComponentData.signals.push({
             name: key,
-            dimension: parsedInputs[key].dimension,
+            dimension: resolvedMainComponent.parsedInputs[key].dimension,
             type: signalType,
             visibility: visibilityType,
           });
@@ -392,8 +395,15 @@ export class CircomFilesResolver {
     const lastModificationDate = new Date(stats.ctime);
 
     const contentHash = await getFileHash(absolutePath);
+    const circuitsFilesCacheEntry = CircuitsCompileCache!.getEntry(absolutePath);
 
-    const fileData = this._parser.parse(rawContent, absolutePath, contentHash);
+    let fileData;
+
+    if (circuitsFilesCacheEntry === undefined || circuitsFilesCacheEntry.contentHash !== contentHash) {
+      fileData = this._parser.parse(rawContent, absolutePath, contentHash);
+    } else {
+      fileData = circuitsFilesCacheEntry.fileData;
+    }
 
     const resolvedFile = new CircomResolvedFile(
       sourceName,
