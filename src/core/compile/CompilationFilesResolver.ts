@@ -2,7 +2,13 @@ import { HardhatConfig } from "hardhat/types";
 import { getAllFilesMatching } from "hardhat/internal/util/fs-utils";
 import { localPathToSourceName } from "hardhat/utils/source-names";
 
-import { DependencyGraph, CircomFilesParser, CircomFilesResolver, CircomResolvedFile } from "../dependencies";
+import {
+  DependencyGraph,
+  CircomFilesParser,
+  CircomFilesResolver,
+  CircuitAnalyzer,
+  CircomResolvedFile,
+} from "../resolve";
 import { CircuitsCompileCache } from "../../cache";
 import { Reporter } from "../../reporter";
 import { filterCircuitFiles, getNormalizedFullPath } from "../../utils/path-utils";
@@ -57,6 +63,16 @@ export class CompilationFilesResolver {
   ): Promise<CircomResolvedFileInfo[]> {
     const spinnerId: string | null = Reporter!.reportCircuitFilesResolvingStartWithSpinner();
 
+    const allFilteredSourceNames = await this._getAllSourceNames();
+    const filesWithMainComponentToCompile = await this._filterAndBuildCircuitsWithMainComponent(
+      spinnerId,
+      allFilteredSourceNames,
+    );
+
+    return this._decideWhichCircuitsToCompile(compileFlags, force, spinnerId, filesWithMainComponentToCompile);
+  }
+
+  protected async _getAllSourceNames(): Promise<string[]> {
     const circuitsSourcePaths: string[] = await getAllFilesMatching(this._getCircuitsDirFullPath(), (f) =>
       f.endsWith(".circom"),
     );
@@ -78,68 +94,78 @@ export class CompilationFilesResolver {
       allFilteredSourceNames,
     ]);
 
-    let resolvedFilesInfoToCompile: CircomResolvedFileInfo[];
+    return allFilteredSourceNames;
+  }
 
+  protected async _filterAndBuildCircuitsWithMainComponent(
+    spinnerId: string | null,
+    allFilteredSourceNames: string[],
+  ): Promise<CircomResolvedFileInfo[]> {
     try {
-      const resolver = new CircomFilesResolver(this._projectRoot, new CircomFilesParser(), this._readFile);
+      const parser = new CircomFilesParser();
+      const resolver = new CircomFilesResolver(this._projectRoot, parser, this._readFile);
+      const analyzer = new CircuitAnalyzer(parser, this._readFile);
       const dependencyGraph: DependencyGraph = await this._getDependencyGraph(allFilteredSourceNames, resolver);
 
-      resolvedFilesInfoToCompile = this._filterResolvedFiles(
+      const filesWithMainComponentToCompile = this._filterResolvedFilesWithMainComponent(
         dependencyGraph.getResolvedFiles(),
         allFilteredSourceNames,
         dependencyGraph,
       );
 
       Reporter!.verboseLog("compilation-file-resolver", "All circuit source names to compile: %o", [
-        resolvedFilesInfoToCompile.map((fileInfo) => fileInfo.resolvedFile.sourceName),
+        filesWithMainComponentToCompile.map((fileInfo) => fileInfo.resolvedFile.sourceName),
       ]);
 
-      for (const fileInfo of resolvedFilesInfoToCompile) {
-        await resolver.resolveMainComponentData(fileInfo.resolvedFile, fileInfo.dependencies);
+      for (const fileInfo of filesWithMainComponentToCompile) {
+        await analyzer.buildMainComponentData(fileInfo.resolvedFile, fileInfo.dependencies);
       }
 
-      this._invalidateCacheMissingArtifacts(resolvedFilesInfoToCompile);
+      this._invalidateCacheMissingArtifacts(filesWithMainComponentToCompile);
+
+      return filesWithMainComponentToCompile;
     } catch (e) {
       Reporter!.reportCircuitFilesResolvingFail(spinnerId);
 
       throw e;
     }
+  }
 
-    let filteredResolvedFilesInfo: CircomResolvedFileInfo[];
+  protected _decideWhichCircuitsToCompile(
+    compileFlags: CompileFlags,
+    force: boolean,
+    spinnerId: string | null,
+    filesWithMainComponentToCompile: CircomResolvedFileInfo[],
+  ): CircomResolvedFileInfo[] {
+    let changedFilesToCompile: CircomResolvedFileInfo[];
 
     if (!force) {
       Reporter!.verboseLog("compilation-file-resolver", "Force flag disabled. Start filtering...");
 
-      filteredResolvedFilesInfo = resolvedFilesInfoToCompile.filter((fileInfo) =>
+      changedFilesToCompile = filesWithMainComponentToCompile.filter((fileInfo) =>
         this._needsCompilation(fileInfo, compileFlags),
       );
     } else {
-      filteredResolvedFilesInfo = resolvedFilesInfoToCompile;
+      changedFilesToCompile = filesWithMainComponentToCompile;
     }
 
     Reporter!.reportAllWarnings(spinnerId);
     Reporter!.reportCircuitFilesResolvingResult(spinnerId);
 
-    const filteredSourceNamesToCompile: string[] = filteredResolvedFilesInfo.map(
-      (file) => file.resolvedFile.sourceName,
-    );
+    const filteredSourceNamesToCompile: string[] = changedFilesToCompile.map((file) => file.resolvedFile.sourceName);
 
     Reporter!.verboseLog("compilation-file-resolver", "Filtered circuit source names to compile: %o", [
       filteredSourceNamesToCompile,
     ]);
     Reporter!.reportCircuitListToCompile(
-      resolvedFilesInfoToCompile.map((file) => file.resolvedFile.sourceName),
+      filesWithMainComponentToCompile.map((file) => file.resolvedFile.sourceName),
       filteredSourceNamesToCompile,
     );
 
-    return filteredResolvedFilesInfo;
+    return changedFilesToCompile;
   }
 
-  protected _getCircuitsDirFullPath(): string {
-    return getNormalizedFullPath(this._projectRoot, this._zkitConfig.circuitsDir);
-  }
-
-  protected _filterResolvedFiles(
+  protected _filterResolvedFilesWithMainComponent(
     circomResolvedFiles: CircomResolvedFile[],
     sourceNames: string[],
     dependencyGraph: DependencyGraph,
@@ -161,6 +187,10 @@ export class CompilationFilesResolver {
     }
 
     return resolvedFilesInfo;
+  }
+
+  protected _getCircuitsDirFullPath(): string {
+    return getNormalizedFullPath(this._projectRoot, this._zkitConfig.circuitsDir);
   }
 
   protected async _getSourceNamesFromSourcePaths(sourcePaths: string[]): Promise<string[]> {

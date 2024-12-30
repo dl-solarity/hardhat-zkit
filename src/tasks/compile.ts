@@ -71,17 +71,7 @@ export const compile: ActionType<CompileTaskConfig> = async (
 
     await compilationProcessor.compile(resolvedFilesInfo);
 
-    for (const fileInfo of resolvedFilesInfo) {
-      for (const file of [fileInfo.resolvedFile, ...fileInfo.dependencies]) {
-        CircuitsCompileCache!.addFile(file.absolutePath, {
-          lastModificationDate: file.lastModificationDate.valueOf(),
-          contentHash: file.contentHash,
-          sourceName: file.sourceName,
-          compileFlags,
-          fileData: file.fileData,
-        });
-      }
-    }
+    updateCache(compileFlags, resolvedFilesInfo);
   } else {
     Reporter!.reportNothingToCompile();
   }
@@ -90,3 +80,17 @@ export const compile: ActionType<CompileTaskConfig> = async (
 
   await CircuitsCompileCache!.writeToFile(circuitsCompileCacheFullPath);
 };
+
+function updateCache(compileFlags: CompileFlags, resolvedFilesInfo: CircomResolvedFileInfo[]) {
+  for (const fileInfo of resolvedFilesInfo) {
+    for (const file of [fileInfo.resolvedFile, ...fileInfo.dependencies]) {
+      CircuitsCompileCache!.addFile(file.absolutePath, {
+        lastModificationDate: file.lastModificationDate.valueOf(),
+        contentHash: file.contentHash,
+        sourceName: file.sourceName,
+        compileFlags,
+        fileData: file.fileData,
+      });
+    }
+  }
+}

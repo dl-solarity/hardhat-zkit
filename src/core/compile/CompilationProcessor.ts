@@ -83,21 +83,7 @@ export class CompilationProcessor {
       Reporter!.verboseLog("compilation-processor", "Compilation temp directory: %s", [tempDir]);
       Reporter!.reportCompilationProcessHeader();
 
-      const highestCircomVersion = getHighestVersion(filesInfoToCompile);
-
-      let isVersionStrict = false;
-      let version = highestCircomVersion;
-
-      if (this._zkitConfig.compilerVersion && isVersionValid(this._zkitConfig.compilerVersion)) {
-        if (!semver.gte(this._zkitConfig.compilerVersion, highestCircomVersion)) {
-          throw new HardhatZKitError(
-            `Unable to compile a circuit with Circom version ${highestCircomVersion} using compiler version ${this._zkitConfig.compilerVersion} specified in the config`,
-          );
-        }
-
-        isVersionStrict = true;
-        version = this._zkitConfig.compilerVersion;
-      }
+      const [isVersionStrict, version] = this._getOptimalCircomVersion(filesInfoToCompile);
 
       // Ensure that the CircomCompilerFactory object is properly instantiated before interacting with it
       createCircomCompilerFactory();
@@ -115,7 +101,6 @@ export class CompilationProcessor {
       await terminateCurve();
 
       await this._moveFromTempDirToArtifacts(compilationInfoArr);
-
       await this._emitArtifacts(compilationInfoArr);
 
       Reporter!.reportCompilationResult(compilationInfoArr);
@@ -140,7 +125,7 @@ export class CompilationProcessor {
         circuitFullPath: info.resolvedFile.absolutePath,
         artifactsFullPath: info.tempArtifactsPath,
         errorFileFullPath: errorsFilePath,
-        linkLibraries: this._getLinkLibraries(),
+        linkLibraries: [this._nodeModulesPath],
         compileFlags: this._config.compileFlags,
         quiet: this._config.quiet,
       };
@@ -172,6 +157,26 @@ export class CompilationProcessor {
 
       Reporter!.reportCircuitCompilationResult(spinnerId, info.circuitName, info.circuitFileName);
     }
+  }
+
+  private _getOptimalCircomVersion(filesInfoToCompile: CircomResolvedFileInfo[]): [boolean, string] {
+    const highestCircomVersion = getHighestVersion(filesInfoToCompile);
+
+    let isVersionStrict = false;
+    let version = highestCircomVersion;
+
+    if (this._zkitConfig.compilerVersion && isVersionValid(this._zkitConfig.compilerVersion)) {
+      if (!semver.gte(this._zkitConfig.compilerVersion, highestCircomVersion)) {
+        throw new HardhatZKitError(
+          `Unable to compile a circuit with Circom version ${highestCircomVersion} using compiler version ${this._zkitConfig.compilerVersion} specified in the config`,
+        );
+      }
+
+      isVersionStrict = true;
+      version = this._zkitConfig.compilerVersion;
+    }
+
+    return [isVersionStrict, version];
   }
 
   private async _emitArtifacts(compilationInfoArr: CompilationInfo[]) {
@@ -263,9 +268,5 @@ export class CompilationProcessor {
     return Object.entries(this._config.compileFlags)
       .filter(([key, value]) => value && validFileTypes.has(key))
       .map(([key]) => key as ArtifactsFileType);
-  }
-
-  private _getLinkLibraries(): string[] {
-    return [this._nodeModulesPath];
   }
 }

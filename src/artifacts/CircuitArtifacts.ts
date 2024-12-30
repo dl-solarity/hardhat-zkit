@@ -114,6 +114,7 @@ export class CircuitArtifacts implements ICircuitArtifacts {
    */
   public async getAllCircuitFullyQualifiedNames(): Promise<string[]> {
     const paths = await this.getCircuitArtifactPaths();
+
     return paths.map((p) => this._getFullyQualifiedNameFromPath(p)).sort();
   }
 
@@ -286,11 +287,13 @@ export class CircuitArtifacts implements ICircuitArtifacts {
 
   private async _getArtifactPath(name: string): Promise<string> {
     const cached = this._cache?.artifactNameToArtifactPathCache.get(name);
+
     if (cached !== undefined) {
       return cached;
     }
 
     let result: string;
+
     if (isFullyQualifiedName(name)) {
       result = await this._getValidArtifactPathFromFullyQualifiedName(name);
     } else {
@@ -299,6 +302,7 @@ export class CircuitArtifacts implements ICircuitArtifacts {
     }
 
     this._cache?.artifactNameToArtifactPathCache.set(name, result);
+
     return result;
   }
 
