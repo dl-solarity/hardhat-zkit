@@ -45,7 +45,7 @@ export const generateVerifiers: ActionType<GenerateVerifiersTaskConfig> = async 
   if (allFullyQualifiedNames.length > 0) {
     Reporter!.reportVerifiersGenerationHeader(verifiersType);
 
-    const [templateNamesCount, circuitArtifactsInfo] = await getAndCountArtifacts(env, provingSystems);
+    const [templateNamesCount, circuitArtifactsInfo] = await getAndCountArtifacts(env, allFullyQualifiedNames);
 
     for (const circuitArtifactInfo of circuitArtifactsInfo) {
       for (const provingSystem of provingSystems) {
