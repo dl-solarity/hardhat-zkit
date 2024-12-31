@@ -7,7 +7,7 @@ export class CompilationFilesResolverMock extends CompilationFilesResolver {
     sourceNames: string[],
     dependencyGraph: DependencyGraph,
   ): CircomResolvedFileInfo[] {
-    return this._filterResolvedFiles(resolvedFiles, sourceNames, dependencyGraph);
+    return this._filterResolvedFilesWithMainComponent(resolvedFiles, sourceNames, dependencyGraph);
   }
 
   public getCircuitsDirFullPath(): string {

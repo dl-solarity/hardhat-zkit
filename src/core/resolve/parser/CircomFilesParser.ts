@@ -4,7 +4,7 @@ import { CircomFilesVisitor } from "./CircomFilesVisitor";
 import { CircomTemplateInputsVisitor } from "./CircomTemplateInputsVisitor";
 import { Reporter } from "../../../reporter";
 
-import { VisitorError } from "../parser/VisitorError";
+import { VisitorError } from "./VisitorError";
 import { CircomResolvedFile, ErrorType, InputData, ResolvedFileData } from "../../../types/core";
 
 /**

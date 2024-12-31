@@ -9,7 +9,7 @@ import { ZKIT_SCOPE_NAME, TASK_CIRCUITS_MAKE } from "../task-names";
 import { Reporter, createReporter } from "../reporter";
 import { getNormalizedFullPath, getUniqueProvingSystems } from "../utils";
 
-import { GenerateVerifiersTaskConfig } from "../types/tasks";
+import { GenerateVerifiersTaskConfig, CircuitArtifactInfo } from "../types/tasks";
 import { CircuitArtifact } from "../types/artifacts/circuit-artifacts";
 
 export const generateVerifiers: ActionType<GenerateVerifiersTaskConfig> = async (
@@ -45,53 +45,18 @@ export const generateVerifiers: ActionType<GenerateVerifiersTaskConfig> = async 
   if (allFullyQualifiedNames.length > 0) {
     Reporter!.reportVerifiersGenerationHeader(verifiersType);
 
-    const templateNamesCount: { [key: string]: number } = {};
-    const circuitArtifactsInfo = await Promise.all(
-      allFullyQualifiedNames.map(async (name: string) => {
-        const circuitArtifact: CircuitArtifact = await env.zkit.circuitArtifacts.readCircuitArtifact(name);
-
-        // Count the number of uses of templates to determine whether a verifier file
-        // will need a suffix in case of non-uniqueness
-        templateNamesCount[circuitArtifact.circuitTemplateName] =
-          (templateNamesCount[circuitArtifact.circuitTemplateName] || 0) + 1;
-
-        return { name, circuitArtifact };
-      }),
-    );
+    const [templateNamesCount, circuitArtifactsInfo] = await getAndCountArtifacts(env, allFullyQualifiedNames);
 
     for (const circuitArtifactInfo of circuitArtifactsInfo) {
       for (const provingSystem of provingSystems) {
-        const spinnerId: string | null = Reporter!.reportVerifierGenerationStartWithSpinner(
-          circuitArtifactInfo.circuitArtifact.circuitTemplateName,
-          verifiersType,
+        await generateVerifierForProvingSystem(
+          taskArgs,
+          env,
+          provingSystems.length,
+          circuitArtifactInfo,
           provingSystem,
-        );
-
-        let verifierNameSuffix: string = "";
-
-        if (templateNamesCount[circuitArtifactInfo.circuitArtifact.circuitTemplateName] > 1) {
-          const flattenParametersArr: bigint[] = flattenParameters(
-            circuitArtifactInfo.circuitArtifact.baseCircuitInfo.parameters,
-          );
-
-          flattenParametersArr.forEach((param: bigint, index: number) => {
-            verifierNameSuffix += `_${param.toString()}${index === flattenParametersArr.length - 1 ? "_" : ""}`;
-          });
-        }
-
-        const currentCircuit = await env.zkit.circuitZKitBuilder.getCircuitZKit(
-          circuitArtifactInfo.name,
-          provingSystems.length > 1 ? provingSystem : undefined,
-          taskArgs.verifiersDir,
-        );
-
-        currentCircuit.createVerifier(verifiersType, verifierNameSuffix);
-
-        Reporter!.reportVerifierGenerationResult(
-          spinnerId,
-          `${circuitArtifactInfo.circuitArtifact.circuitTemplateName}${verifierNameSuffix.slice(0, verifierNameSuffix.length - 1)}`,
           verifiersType,
-          provingSystem,
+          templateNamesCount,
         );
 
         verifiersCount++;
@@ -103,6 +68,70 @@ export const generateVerifiers: ActionType<GenerateVerifiersTaskConfig> = async 
     Reporter!.reportNothingToGenerate();
   }
 };
+
+async function getAndCountArtifacts(
+  env: HardhatRuntimeEnvironment,
+  allFullyQualifiedNames: string[],
+): Promise<[{ [key: string]: number }, CircuitArtifactInfo[]]> {
+  const templateNamesCount: { [key: string]: number } = {};
+  const circuitArtifactsInfo = await Promise.all(
+    allFullyQualifiedNames.map(async (name: string) => {
+      const circuitArtifact: CircuitArtifact = await env.zkit.circuitArtifacts.readCircuitArtifact(name);
+
+      // Count the number of uses of templates to determine whether a verifier file
+      // will need a suffix in case of non-uniqueness
+      templateNamesCount[circuitArtifact.circuitTemplateName] =
+        (templateNamesCount[circuitArtifact.circuitTemplateName] || 0) + 1;
+
+      return { name, circuitArtifact };
+    }),
+  );
+
+  return [templateNamesCount, circuitArtifactsInfo];
+}
+
+async function generateVerifierForProvingSystem(
+  taskArgs: GenerateVerifiersTaskConfig,
+  env: HardhatRuntimeEnvironment,
+  totalProvingSystems: number,
+  circuitArtifactInfo: CircuitArtifactInfo,
+  provingSystem: ProvingSystemType,
+  verifiersType: VerifierLanguageType,
+  templateNamesCount: { [key: string]: number },
+) {
+  const spinnerId: string | null = Reporter!.reportVerifierGenerationStartWithSpinner(
+    circuitArtifactInfo.circuitArtifact.circuitTemplateName,
+    verifiersType,
+    provingSystem,
+  );
+
+  let verifierNameSuffix: string = "";
+
+  if (templateNamesCount[circuitArtifactInfo.circuitArtifact.circuitTemplateName] > 1) {
+    const flattenParametersArr: bigint[] = flattenParameters(
+      circuitArtifactInfo.circuitArtifact.baseCircuitInfo.parameters,
+    );
+
+    flattenParametersArr.forEach((param: bigint, index: number) => {
+      verifierNameSuffix += `_${param.toString()}${index === flattenParametersArr.length - 1 ? "_" : ""}`;
+    });
+  }
+
+  const currentCircuit = await env.zkit.circuitZKitBuilder.getCircuitZKit(
+    circuitArtifactInfo.name,
+    totalProvingSystems > 1 ? provingSystem : undefined,
+    taskArgs.verifiersDir,
+  );
+
+  currentCircuit.createVerifier(verifiersType, verifierNameSuffix);
+
+  Reporter!.reportVerifierGenerationResult(
+    spinnerId,
+    `${circuitArtifactInfo.circuitArtifact.circuitTemplateName}${verifierNameSuffix.slice(0, verifierNameSuffix.length - 1)}`,
+    verifiersType,
+    provingSystem,
+  );
+}
 
 function flattenParameters(parameters: Record<string, CircomValueType>): bigint[] {
   const flattenParametersArr: bigint[] = [];

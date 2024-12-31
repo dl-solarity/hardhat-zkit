@@ -24,6 +24,7 @@ export const setup: ActionType<SetupTaskConfig> = async (taskArgs: SetupTaskConf
   await createCircuitsSetupCache(circuitsSetupCacheFullPath);
 
   const setupFileResolver: SetupFilesResolver = new SetupFilesResolver(env.zkit.circuitArtifacts, env.config);
+
   const setupContributionSettings: SetupContributionSettings = {
     provingSystems: getUniqueProvingSystems(env.config.zkit.setupSettings.contributionSettings.provingSystem),
     contributions: env.config.zkit.setupSettings.contributionSettings.contributions,
@@ -50,33 +51,7 @@ export const setup: ActionType<SetupTaskConfig> = async (taskArgs: SetupTaskConf
 
     await setupProcessor.setup(circuitSetupInfoArr, setupContributionSettings);
 
-    for (const setupInfo of circuitSetupInfoArr) {
-      const currentSetupCacheEntry = CircuitsSetupCache!.getEntry(setupInfo.circuitArtifactFullPath);
-
-      let currentProvingSystemsData: ProvingSystemData[] = [];
-
-      if (currentSetupCacheEntry) {
-        // Getting untouched proving systems data
-        currentProvingSystemsData = currentSetupCacheEntry.provingSystemsData.filter((data: ProvingSystemData) => {
-          return !setupInfo.provingSystems.includes(data.provingSystem);
-        });
-      }
-
-      CircuitsSetupCache!.addFile(setupInfo.circuitArtifactFullPath, {
-        circuitSourceName: setupInfo.circuitArtifact.circuitSourceName,
-        r1csSourcePath: setupInfo.r1csSourcePath,
-        provingSystemsData: [
-          ...currentProvingSystemsData,
-          ...setupContributionSettings.provingSystems.map((provingSystem) => {
-            return {
-              provingSystem,
-              lastR1CSFileHash: setupInfo.r1csContentHash,
-            };
-          }),
-        ],
-        contributionsNumber: setupContributionSettings.contributions,
-      });
-    }
+    updateCache(setupContributionSettings, circuitSetupInfoArr);
   } else {
     Reporter!.reportNothingToSetup();
   }
@@ -85,3 +60,33 @@ export const setup: ActionType<SetupTaskConfig> = async (taskArgs: SetupTaskConf
 
   await CircuitsSetupCache!.writeToFile(circuitsSetupCacheFullPath);
 };
+
+function updateCache(setupContributionSettings: SetupContributionSettings, circuitSetupInfoArr: CircuitSetupInfo[]) {
+  for (const setupInfo of circuitSetupInfoArr) {
+    const currentSetupCacheEntry = CircuitsSetupCache!.getEntry(setupInfo.circuitArtifactFullPath);
+
+    let currentProvingSystemsData: ProvingSystemData[] = [];
+
+    if (currentSetupCacheEntry) {
+      // Getting untouched proving systems data
+      currentProvingSystemsData = currentSetupCacheEntry.provingSystemsData.filter((data: ProvingSystemData) => {
+        return !setupInfo.provingSystems.includes(data.provingSystem);
+      });
+    }
+
+    CircuitsSetupCache!.addFile(setupInfo.circuitArtifactFullPath, {
+      circuitSourceName: setupInfo.circuitArtifact.circuitSourceName,
+      r1csSourcePath: setupInfo.r1csSourcePath,
+      provingSystemsData: [
+        ...currentProvingSystemsData,
+        ...setupContributionSettings.provingSystems.map((provingSystem) => {
+          return {
+            provingSystem,
+            lastR1CSFileHash: setupInfo.r1csContentHash,
+          };
+        }),
+      ],
+      contributionsNumber: setupContributionSettings.contributions,
+    });
+  }
+}
