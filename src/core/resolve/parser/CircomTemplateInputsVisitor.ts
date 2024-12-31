@@ -320,7 +320,7 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
 
     const identifierStatement = primaryExpression.identifierStatement();
 
-    if (identifierStatement.idetifierAccess_list().length > 0) {
+    if (identifierStatement.identifierAccess_list().length > 0) {
       this.errors.push({
         type: ErrorType.ComplexAccessNotSupported,
         context: ctx,
@@ -369,7 +369,7 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
   visitSubsAssignmentWithOperation = (ctx: SubsAssignmentWithOperationContext) => {
     const identifierStatement = ctx.identifierStatement();
 
-    if (identifierStatement.idetifierAccess_list().length > 0) {
+    if (identifierStatement.identifierAccess_list().length > 0) {
       this.errors.push({
         type: ErrorType.ComplexAccessNotSupported,
         context: ctx,
@@ -492,7 +492,7 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
   visitSubsIcnDecOperation = (ctx: SubsIcnDecOperationContext) => {
     const identifierStatement = ctx.identifierStatement();
 
-    if (identifierStatement.idetifierAccess_list().length > 0) {
+    if (identifierStatement.identifierAccess_list().length > 0) {
       this.errors.push({
         type: ErrorType.ComplexAccessNotSupported,
         context: ctx,
