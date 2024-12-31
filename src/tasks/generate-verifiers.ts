@@ -9,7 +9,7 @@ import { ZKIT_SCOPE_NAME, TASK_CIRCUITS_MAKE } from "../task-names";
 import { Reporter, createReporter } from "../reporter";
 import { getNormalizedFullPath, getUniqueProvingSystems } from "../utils";
 
-import { GenerateVerifiersTaskConfig } from "../types/tasks";
+import { GenerateVerifiersTaskConfig, CircuitArtifactInfo } from "../types/tasks";
 import { CircuitArtifact } from "../types/artifacts/circuit-artifacts";
 
 export const generateVerifiers: ActionType<GenerateVerifiersTaskConfig> = async (
@@ -52,8 +52,8 @@ export const generateVerifiers: ActionType<GenerateVerifiersTaskConfig> = async 
         await generateVerifierForProvingSystem(
           taskArgs,
           env,
+          provingSystems.length,
           circuitArtifactInfo,
-          provingSystems,
           provingSystem,
           verifiersType,
           templateNamesCount,
@@ -72,15 +72,7 @@ export const generateVerifiers: ActionType<GenerateVerifiersTaskConfig> = async 
 async function getAndCountArtifacts(
   env: HardhatRuntimeEnvironment,
   allFullyQualifiedNames: string[],
-): Promise<
-  [
-    { [key: string]: number },
-    {
-      name: string;
-      circuitArtifact: CircuitArtifact;
-    }[],
-  ]
-> {
+): Promise<[{ [key: string]: number }, CircuitArtifactInfo[]]> {
   const templateNamesCount: { [key: string]: number } = {};
   const circuitArtifactsInfo = await Promise.all(
     allFullyQualifiedNames.map(async (name: string) => {
@@ -101,11 +93,8 @@ async function getAndCountArtifacts(
 async function generateVerifierForProvingSystem(
   taskArgs: GenerateVerifiersTaskConfig,
   env: HardhatRuntimeEnvironment,
-  circuitArtifactInfo: {
-    name: string;
-    circuitArtifact: CircuitArtifact;
-  },
-  provingSystems: ProvingSystemType[],
+  totalProvingSystems: number,
+  circuitArtifactInfo: CircuitArtifactInfo,
   provingSystem: ProvingSystemType,
   verifiersType: VerifierLanguageType,
   templateNamesCount: { [key: string]: number },
@@ -130,7 +119,7 @@ async function generateVerifierForProvingSystem(
 
   const currentCircuit = await env.zkit.circuitZKitBuilder.getCircuitZKit(
     circuitArtifactInfo.name,
-    provingSystems.length > 1 ? provingSystem : undefined,
+    totalProvingSystems > 1 ? provingSystem : undefined,
     taskArgs.verifiersDir,
   );
 
