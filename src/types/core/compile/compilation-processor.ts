@@ -1,7 +1,7 @@
 import { CompileFlags } from "../compiler/circom-compiler";
 import { CircomResolvedFile } from "../dependencies";
 
-export type CompilationProccessorConfig = {
+export type CompilationProcessorConfig = {
   compileFlags: CompileFlags;
   quiet: boolean;
 };
