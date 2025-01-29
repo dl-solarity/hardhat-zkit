@@ -23,7 +23,7 @@ import { ZKitConfig } from "../../types/zkit-config";
 import { ArtifactsFileType, CircuitArtifact, ICircuitArtifacts } from "../../types/artifacts/circuit-artifacts";
 import {
   ICircomCompiler,
-  CompilationProccessorConfig,
+  CompilationProcessorConfig,
   CompilationInfo,
   CompileConfig,
   CircomResolvedFileInfo,
@@ -43,7 +43,7 @@ export class CompilationProcessor {
   private readonly _nodeModulesPath: string;
 
   constructor(
-    private readonly _config: CompilationProccessorConfig,
+    private readonly _config: CompilationProcessorConfig,
     private readonly _circuitArtifacts: ICircuitArtifacts,
     hre: HardhatRuntimeEnvironment,
   ) {

@@ -47,7 +47,7 @@ describe("CircomFilesParser", () => {
       expect(result.parsedFileData.pragmaInfo.compilerVersion).to.be.eq("2.0.0");
     });
 
-    it("should correctly parse circuit file content wihout cache", async function () {
+    it("should correctly parse circuit file content without cache", async function () {
       fs.rmSync(circuitsCacheFullPath, { force: true });
 
       const result: ResolvedFileData = parser.parse(fileContent, circuitPath, contentHash);
