@@ -113,23 +113,29 @@ export class BaseCache<T> {
    * @param cacheFilePath The full path to the cache file where the state will be written.
    */
   public async writeToFile(cacheFilePath: string) {
-    const jsonContent = JSON.stringify(
-      this._cache,
-      (key, value) => {
-        if (key === "context") {
-          return;
-        }
+    const bigIntToJSONOld = (BigInt.prototype as any).toJSON;
 
-        if (typeof value === "bigint") {
-          return { __bigintval__: value.toString() };
-        }
+    try {
+      (BigInt.prototype as any).toJSON = function () {
+        return { __bigintval__: this.toString() };
+      };
 
-        return value;
-      },
-      2,
-    );
+      const jsonContent = JSON.stringify(
+        this._cache,
+        (key, value) => {
+          if (key === "context") {
+            return;
+          }
 
-    await fsExtra.outputFile(cacheFilePath, jsonContent);
+          return value;
+        },
+        2,
+      );
+
+      await fsExtra.outputFile(cacheFilePath, jsonContent);
+    } finally {
+      (BigInt.prototype as any).toJSON = bigIntToJSONOld;
+    }
   }
 
   /**
