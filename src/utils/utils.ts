@@ -108,7 +108,7 @@ export async function getFileHash(filePath: string): Promise<string> {
     const hash = createHash("sha1");
     const stream = fsExtra.createReadStream(filePath);
 
-    stream.on("data", (data: Buffer) => {
+    stream.on("data", (data: string | Buffer) => {
       // Add data chunk to the hash object
       hash.update(data);
     });
