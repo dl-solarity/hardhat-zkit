@@ -12,11 +12,14 @@ export function useEnvironment(
   fixtureProjectName: string,
   withCleanUp: boolean = false,
   withLogging: boolean = true,
+  withTSProject: boolean = true,
   networkName = "hardhat",
 ) {
   beforeEach("Loading hardhat environment", async function () {
+    const fixtureProjectsDirName = `fixture-projects${withTSProject ? "" : "-js"}`;
     const prefix = "hardhat-project-";
-    process.chdir(join(__dirname, "fixture-projects", prefix + fixtureProjectName));
+
+    process.chdir(join(__dirname, fixtureProjectsDirName, prefix + fixtureProjectName));
     process.env.HARDHAT_NETWORK = networkName;
 
     this.hre = require("hardhat");

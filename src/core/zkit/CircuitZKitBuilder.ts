@@ -43,27 +43,33 @@ export class CircuitZKitBuilder implements ICircuitZKitBuilder {
     const circuitArtifact: CircuitArtifact = await this._hre.zkit.circuitArtifacts.readCircuitArtifact(circuitName);
     const circuitZKitConfig: CircuitZKitConfig = this._getCircuitZKitConfig(circuitArtifact, verifiersDir);
 
-    if (this._isTSProject) {
-      if (this._provingSystems.length > 1 && !provingSystem) {
-        throw new HardhatZKitError(
-          "Found several proving systems. Please specify the exact proving system in the getCircuit function.",
-        );
-      }
+    /// If multiple proving systems are available but none is explicitly specified, throw an error
+    if (this._provingSystems.length > 1 && !provingSystem) {
+      throw new HardhatZKitError(
+        "Found several proving systems. Please specify the exact proving system in the getCircuit function.",
+      );
+    }
 
+    // If a proving system is specified but not found in the available proving systems, throw an error
+    if (provingSystem && !this._provingSystems.includes(provingSystem)) {
+      throw new HardhatZKitError(
+        "Invalid proving system is passed. Please recompile the circuits or change the proving system.",
+      );
+    }
+
+    if (this._isTSProject) {
+      // If only a single proving system has been configured, undefined should be used to retrieve the zktype type
       if (this._provingSystems.length === 1 && provingSystem) {
-        throw new HardhatZKitError(
-          "Found single proving system. No need to specify the exact proving system in the getCircuit function.",
-        );
+        provingSystem = undefined;
       }
 
       const module = await this._typesGenerator.getCircuitObject(circuitName, provingSystem);
 
       return new module(circuitZKitConfig);
     } else {
-      if (!provingSystem || !this._provingSystems.includes(provingSystem)) {
-        throw new HardhatZKitError(
-          "Undefined or invalid proving system is passed. Please recompile the circuits or change the proving system.",
-        );
+      // If a proving system was not explicitly provided, it will be retrieved from the config
+      if (!provingSystem) {
+        provingSystem = this._provingSystems[0];
       }
 
       return new CircuitZKit<typeof provingSystem>(circuitZKitConfig, this.getProtocolImplementer(provingSystem));
