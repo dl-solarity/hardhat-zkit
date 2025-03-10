@@ -176,7 +176,7 @@ The plugin extends the hardhat environment with the `zkit` object that allows ty
 
 pragma circom 2.0.0;
 
-template Multiplier(){
+template Multiplier() {
    signal input in1;
    signal input in2;
    signal output out;
@@ -253,6 +253,13 @@ The optional `provingSystem` parameter should only be specified if multiple prov
 
 > [!IMPORTANT]
 > Please note that the method actually returns the [`zktype`](https://github.com/dl-solarity/zktype) typed zkit wrapper objects which enable full TypeScript typization of signals and proofs. Also, check out the [`zkit`](https://github.com/dl-solarity/zkit) documentation to understand zkit object capabilities and how to interact with circuits.
+
+## Future work
+
+- [ ] ZK proofs generation with custom witness files (witness substitution).
+- [ ] Per-circuit plugin configuration.
+- [ ] `BLS12-381` on-chain ZK verifiers (EIP-2537).
+- [ ] Support for `--prime bls12381` Circom (and Snarkjs) compilation flag.
 
 ## Known limitations
 
