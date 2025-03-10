@@ -6,7 +6,10 @@ import { useEnvironment } from "@test-helpers";
 
 describe("PtauDownloader", () => {
   describe("downloadPtau", () => {
-    useEnvironment("with-circuits", true);
+    useEnvironment({
+      fixtureProjectName: "with-circuits",
+      withCleanUp: true,
+    });
 
     it("should download ptau file correctly", async function () {
       const ptauPath = this.hre.config.zkit.setupSettings.ptauDir;

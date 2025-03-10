@@ -1,4 +1,5 @@
 dist/*.js
 *.md
 test/fixture-projects/**/*.*
+test/fixture-projects-js/**/*.*
 src/core/compiler/vendor

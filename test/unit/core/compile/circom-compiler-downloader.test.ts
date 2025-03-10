@@ -16,7 +16,7 @@ describe("CircomCompilerDownloader", () => {
   createReporter(true);
 
   describe("isCompilerDownloaded", () => {
-    useEnvironment("with-circuits");
+    useEnvironment({ fixtureProjectName: "with-circuits" });
 
     it("should correctly identify whether the latest compatible compiler is downloaded", async function () {
       cleanUp(this.hre.config.paths.root);
@@ -54,7 +54,7 @@ describe("CircomCompilerDownloader", () => {
   });
 
   describe("getCompilerBinary", () => {
-    useEnvironment("with-circuits");
+    useEnvironment({ fixtureProjectName: "with-circuits" });
 
     it("should return a correct compiler binary path", async function () {
       const compilersDir = getNormalizedFullPath(this.hre.config.paths.root, "compilers");
@@ -118,7 +118,7 @@ describe("CircomCompilerDownloader", () => {
   });
 
   describe("downloadCompiler", () => {
-    useEnvironment("with-circuits", true);
+    useEnvironment({ fixtureProjectName: "with-circuits", withCleanUp: true });
 
     it("should download the latest available compiler properly", async function () {
       const compilersDir = getNormalizedFullPath(this.hre.config.paths.root, "compilers");

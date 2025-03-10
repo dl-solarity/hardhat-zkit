@@ -1,0 +1,7 @@
+/cache
+/artifacts
+
+generated-types
+compilers
+contracts/verifiers
+zkit

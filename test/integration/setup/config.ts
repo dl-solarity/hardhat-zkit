@@ -10,7 +10,7 @@ import { ZKitConfig } from "@src/types/zkit-config";
 
 describe("config", () => {
   describe("loading", () => {
-    useEnvironment("defined-config");
+    useEnvironment({ fixtureProjectName: "defined-config" });
 
     let loadedOptions: ZKitConfig;
 
@@ -53,7 +53,7 @@ describe("config", () => {
   });
 
   describe("extension", () => {
-    useEnvironment("undefined-config");
+    useEnvironment({ fixtureProjectName: "undefined-config" });
 
     let loadedOptions: ZKitConfig;
 

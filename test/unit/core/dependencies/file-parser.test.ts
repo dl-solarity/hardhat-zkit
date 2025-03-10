@@ -24,7 +24,7 @@ describe("CircomFilesParser", () => {
 
     let circuitsCacheFullPath: string;
 
-    useEnvironment("with-circuits");
+    useEnvironment({ fixtureProjectName: "with-circuits" });
 
     beforeEach("setup", async function () {
       circuitsCacheFullPath = getNormalizedFullPath(this.hre.config.paths.cache, CIRCUITS_COMPILE_CACHE_FILENAME);
@@ -122,7 +122,7 @@ describe("CircomFilesParser", () => {
   });
 
   describe("parse with resolution of main component", () => {
-    useEnvironment("with-circuits-main-component");
+    useEnvironment({ fixtureProjectName: "with-circuits-main-component" });
 
     beforeEach("setup", async function () {
       await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
@@ -148,7 +148,7 @@ describe("CircomFilesParser", () => {
   });
 
   describe("invalid parse", () => {
-    useEnvironment("with-complex-circuits");
+    useEnvironment({ fixtureProjectName: "with-complex-circuits" });
 
     it("should get exception if circuit has function call inside main component parameters", async function () {
       createReporter(true);

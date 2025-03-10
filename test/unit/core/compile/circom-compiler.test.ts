@@ -26,7 +26,7 @@ describe("WASMCircomCompiler", () => {
   describe("compile:without-libraries", () => {
     let circomCompiler: WASMCircomCompiler;
 
-    useEnvironment("with-circuits");
+    useEnvironment({ fixtureProjectName: "with-circuits" });
 
     beforeEach("setup", async function () {
       const compilersDir = getNormalizedFullPath(this.hre.config.paths.root, "compilers");
@@ -183,7 +183,7 @@ describe("WASMCircomCompiler", () => {
   describe("compile:with-libraries", () => {
     let circomCompiler: WASMCircomCompiler;
 
-    useEnvironment("circuits-with-libraries");
+    useEnvironment({ fixtureProjectName: "circuits-with-libraries" });
 
     beforeEach("setup", async function () {
       const compilersDir = getNormalizedFullPath(this.hre.config.paths.root, "compilers");
@@ -236,7 +236,7 @@ describe("WASMCircomCompiler", () => {
   describe("getCompilationArgs", () => {
     let circomCompiler: WASMCircomCompiler;
 
-    useEnvironment("with-circuits");
+    useEnvironment({ fixtureProjectName: "with-circuits" });
 
     beforeEach("setup", async function () {
       const compilersDir = getNormalizedFullPath(this.hre.config.paths.root, "compilers");
