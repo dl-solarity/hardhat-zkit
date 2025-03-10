@@ -62,7 +62,7 @@ describe("CircomCompilerFactory", () => {
   }
 
   describe("createCircomCompiler", () => {
-    useEnvironment("with-circuits");
+    useEnvironment({ fixtureProjectName: "with-circuits" });
 
     it("should correctly create circom compiler instance", async function () {
       createCircomCompilerFactory();

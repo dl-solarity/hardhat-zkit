@@ -31,7 +31,7 @@ describe("CompilationFilesResolver", () => {
     let dependencyGraph: DependencyGraph;
     let sourceNames: string[];
 
-    useEnvironment("with-circuits");
+    useEnvironment({ fixtureProjectName: "with-circuits" });
 
     beforeEach("setup", async function () {
       await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
@@ -99,7 +99,7 @@ describe("CompilationFilesResolver", () => {
   describe("getSourceNamesFromSourcePaths", () => {
     let compilationFilesManager: CompilationFilesResolverMock;
 
-    useEnvironment("with-circuits");
+    useEnvironment({ fixtureProjectName: "with-circuits" });
 
     beforeEach("setup", async function () {
       compilationFilesManager = getCompilationFilesManagerMock(this.hre);
@@ -120,7 +120,7 @@ describe("CompilationFilesResolver", () => {
     let resolvedFilesInfo: CircomResolvedFileInfo[];
     let sourceNames: string[];
 
-    useEnvironment("with-circuits");
+    useEnvironment({ fixtureProjectName: "with-circuits" });
 
     beforeEach("setup", async function () {
       await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });

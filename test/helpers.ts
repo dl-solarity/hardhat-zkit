@@ -8,32 +8,34 @@ import { createReporter, Reporter } from "../src/reporter";
 import { resetCircuitsCompileCache, resetCircuitsSetupCache } from "../src/cache";
 import { getNormalizedFullPath } from "../src/utils/path-utils";
 
-export function useEnvironment(
-  fixtureProjectName: string,
-  withCleanUp: boolean = false,
-  withLogging: boolean = true,
-  withTSProject: boolean = true,
-  networkName = "hardhat",
-) {
+export type EnvironmentSettings = {
+  fixtureProjectName: string;
+  withCleanUp?: boolean;
+  withoutLogging?: boolean;
+  withJSProject?: boolean;
+  networkName?: string;
+};
+
+export function useEnvironment(envSettings: EnvironmentSettings) {
   beforeEach("Loading hardhat environment", async function () {
-    const fixtureProjectsDirName = `fixture-projects${withTSProject ? "" : "-js"}`;
+    const fixtureProjectsDirName = `fixture-projects${envSettings.withJSProject ? "-js" : ""}`;
     const prefix = "hardhat-project-";
 
-    process.chdir(join(__dirname, fixtureProjectsDirName, prefix + fixtureProjectName));
-    process.env.HARDHAT_NETWORK = networkName;
+    process.chdir(join(__dirname, fixtureProjectsDirName, prefix + envSettings.fixtureProjectName));
+    process.env.HARDHAT_NETWORK = envSettings.networkName ? envSettings.networkName : "hardhat";
 
     this.hre = require("hardhat");
 
-    if (withCleanUp) {
+    if (envSettings.withCleanUp) {
       cleanUp(this.hre.config.paths.root);
 
       return;
     }
 
     if (!Reporter) {
-      createReporter(!withLogging);
+      createReporter(!!envSettings.withoutLogging);
     } else {
-      Reporter!.setQuiet(!withLogging);
+      Reporter!.setQuiet(!!envSettings.withoutLogging);
     }
 
     await this.hre.run(TASK_COMPILE, { quiet: true });

@@ -27,7 +27,9 @@ describe("CircuitsCompileCache", () => {
   });
 
   describe("readFromFile", () => {
-    useEnvironment("with-circuits");
+    useEnvironment({
+      fixtureProjectName: "with-circuits",
+    });
 
     it("should correctly create CircuitsCompileCache instance from file", async function () {
       CircuitsCompileCache!.getEntries().forEach(async (entry: CompileCacheEntry) => {
@@ -86,7 +88,9 @@ describe("CircuitsCompileCache", () => {
   });
 
   describe("hasFileChanged", () => {
-    useEnvironment("with-circuits");
+    useEnvironment({
+      fixtureProjectName: "with-circuits",
+    });
 
     it("should return correct results", async function () {
       await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
@@ -109,7 +113,10 @@ describe("CircuitsCompileCache", () => {
   });
 
   describe("context-caching", () => {
-    useEnvironment("with-circuits", true);
+    useEnvironment({
+      fixtureProjectName: "with-circuits",
+      withCleanUp: true,
+    });
 
     it("should correctly cache the context", async function () {
       await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_MAKE });

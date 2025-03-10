@@ -11,7 +11,7 @@ import { TASK_CIRCUITS_MAKE, ZKIT_SCOPE_NAME } from "../../../../src/task-names"
 
 describe("Types Generation", () => {
   describe("types generation:with duplicated main components", () => {
-    useEnvironment("with-duplicated-circuits");
+    useEnvironment({ fixtureProjectName: "with-duplicated-circuits" });
 
     beforeEach(async function () {
       await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_MAKE });

@@ -14,7 +14,10 @@ describe("CircuitZKitBuilder", () => {
     describe("with ts project", async function () {
       const groth16PlonkTypesDir = "zkit/types-groth16-plonk";
 
-      useEnvironment("with-circuits", true);
+      useEnvironment({
+        fixtureProjectName: "with-circuits",
+        withCleanUp: true,
+      });
 
       it("should return correct CircuitZKit object for the 'groth16' proving system", async function () {
         await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
@@ -68,7 +71,11 @@ describe("CircuitZKitBuilder", () => {
     });
 
     describe("with js project", async function () {
-      useEnvironment("js-with-circuits", true, true, false);
+      useEnvironment({
+        fixtureProjectName: "js-with-circuits",
+        withCleanUp: true,
+        withJSProject: true,
+      });
 
       it("should return correct CircuitZKit object for the 'groth16' proving system", async function () {
         await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
@@ -125,7 +132,10 @@ describe("CircuitZKitBuilder", () => {
   });
 
   describe("getProtocolImplementer", async function () {
-    useEnvironment("with-circuits", true);
+    useEnvironment({
+      fixtureProjectName: "with-circuits",
+      withCleanUp: true,
+    });
 
     it("should return correct protocol implementers", async function () {
       let protocolImplementer = this.hre.zkit.circuitZKitBuilder.getProtocolImplementer("groth16");

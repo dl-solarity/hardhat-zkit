@@ -114,7 +114,10 @@ describe("ZKit tasks", async function () {
 
   describe("compile", async function () {
     describe("no config compiler version", async function () {
-      useEnvironment("with-circuits", true);
+      useEnvironment({
+        fixtureProjectName: "with-circuits",
+        withCleanUp: true,
+      });
 
       it("should correctly compile circuits", async function () {
         await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
@@ -162,7 +165,10 @@ describe("ZKit tasks", async function () {
     });
 
     describe("config compiler version", async function () {
-      useEnvironment("compiler-config", true);
+      useEnvironment({
+        fixtureProjectName: "compiler-config",
+        withCleanUp: true,
+      });
 
       it("should correctly compile circuits with the specified version of the compiler", async function () {
         await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
@@ -188,7 +194,10 @@ describe("ZKit tasks", async function () {
     });
 
     describe("incorrect config compiler version", async function () {
-      useEnvironment("compiler-incorrect-config", true);
+      useEnvironment({
+        fixtureProjectName: "compiler-incorrect-config",
+        withCleanUp: true,
+      });
 
       it("should throw an error when the specified config compiler version is lower that the circuit one", async function () {
         await expect(this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE })).to.be.rejectedWith(
@@ -199,7 +208,10 @@ describe("ZKit tasks", async function () {
 
     describe("with libraries", async function () {
       describe("valid circuits", function () {
-        useEnvironment("circuits-with-libraries", true);
+        useEnvironment({
+          fixtureProjectName: "circuits-with-libraries",
+          withCleanUp: true,
+        });
 
         it("should correctly compile circuits that include libraries", async function () {
           const root = this.hre.config.paths.root;
@@ -233,7 +245,10 @@ describe("ZKit tasks", async function () {
       });
 
       describe("invalid circuits", function () {
-        useEnvironment("invalid-circuits", true);
+        useEnvironment({
+          fixtureProjectName: "invalid-circuits",
+          withCleanUp: true,
+        });
 
         it("should throw an error if circuit include statement is URI", async function () {
           const circuitPath = "circuits/invalidImportCircuit.circom";
@@ -284,7 +299,10 @@ describe("ZKit tasks", async function () {
         `${circuitName}_js`,
       ];
 
-      useEnvironment("with-constraint-simplification", true);
+      useEnvironment({
+        fixtureProjectName: "with-constraint-simplification",
+        withCleanUp: true,
+      });
 
       it("should correctly compile circuits with different simplification flag", async function () {
         const fileSizes: {
@@ -339,7 +357,10 @@ describe("ZKit tasks", async function () {
       const plonkTypesDir = "zkit/types-plonk";
       const groth16PlonkTypesDir = "zkit/types-groth16-plonk";
 
-      useEnvironment("with-circuits", true);
+      useEnvironment({
+        fixtureProjectName: "with-circuits",
+        withCleanUp: true,
+      });
 
       it("should correctly compile circuits with 'groth16' proving system", async function () {
         await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
@@ -380,7 +401,11 @@ describe("ZKit tasks", async function () {
     });
 
     describe("with js project", async function () {
-      useEnvironment("js-with-circuits", true, true, false);
+      useEnvironment({
+        fixtureProjectName: "js-with-circuits",
+        withCleanUp: true,
+        withJSProject: true,
+      });
 
       it("should correctly compile circuits with 'groth16' proving system", async function () {
         await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
@@ -423,7 +448,10 @@ describe("ZKit tasks", async function () {
       const plonkTypesDir = "zkit/types-plonk";
       const groth16PlonkTypesDir = "zkit/types-groth16-plonk";
 
-      useEnvironment("with-circuits", true);
+      useEnvironment({
+        fixtureProjectName: "with-circuits",
+        withCleanUp: true,
+      });
 
       it("should not generate vkey, zkey files without compiled circuits", async function () {
         cleanUp(this.hre.config.paths.root);
@@ -468,7 +496,11 @@ describe("ZKit tasks", async function () {
     });
 
     describe("with js project", async function () {
-      useEnvironment("js-with-circuits", true, true, false);
+      useEnvironment({
+        fixtureProjectName: "js-with-circuits",
+        withCleanUp: true,
+        withJSProject: true,
+      });
 
       it("should not generate vkey, zkey files without compiled circuits", async function () {
         cleanUp(this.hre.config.paths.root);
@@ -512,7 +544,10 @@ describe("ZKit tasks", async function () {
 
   describe("make", async function () {
     describe("with ts project", async function () {
-      useEnvironment("with-circuits", true);
+      useEnvironment({
+        fixtureProjectName: "with-circuits",
+        withCleanUp: true,
+      });
 
       it("should correctly compile circuits and generate vkey, zkey files", async function () {
         await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_MAKE });
@@ -522,7 +557,11 @@ describe("ZKit tasks", async function () {
     });
 
     describe("with js project", async function () {
-      useEnvironment("js-with-circuits", true, true, false);
+      useEnvironment({
+        fixtureProjectName: "js-with-circuits",
+        withCleanUp: true,
+        withJSProject: true,
+      });
 
       it("should correctly compile circuits and generate vkey, zkey files", async function () {
         await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_MAKE });
@@ -537,7 +576,10 @@ describe("ZKit tasks", async function () {
     const groth16PlonkTypesDir = "zkit/types-groth16-plonk";
 
     describe("with simple circuits", async function () {
-      useEnvironment("with-circuits", true);
+      useEnvironment({
+        fixtureProjectName: "with-circuits",
+        withCleanUp: true,
+      });
 
       it("should correctly generate 'groth16' verifiers after running the verifiers task", async function () {
         await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_GENERATE_VERIFIERS });
@@ -595,7 +637,10 @@ describe("ZKit tasks", async function () {
     });
 
     describe("with complex main components", async function () {
-      useEnvironment("with-circuits-main-component", true);
+      useEnvironment({
+        fixtureProjectName: "with-circuits-main-component",
+        withCleanUp: true,
+      });
 
       it("should correctly generate verifiers with custom verifier names", async function () {
         await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_GENERATE_VERIFIERS });
@@ -610,7 +655,11 @@ describe("ZKit tasks", async function () {
     });
 
     describe("with js project", async function () {
-      useEnvironment("js-with-circuits", true, true, false);
+      useEnvironment({
+        fixtureProjectName: "js-with-circuits",
+        withCleanUp: true,
+        withJSProject: true,
+      });
 
       it("should correctly generate 'groth16' verifiers after running the verifiers task", async function () {
         await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_GENERATE_VERIFIERS });
@@ -666,7 +715,10 @@ describe("ZKit tasks", async function () {
 
   describe("clean", async function () {
     describe("with ts project", async function () {
-      useEnvironment("with-circuits", true);
+      useEnvironment({
+        fixtureProjectName: "with-circuits",
+        withCleanUp: true,
+      });
 
       it("should correctly clean up the generated artifacts, types, etc", async function () {
         expect(fsExtra.readdirSync(this.hre.config.paths.root)).to.be.deep.eq([
@@ -700,7 +752,11 @@ describe("ZKit tasks", async function () {
     });
 
     describe("with js project", async function () {
-      useEnvironment("js-with-circuits", true, true, false);
+      useEnvironment({
+        fixtureProjectName: "js-with-circuits",
+        withCleanUp: true,
+        withJSProject: true,
+      });
 
       it("should correctly clean up the generated artifacts, types, etc", async function () {
         expect(fsExtra.readdirSync(this.hre.config.paths.root)).to.be.deep.eq([
