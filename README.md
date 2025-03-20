@@ -230,7 +230,8 @@ This command will install the newest compatible Circom compiler, compile the pro
 
 Afterward, copy the provided script to the `test` directory and run the tests via `npx hardhat test`. You will see that all the tests are passing!
 
-> Check out the [Medium blog post](https://medium.com/@Arvolear/introducing-hardhat-zkit-how-did-you-even-use-circom-before-a7b463a5575b) to learn more.
+> [!TIP]
+> Check out the [Medium blog post](https://medium.com/@Arvolear/introducing-hardhat-zkit-how-did-you-even-use-circom-before-a7b463a5575b) and [Solarity circom-lib](https://github.com/dl-solarity/circom-lib) to learn more.
 
 ### API reference
 
