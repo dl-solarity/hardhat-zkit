@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 
 import { HardhatZKitError } from "../../errors";
-import { MAX_PTAU_ID } from "../../constants";
+import { MAX_PTAU_ID, PTAU_FILES_URL_PREFIX } from "../../constants";
 import { Reporter } from "../../reporter";
 import { downloadFile } from "../../utils/utils";
 
@@ -38,7 +38,7 @@ export class PtauDownloader {
   }
 
   public static getDownloadURL(ptauId: number): string {
-    return `https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final_${ptauId.toString().padStart(2, "0")}.ptau`;
+    return `${PTAU_FILES_URL_PREFIX}${ptauId.toString().padStart(2, "0")}.ptau`;
   }
 
   public static getMaxPtauID(): number {
