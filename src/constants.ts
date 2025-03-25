@@ -27,6 +27,8 @@ export const MAKEFILE_NAME = "Makefile";
 
 export const CIRCUIT_ARTIFACTS_SUFFIX = "_artifacts.json";
 
+export const PTAU_FILES_URL_PREFIX = "https://storage.googleapis.com/zkevm/ptau/powersOfTau28_hez_final_";
+
 export const COMPILER_AMD_REPOSITORY_URL = "https://github.com/iden3/circom/releases/download";
 export const COMPILER_ARM_REPOSITORY_URL = "https://github.com/distributed-lab/circom/releases/download";
 export const COMPILER_WASM_REPOSITORY_URL = "https://github.com/distributed-lab/circom-wasm/releases/download";
