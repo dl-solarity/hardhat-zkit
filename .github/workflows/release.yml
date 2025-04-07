@@ -16,7 +16,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up environment
         uses: ./.github/actions/setup
       - name: Fetch State
@@ -32,7 +32,7 @@ jobs:
     if: needs.state.outputs.version_changed != 'not_changed'
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
@@ -54,7 +54,7 @@ jobs:
     if: needs.state.outputs.version_changed != 'not_changed'
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Setup
         uses: ./.github/actions/setup
       - name: Publish to npm
