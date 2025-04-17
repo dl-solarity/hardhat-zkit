@@ -104,7 +104,7 @@ Where:
     - `verifiersDir` - The directory where to generate the Solidity | Vyper verifiers.
     - `verifiersType` - The option (`"sol"` or `"vy"`) to indicate which language to use for verifiers generation.
 - `typesDir` - The directory where to save the generated typed circuits wrappers.
-- `typesWitnessLimit` - The maximum number of witness signals for which witness signal names type will be generated.
+- `typesWitnessLimit` - The maximum number of witness substitution signals to generate types for.
 - `quiet` - The flag indicating whether to suppress the output.
 
 ### Tasks
@@ -259,7 +259,7 @@ The optional `provingSystem` parameter should only be specified if multiple prov
 
 ## Future work
 
-- [ ] ZK proofs generation with custom witness files (witness substitution).
+- [x] ZK proofs generation with custom witness files (witness substitution).
 - [ ] Per-circuit plugin configuration.
 - [ ] `BLS12-381` on-chain ZK verifiers (EIP-2537).
 - [ ] Support for `--prime bls12381` Circom (and Snarkjs) compilation flag.
