@@ -75,6 +75,7 @@ module.exports = {
       verifiersType: "sol", // or "vy"
     },
     typesDir: "generated-types/zkit",
+    typesWitnessLimit: 50000,
     quiet: false,
   },
 };
@@ -103,6 +104,7 @@ Where:
     - `verifiersDir` - The directory where to generate the Solidity | Vyper verifiers.
     - `verifiersType` - The option (`"sol"` or `"vy"`) to indicate which language to use for verifiers generation.
 - `typesDir` - The directory where to save the generated typed circuits wrappers.
+- `typesWitnessLimit` - The maximum number of witness signals for which witness signal names type will be generated.
 - `quiet` - The flag indicating whether to suppress the output.
 
 ### Tasks

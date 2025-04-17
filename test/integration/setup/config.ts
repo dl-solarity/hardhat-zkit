@@ -45,6 +45,7 @@ describe("config", () => {
           verifiersType: "vy",
         },
         typesDir: "generated-types/zkit",
+        typesWitnessLimit: 50000,
         quiet: true,
       };
 
@@ -89,6 +90,7 @@ describe("config", () => {
           verifiersType: "sol",
         },
         typesDir: "generated-types/zkit",
+        typesWitnessLimit: 50000,
         quiet: false,
       };
 
