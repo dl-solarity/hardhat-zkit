@@ -31,6 +31,7 @@ const defaultConfig: ZKitConfig = {
     verifiersType: "sol",
   },
   typesDir: "generated-types/zkit",
+  typesWitnessLimit: 50000,
   quiet: false,
 };
 

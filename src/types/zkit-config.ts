@@ -7,6 +7,7 @@ export type ZKitConfig = {
   setupSettings: SetupSettings;
   verifiersSettings: VerifiersSettings;
   typesDir: string;
+  typesWitnessLimit: number;
   quiet: boolean;
 };
 

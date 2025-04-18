@@ -69,6 +69,7 @@ export class TypeGenerationProcessor {
           circuitProtocolType: this._provingSystems,
         };
       }),
+      signalNamesTypeLimit: this._zkitConfig.typesWitnessLimit,
     });
 
     await typesGenerator.generateTypes();
