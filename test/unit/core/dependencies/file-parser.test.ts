@@ -38,7 +38,7 @@ describe("CircomFilesParser", () => {
       await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
     });
 
-    it("should correctly parse file with empty circuit files cahce", async function () {
+    it("should correctly parse file with empty circuit files cache", async function () {
       const newParser: CircomFilesParser = new CircomFilesParser();
 
       const result: ResolvedFileData = newParser.parse(fileContent, circuitPath, contentHash);

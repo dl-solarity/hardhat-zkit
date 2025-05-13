@@ -1250,7 +1250,7 @@ class WASIDefault {
             console.log(`WASI:  => ${result}`);
             return result;
           } catch (e) {
-            console.log(`Catched error: ${e}`);
+            console.log(`Caught error: ${e}`);
             throw e;
           }
         };
