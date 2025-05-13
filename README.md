@@ -20,7 +20,7 @@ This hardhat plugin is a zero-config, one-stop Circom development environment th
 - Full TypeScript typization of signals and ZK proofs.
 - Automatic downloads of phase-1 `ptau` files.
 - Convenient phase-2 contributions to `zkey` files.
-- Practical `witness` and proof testing via chai assertions.
+- Practical witness (with signals substitution) and proof testing via chai assertions.
 - Invisible platform-specific and `wasm`-based Circom compiler management.
 - Simplified `node_modules` libraries resolution.
 - Rich plugin configuration.
@@ -157,6 +157,13 @@ require("@solarity/chai-zkit"); // JavaScript
 
 The package extends `expect` chai assertion to recognize typed `zktype` objects for frictionless testing experience.
 
+The plugin supports:
+
+1. Basic witness `input` -> `output` testing.
+2. Deep witness (signals) substitution testing.
+3. Proof generation success/failure testing.
+4. Circuit constraints number testing.
+
 > [!NOTE]
 > Please note that for witness testing purposes it is sufficient to compile circuits just with `zkit compile` task, without generating the keys.
 
@@ -207,6 +214,7 @@ describe("Multiplier", () => {
 
     // witness testing
     await expect(circuit)
+        // provide a second parameter here to override witness values
         .with.witnessInputs({ in1: "3", in2: "7" })
         .to.have.witnessOutputs({ out: "21" });
 
