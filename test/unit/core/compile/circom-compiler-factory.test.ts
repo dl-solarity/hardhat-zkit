@@ -102,7 +102,7 @@ describe("CircomCompilerFactory", () => {
       createCircomCompilerFactory();
       await expect(CircomCompilerFactory!.createCircomCompiler(invalidVersion, true)).to.be.rejectedWith(reason);
 
-      invalidVersion = "2.2.1";
+      invalidVersion = "2.2.3";
       reason = `Unsupported Circom compiler version - ${invalidVersion}. Please provide another version.`;
 
       await expect(CircomCompilerFactory!.createCircomCompiler(invalidVersion, false)).to.be.rejectedWith(reason);

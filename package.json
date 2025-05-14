@@ -1,6 +1,6 @@
 {
   "name": "@solarity/hardhat-zkit",
-  "version": "0.5.16",
+  "version": "0.5.17",
   "description": "The ultimate TypeScript environment for Circom development",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
@@ -55,7 +55,7 @@
     ]
   },
   "engines": {
-    "node": ">=16"
+    "node": ">=18"
   },
   "dependencies": {
     "@distributedlab/circom-parser": "0.2.6",
