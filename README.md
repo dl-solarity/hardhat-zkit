@@ -276,4 +276,5 @@ The optional `provingSystem` parameter should only be specified if multiple prov
 
 - Currently there is minimal support for `var` Circom variables. Some circuits may not work if you are using complex `var`-dependent expressions.
 - Even though the plugin provides support of Circom `v2.2.2`, its newest feature `bus` is not supported.
+- When compiling with `v2.2.2`, you may encounter an error like: 'index out of bounds: the len is 0 but the index is 4294967295'.
 - Due to current `wasm` memory limitations (address space is 32-bit), the plugin may fail to compile especially large circuits on some platforms.
