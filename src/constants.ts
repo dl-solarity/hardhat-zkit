@@ -41,5 +41,5 @@ export const WASM_COMPILER_VERSIONING: { [key: string]: string } = {
   "2.1.9": "0.2.19-rc.0",
   "2.2.0": "0.2.20-rc.0",
   "2.2.1": "0.2.21-rc.0",
-  "2.2.2": "0.2.22-rc.0",
+  "2.2.2": "0.2.22-rc.1",
 };
