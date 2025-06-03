@@ -225,13 +225,8 @@ export class CompilationProcessor {
         const correspondingOutDir = path.join(info.artifactsPath, path.relative(info.tempArtifactsPath, dir));
         const correspondingOutFile = path.join(info.artifactsPath, path.relative(info.tempArtifactsPath, file));
 
-        if (!fsExtra.existsSync(correspondingOutDir)) {
-          fsExtra.mkdirSync(correspondingOutDir);
-        }
-
-        if (fsExtra.existsSync(correspondingOutFile)) {
-          fsExtra.rmSync(correspondingOutFile);
-        }
+        fsExtra.ensureDirSync(correspondingOutDir);
+        fsExtra.removeSync(correspondingOutFile);
 
         Reporter!.verboseLog("compilation-processor:copying", "Copying file from temp directory to artifacts: %o", [
           { file, correspondingOutFile },
