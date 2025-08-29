@@ -4,10 +4,10 @@ import fsExtra from "fs-extra";
 
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
-import { useEnvironment } from "@test-helpers";
+import { useEnvironment } from "test-helpers";
 
-import { CircuitArtifact } from "../../../../src/types/artifacts/circuit-artifacts";
-import { TASK_CIRCUITS_MAKE, ZKIT_SCOPE_NAME } from "../../../../src/task-names";
+import { CircuitArtifact } from "src/types/artifacts/circuit-artifacts";
+import { TASK_CIRCUITS_MAKE, ZKIT_SCOPE_NAME } from "src/task-names";
 
 describe("Types Generation", () => {
   describe("types generation:with duplicated main components", () => {

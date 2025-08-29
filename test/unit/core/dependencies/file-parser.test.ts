@@ -1,18 +1,20 @@
 import fs from "fs";
 import { expect } from "chai";
 
+import { getCircomParser, VariableContext } from "@distributedlab/circom-parser";
+
 import { createNonCryptographicHashBasedIdentifier } from "hardhat/internal/util/hash";
 
-import { useEnvironment } from "@test-helpers";
-import { CircomFilesParser, CircomFilesVisitor, CircomTemplateInputsVisitor } from "@src/core";
-import { TASK_CIRCUITS_COMPILE, ZKIT_SCOPE_NAME } from "@src/task-names";
-import { getNormalizedFullPath } from "@src/utils/path-utils";
-import { CIRCUITS_COMPILE_CACHE_FILENAME } from "@src/constants";
-import { createCircuitsCompileCache } from "@src/cache";
-import { createReporter } from "@src/reporter";
-import { CircomResolvedFile, ResolvedFileData } from "@src/types/core";
-import { getCircomParser, VariableContext } from "@distributedlab/circom-parser";
-import { BaseCacheType } from "@src/types/cache/base-cache";
+import { useEnvironment } from "test-helpers";
+
+import { CircomFilesParser, CircomFilesVisitor, CircomTemplateInputsVisitor } from "src/core";
+import { TASK_CIRCUITS_COMPILE, ZKIT_SCOPE_NAME } from "src/task-names";
+import { getNormalizedFullPath } from "src/utils/path-utils";
+import { CIRCUITS_COMPILE_CACHE_FILENAME } from "src/constants";
+import { createCircuitsCompileCache } from "src/cache";
+import { createReporter } from "src/reporter";
+import { CircomResolvedFile, ResolvedFileData } from "src/types/core";
+import { BaseCacheType } from "src/types/cache/base-cache";
 
 describe("CircomFilesParser", () => {
   describe("parse", () => {

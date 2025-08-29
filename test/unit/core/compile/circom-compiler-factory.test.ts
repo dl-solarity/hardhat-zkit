@@ -6,21 +6,21 @@ import { expect } from "chai";
 import { before } from "mocha";
 import { stub, SinonStub } from "sinon";
 
-import { useEnvironment } from "@test-helpers";
-import { getNormalizedFullPath } from "@src/utils/path-utils";
-import { CompilerPlatformBinary, ICircomCompiler } from "@src/types/core";
+import { useEnvironment } from "test-helpers";
+import { getNormalizedFullPath } from "src/utils/path-utils";
+import { CompilerPlatformBinary, ICircomCompiler } from "src/types/core";
 import {
   BaseCircomCompilerFactory,
   BinaryCircomCompiler,
   CircomCompilerFactory,
   createCircomCompilerFactory,
   WASMCircomCompiler,
-} from "@src/core";
+} from "src/core";
 
-import { CircomCompilerDownloader } from "@src/core/compiler/CircomCompilerDownloader";
+import { CircomCompilerDownloader } from "src/core/compiler/CircomCompilerDownloader";
 
 import { defaultCompileFlags } from "../../../constants";
-import { LATEST_SUPPORTED_CIRCOM_VERSION } from "@src/constants";
+import { LATEST_SUPPORTED_CIRCOM_VERSION } from "src/constants";
 
 describe("CircomCompilerFactory", () => {
   let nativeCompilerStub: SinonStub;

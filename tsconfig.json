@@ -20,8 +20,8 @@
       "@nomicfoundation/hardhat-ethers"
     ],
     "paths": {
-      "@src/*": ["./src/*"],
-      "@test-helpers": ["./test/helpers"]
+      "src/*": ["./src/*"],
+      "test-helpers": ["./test/helpers"]
     }
   },
   "exclude": [

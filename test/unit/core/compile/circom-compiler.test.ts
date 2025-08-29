@@ -3,13 +3,13 @@ import { execSync } from "child_process";
 
 import { expect } from "chai";
 
-import { useEnvironment } from "@test-helpers";
-import { getNormalizedFullPath } from "@src/utils/path-utils";
-import { CircomCompilerFactory, createCircomCompilerFactory, WASMCircomCompiler } from "@src/core";
+import { useEnvironment } from "test-helpers";
 
-import { LATEST_SUPPORTED_CIRCOM_VERSION, NODE_MODULES } from "@src/constants";
-import { CompileFlags, CompilerPlatformBinary } from "@src/types/core";
-import { CircomCompilerDownloader } from "@src/core/compiler/CircomCompilerDownloader";
+import { getNormalizedFullPath } from "src/utils/path-utils";
+import { CircomCompilerFactory, createCircomCompilerFactory, WASMCircomCompiler } from "src/core";
+import { LATEST_SUPPORTED_CIRCOM_VERSION, NODE_MODULES } from "src/constants";
+import { CompileFlags, CompilerPlatformBinary } from "src/types/core";
+import { CircomCompilerDownloader } from "src/core/compiler/CircomCompilerDownloader";
 
 describe("WASMCircomCompiler", () => {
   const defaultCompileFlags: CompileFlags = {

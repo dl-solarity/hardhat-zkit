@@ -2,17 +2,18 @@ import fsExtra from "fs-extra";
 
 import { expect } from "chai";
 
-import { useEnvironment } from "@test-helpers";
+import { useEnvironment } from "test-helpers";
+
 import { getCompileCacheEntry } from "../../utils";
-import { getFileHash } from "@src/utils/utils";
-import { getNormalizedFullPath } from "@src/utils/path-utils";
+import { getFileHash } from "src/utils/utils";
+import { getNormalizedFullPath } from "src/utils/path-utils";
 
 import { defaultCompileFlags } from "../../constants";
-import { CompileCacheEntry } from "@src/types/cache";
-import { TASK_CIRCUITS_COMPILE, TASK_CIRCUITS_MAKE, ZKIT_SCOPE_NAME } from "@src/task-names";
-import { CIRCUITS_COMPILE_CACHE_FILENAME, CIRCUIT_COMPILE_CACHE_VERSION } from "@src/constants";
+import { CompileCacheEntry } from "src/types/cache";
+import { TASK_CIRCUITS_COMPILE, TASK_CIRCUITS_MAKE, ZKIT_SCOPE_NAME } from "src/task-names";
+import { CIRCUITS_COMPILE_CACHE_FILENAME, CIRCUIT_COMPILE_CACHE_VERSION } from "src/constants";
 
-import { CircuitsCompileCache, createCircuitsCompileCache, resetCircuitsCompileCache } from "@src/cache";
+import { CircuitsCompileCache, createCircuitsCompileCache, resetCircuitsCompileCache } from "src/cache";
 
 describe("CircuitsCompileCache", () => {
   describe("createEmpty", () => {

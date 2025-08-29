@@ -6,15 +6,16 @@ import { TASK_COMPILE_SOLIDITY_READ_FILE as TASK_READ_FILE } from "hardhat/built
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { getAllFilesMatching } from "hardhat/internal/util/fs-utils";
 
-import { CompilationFilesResolverMock } from "./mock/CompilationFilesResolverMock";
-import { useEnvironment } from "@test-helpers";
-import { CircuitsCompileCache } from "@src/cache";
-import { TASK_CIRCUITS_COMPILE, ZKIT_SCOPE_NAME } from "@src/task-names";
-import { DependencyGraph, CircomFilesResolver, CircomFilesParser } from "@src/core";
-import { getNormalizedFullPath } from "@src/utils/path-utils";
-import { CIRCUITS_COMPILE_CACHE_FILENAME } from "@src/constants";
+import { useEnvironment } from "test-helpers";
 
-import { CircomResolvedFileInfo, CircomResolvedFile } from "@src/types/core";
+import { CompilationFilesResolverMock } from "./mock/CompilationFilesResolverMock";
+import { CircuitsCompileCache } from "src/cache";
+import { TASK_CIRCUITS_COMPILE, ZKIT_SCOPE_NAME } from "src/task-names";
+import { DependencyGraph, CircomFilesResolver, CircomFilesParser } from "src/core";
+import { getNormalizedFullPath } from "src/utils/path-utils";
+import { CIRCUITS_COMPILE_CACHE_FILENAME } from "src/constants";
+
+import { CircomResolvedFileInfo, CircomResolvedFile } from "src/types/core";
 
 describe("CompilationFilesResolver", () => {
   function getCompilationFilesManagerMock(hre: HardhatRuntimeEnvironment): CompilationFilesResolverMock {

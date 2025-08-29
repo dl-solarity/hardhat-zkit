@@ -5,6 +5,7 @@ import { capitalize } from "lodash";
 import { execSync } from "child_process";
 
 import "@solarity/chai-zkit";
+
 import { expect } from "chai";
 import { before } from "mocha";
 import { stub, SinonStub } from "sinon";
@@ -20,12 +21,12 @@ import {
   TASK_GENERATE_VERIFIERS,
   TASK_ZKIT_CLEAN,
   ZKIT_SCOPE_NAME,
-} from "@src/task-names";
-import { CircuitsCompileCache, CircuitsSetupCache } from "@src/cache";
-import { CompileCacheEntry, SetupCacheEntry } from "@src/types/cache";
+} from "src/task-names";
+import { CircuitsCompileCache, CircuitsSetupCache } from "src/cache";
+import { CompileCacheEntry, SetupCacheEntry } from "src/types/cache";
 
-import { cleanUp, useEnvironment } from "@test-helpers";
-import { getNormalizedFullPath } from "@src/utils/path-utils";
+import { cleanUp, useEnvironment } from "test-helpers";
+import { getNormalizedFullPath } from "src/utils/path-utils";
 import {
   getCompileCacheEntry,
   getSetupCacheEntry,
@@ -34,9 +35,9 @@ import {
   updateTypesDir,
 } from "../utils";
 
-import { HardhatZKit } from "@src/types/hardhat-zkit";
-import { BaseCircomCompilerFactory } from "@src/core";
-import { CircomCompilerDownloader } from "@src/core/compiler/CircomCompilerDownloader";
+import { HardhatZKit } from "src/types/hardhat-zkit";
+import { BaseCircomCompilerFactory } from "src/core";
+import { CircomCompilerDownloader } from "src/core/compiler/CircomCompilerDownloader";
 
 describe("ZKit tasks", async function () {
   const circuitNames = ["Multiplier2", "Multiplier3Arr"];

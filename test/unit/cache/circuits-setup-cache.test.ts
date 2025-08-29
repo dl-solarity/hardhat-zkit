@@ -2,17 +2,17 @@ import fsExtra from "fs-extra";
 
 import { expect } from "chai";
 
-import { getFileHash } from "@src/utils/utils";
-import { getNormalizedFullPath } from "@src/utils/path-utils";
-import { CircuitsSetupCache, createCircuitsSetupCache, resetCircuitsSetupCache } from "@src/cache";
-import { TASK_CIRCUITS_MAKE, ZKIT_SCOPE_NAME } from "@src/task-names";
-import { CIRCUITS_SETUP_CACHE_FILENAME, CIRCUIT_SETUP_CACHE_VERSION } from "@src/constants";
+import { getFileHash } from "src/utils/utils";
+import { getNormalizedFullPath } from "src/utils/path-utils";
+import { CircuitsSetupCache, createCircuitsSetupCache, resetCircuitsSetupCache } from "src/cache";
+import { TASK_CIRCUITS_MAKE, ZKIT_SCOPE_NAME } from "src/task-names";
+import { CIRCUITS_SETUP_CACHE_FILENAME, CIRCUIT_SETUP_CACHE_VERSION } from "src/constants";
 
-import { SetupContributionSettings } from "@src/types/core";
-import { SetupCacheEntry } from "@src/types/cache";
-import { CircuitArtifact } from "@src/types/artifacts/circuit-artifacts";
+import { SetupContributionSettings } from "src/types/core";
+import { SetupCacheEntry } from "src/types/cache";
+import { CircuitArtifact } from "src/types/artifacts/circuit-artifacts";
 
-import { useEnvironment } from "@test-helpers";
+import { useEnvironment } from "test-helpers";
 import { getSetupCacheEntry } from "../../utils";
 import { defaultContributionSettings } from "../../constants";
 

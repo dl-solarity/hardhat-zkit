@@ -2,9 +2,9 @@ import { expect } from "chai";
 
 import { CircuitZKit } from "@solarity/zkit";
 
-import { TASK_CIRCUITS_COMPILE, ZKIT_SCOPE_NAME } from "@src/task-names";
+import { TASK_CIRCUITS_COMPILE, ZKIT_SCOPE_NAME } from "src/task-names";
 
-import { useEnvironment } from "@test-helpers";
+import { useEnvironment } from "test-helpers";
 import { updateProvingSystems, updateTypesDir } from "../../../utils";
 
 describe("CircuitZKitBuilder", () => {
