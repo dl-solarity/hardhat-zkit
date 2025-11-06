@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![tests](https://github.com/dl-solarity/hardhat-zkit/actions/workflows/tests.yml/badge.svg?branch=master)](https://github.com/dl-solarity/hardhat-zkit/actions/workflows/tests.yml)
 [![GitPOAP Badge](https://public-api.gitpoap.io/v1/repo/dl-solarity/hardhat-zkit/badge)](https://www.gitpoap.io/gh/dl-solarity/hardhat-zkit)
-[![hardhat](https://hardhat.org/buidler-plugin-badge.svg?1)](https://hardhat.org)
+[![hardhat](https://img.shields.io/badge/Built%20with-Hardhat-FFDB1C.svg)](https://hardhat.org)
 
 # Hardhat ZKit
 
