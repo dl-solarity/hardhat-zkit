@@ -7,20 +7,20 @@ import * as snarkjs from "snarkjs";
 
 import { ProvingSystemType } from "@solarity/zkit";
 
-import { HardhatZKitError } from "../../errors";
-import { BN128_CURVE_NAME, PTAU_FILE_REG_EXP } from "../../constants";
-import { Reporter } from "../../reporter";
-import { PtauDownloader } from "../utils/PtauDownloader";
+import { HardhatZKitError } from "../../errors.js";
+import { BN128_CURVE_NAME, PTAU_FILE_REG_EXP } from "../../constants.js";
+import { Reporter } from "../../reporter/index.js";
+import { PtauDownloader } from "../utils/PtauDownloader.js";
 
 import {
   terminateCurve,
   getNormalizedFullPath,
   getGroth16ConstraintsNumber,
   getPlonkConstraintsNumber,
-} from "../../utils";
+} from "../../utils/index.js";
 
-import { ICircuitArtifacts } from "../../types/artifacts/circuit-artifacts";
-import { CircuitSetupInfo, SetupContributionSettings } from "../../types/core";
+import { ICircuitArtifacts } from "../../types/artifacts/circuit-artifacts.js";
+import { CircuitSetupInfo, SetupContributionSettings } from "../../types/core/index.js";
 
 /**
  * Class responsible for processing the setup of circuit artifacts.

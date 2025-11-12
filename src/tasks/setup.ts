@@ -1,53 +1,54 @@
 import os from "os";
 import path from "path";
 
-import { ActionType, HardhatRuntimeEnvironment } from "hardhat/types";
+import { CircuitsSetupCache, createCircuitsSetupCache } from "../cache/CircuitsSetupCache.js";
+import { SetupFilesResolver } from "../core/setup/SetupFilesResolver.js";
+import { SetupProcessor } from "../core/setup/SetupProcessor.js";
+import { TypeGenerationProcessor } from "../core/index.js";
+import { createReporter, Reporter } from "../reporter/ReporterFacade.js";
+import { SetupContributionSettings } from "../types/core/setup/setup-processor.js";
+import { CircuitSetupInfo } from "../types/core/setup/setup-files-resolver.js";
+import { ProvingSystemData } from "../types/cache/circuits-setup-cache.js";
+import { getNormalizedFullPath } from "../utils/path-utils.js";
+import { getUniqueProvingSystems } from "../utils/utils.js";
+import { SetupTaskConfig } from "../types/tasks/setup.js";
+import { CIRCUITS_SETUP_CACHE_FILENAME } from "../constants.js";
+import { NewTaskActionFunction } from "hardhat/types/tasks";
 
-import { CircuitsSetupCache, createCircuitsSetupCache } from "../cache";
-import { TypeGenerationProcessor, SetupProcessor, SetupFilesResolver } from "../core";
-
-import { Reporter, createReporter } from "../reporter";
-import { CIRCUITS_SETUP_CACHE_FILENAME } from "../constants";
-import { getNormalizedFullPath, getUniqueProvingSystems } from "../utils";
-
-import { SetupTaskConfig } from "../types/tasks";
-import { CircuitSetupInfo, SetupContributionSettings } from "../types/core";
-import { ProvingSystemData } from "../types/cache";
-
-export const setup: ActionType<SetupTaskConfig> = async (taskArgs: SetupTaskConfig, env: HardhatRuntimeEnvironment) => {
+const setupAction: NewTaskActionFunction<SetupTaskConfig> = async (taskArgs, hre) => {
   const circuitsSetupCacheFullPath: string = getNormalizedFullPath(
-    env.config.paths.cache,
+    hre.config.paths.cache,
     CIRCUITS_SETUP_CACHE_FILENAME,
   );
 
-  createReporter(taskArgs.quiet || env.config.zkit.quiet);
+  createReporter(taskArgs.quiet || hre.config.zkit.quiet);
   await createCircuitsSetupCache(circuitsSetupCacheFullPath);
 
-  const setupFileResolver: SetupFilesResolver = new SetupFilesResolver(env.zkit.circuitArtifacts, env.config);
+  const setupFileResolver: SetupFilesResolver = new SetupFilesResolver(hre.zkit.circuitArtifacts, hre.config);
 
   const setupContributionSettings: SetupContributionSettings = {
-    provingSystems: getUniqueProvingSystems(env.config.zkit.setupSettings.contributionSettings.provingSystem),
-    contributions: env.config.zkit.setupSettings.contributionSettings.contributions,
+    provingSystems: getUniqueProvingSystems(hre.config.zkit.setupSettings.contributionSettings.provingSystem),
+    contributions: hre.config.zkit.setupSettings.contributionSettings.contributions,
   };
 
   const circuitSetupInfoArr: CircuitSetupInfo[] = await setupFileResolver.getCircuitsInfoToSetup(
     setupContributionSettings,
-    env.config.zkit.setupSettings,
+    hre.config.zkit.setupSettings,
     taskArgs.force,
   );
 
   if (circuitSetupInfoArr.length > 0) {
-    let ptauDir = env.config.zkit.setupSettings.ptauDir;
+    let ptauDir = hre.config.zkit.setupSettings.ptauDir;
 
     // If `ptauDir` is not specified in the configuration,
     // the `.zkit/ptau` folder in the user's home directory is used as the default location
     if (ptauDir) {
-      ptauDir = path.isAbsolute(ptauDir) ? ptauDir : getNormalizedFullPath(env.config.paths.root, ptauDir);
+      ptauDir = path.isAbsolute(ptauDir) ? ptauDir : getNormalizedFullPath(hre.config.paths.root, ptauDir);
     } else {
       ptauDir = path.join(os.homedir(), ".zkit", "ptau");
     }
 
-    const setupProcessor: SetupProcessor = new SetupProcessor(ptauDir, env.zkit.circuitArtifacts);
+    const setupProcessor: SetupProcessor = new SetupProcessor(ptauDir, hre.zkit.circuitArtifacts);
 
     await setupProcessor.setup(circuitSetupInfoArr, setupContributionSettings);
 
@@ -56,7 +57,7 @@ export const setup: ActionType<SetupTaskConfig> = async (taskArgs: SetupTaskConf
     Reporter!.reportNothingToSetup();
   }
 
-  await new TypeGenerationProcessor(env).generateAllTypes();
+  await new TypeGenerationProcessor(hre).generateAllTypes();
 
   await CircuitsSetupCache!.writeToFile(circuitsSetupCacheFullPath);
 };
@@ -90,3 +91,5 @@ function updateCache(setupContributionSettings: SetupContributionSettings, circu
     });
   }
 }
+
+export default setupAction;

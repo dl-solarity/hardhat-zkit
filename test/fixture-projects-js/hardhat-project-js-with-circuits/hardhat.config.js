@@ -1,11 +1,7 @@
-require("@nomicfoundation/hardhat-ethers");
-
-require("../../../src");
-
-const config = require("../hardhat.config");
+import config from '../hardhat.config.js';
 
 /** @type import('hardhat/config').HardhatUserConfig */
-module.exports = {
+const defaultConfig = {
   ...config,
   zkit: {
     circuitsDir: "circuits",
@@ -27,3 +23,5 @@ module.exports = {
     typesDir: "generated-types/zkit",
   },
 };
+
+export default defaultConfig;

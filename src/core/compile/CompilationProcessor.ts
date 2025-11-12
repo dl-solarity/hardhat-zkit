@@ -4,30 +4,23 @@ import semver from "semver";
 import fsExtra from "fs-extra";
 import { v4 as uuid } from "uuid";
 
-import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { HardhatRuntimeEnvironment } from "hardhat/types/hre";
 
-import { CircomCompilerFactory, createCircomCompilerFactory, getHighestVersion, isVersionValid } from "../compiler";
-import { HardhatZKitError } from "../../errors";
-import { CIRCUIT_ARTIFACT_VERSION, NODE_MODULES } from "../../constants";
-import { Reporter } from "../../reporter";
+import { Reporter } from "../../reporter/ReporterFacade.js";
+import { CircomCompilerFactory, createCircomCompilerFactory } from "../compiler/CircomCompilerFactory.js";
+import { getHighestVersion, isVersionValid } from "../compiler/versioning.js";
 
-import {
-  getNormalizedFullPath,
-  renameFilesRecursively,
-  readDirRecursively,
-  getR1CSConstraintsNumber,
-  terminateCurve,
-} from "../../utils";
+import { getNormalizedFullPath, renameFilesRecursively, readDirRecursively } from "../../utils/path-utils.js";
 
-import { ZKitConfig } from "../../types/zkit-config";
-import { ArtifactsFileType, CircuitArtifact, ICircuitArtifacts } from "../../types/artifacts/circuit-artifacts";
-import {
-  ICircomCompiler,
-  CompilationProcessorConfig,
-  CompilationInfo,
-  CompileConfig,
-  CircomResolvedFileInfo,
-} from "../../types/core";
+import { terminateCurve } from "../../utils/utils.js";
+import { CIRCUIT_ARTIFACT_VERSION, NODE_MODULES } from "../../constants.js";
+import { HardhatZKitError } from "../../errors.js";
+import { getR1CSConstraintsNumber } from "../../utils/constraints-utils.js";
+import { ZKitConfig } from "../../types/zkit-config.js";
+import { CompilationInfo, CompilationProcessorConfig } from "../../types/core/compile/compilation-processor.js";
+import { ArtifactsFileType, CircuitArtifact, ICircuitArtifacts } from "../../types/artifacts/circuit-artifacts.js";
+import { CompileConfig, ICircomCompiler } from "../../types/core/compiler/circom-compiler.js";
+import { CircomResolvedFileInfo } from "../../types/core/compile/compilation-files-resolver.js";
 
 /**
  * This class handles the entire process of circuit compilation, from configuring the appropriate `circom` compiler
@@ -98,7 +91,7 @@ export class CompilationProcessor {
         info.constraintsNumber = await getR1CSConstraintsNumber(r1csFilePath);
       }
 
-      await terminateCurve();
+      //  await terminateCurve();
 
       await this._moveFromTempDirToArtifacts(compilationInfoArr);
       await this._emitArtifacts(compilationInfoArr);

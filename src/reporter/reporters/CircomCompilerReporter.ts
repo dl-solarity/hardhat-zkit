@@ -1,9 +1,8 @@
 /* eslint-disable no-console */
 import chalk from "chalk";
-import { emoji } from "hardhat/internal/cli/emoji";
 
-import { BaseReporter } from "./BaseReporter";
-import { ProgressBarProcessor } from "../ProgressBarProcessor";
+import { BaseReporter } from "./BaseReporter.js";
+import { ProgressBarProcessor } from "../ProgressBarProcessor.js";
 
 export class CircomCompilerReporter extends BaseReporter {
   public reportVersion(compilerVersion: string) {
@@ -33,7 +32,7 @@ export class CircomCompilerReporter extends BaseReporter {
 
     ProgressBarProcessor!.stopProgressBar();
 
-    console.log(`\n${emoji("✅ ", `${chalk.green("✔ ")}`)}Circom compiler successfully downloaded`);
+    console.log(`\n ${chalk.green("✔ ")} Circom compiler successfully downloaded`);
   }
 
   public reportDownloadingError() {
@@ -41,6 +40,6 @@ export class CircomCompilerReporter extends BaseReporter {
 
     ProgressBarProcessor!.stopProgressBar();
 
-    console.log(`\n${emoji("❌ ", `${chalk.red("X ")}`)}Circom compiler downloading failed`);
+    console.log(`\n ${chalk.red("X ")} Circom compiler downloading failed`);
   }
 }

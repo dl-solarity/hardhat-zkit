@@ -5,22 +5,19 @@ import fsExtra from "fs-extra";
 import { expect } from "chai";
 import { before } from "mocha";
 import { stub, SinonStub } from "sinon";
-
-import { useEnvironment } from "test-helpers";
-import { getNormalizedFullPath } from "src/utils/path-utils";
-import { CompilerPlatformBinary, ICircomCompiler } from "src/types/core";
 import {
   BaseCircomCompilerFactory,
-  BinaryCircomCompiler,
   CircomCompilerFactory,
   createCircomCompilerFactory,
-  WASMCircomCompiler,
-} from "src/core";
-
-import { CircomCompilerDownloader } from "src/core/compiler/CircomCompilerDownloader";
-
-import { defaultCompileFlags } from "../../../constants";
-import { LATEST_SUPPORTED_CIRCOM_VERSION } from "src/constants";
+} from "../../../../src/core/compiler/CircomCompilerFactory.js";
+import { CircomCompilerDownloader } from "../../../../src/core/compiler/CircomCompilerDownloader.js";
+import { CompilerPlatformBinary } from "../../../../src/types/core/compiler/circom-compiler-downloader.js";
+import { BinaryCircomCompiler, WASMCircomCompiler } from "../../../../src/core/compiler/CircomCompiler.js";
+import { LATEST_SUPPORTED_CIRCOM_VERSION } from "../../../../src/constants.js";
+import { getNormalizedFullPath } from "../../../../src/utils/path-utils.js";
+import { useEnvironment } from "../../../helpers.js";
+import { ICircomCompiler } from "../../../../src/types/core/compiler/circom-compiler.js";
+import { defaultCompileFlags } from "../../../constants.js";
 
 describe("CircomCompilerFactory", () => {
   let nativeCompilerStub: SinonStub;

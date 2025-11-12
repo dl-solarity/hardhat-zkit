@@ -1,36 +1,36 @@
-import { ActionType, HardhatRuntimeEnvironment } from "hardhat/types";
-import { TASK_COMPILE_SOLIDITY_READ_FILE as TASK_READ_FILE } from "hardhat/builtin-tasks/task-names";
+import { NewTaskActionFunction, NewTaskDefinition, TaskDefinition } from "hardhat/types/tasks";
 
-import { CircuitsCompileCache, createCircuitsCompileCache } from "../cache";
-import { CompilationProcessor, CompilationFilesResolver, TypeGenerationProcessor, isVersionValid } from "../core";
+import * as fs from "fs";
 
-import { HardhatZKitError } from "../errors";
-import { Reporter, createReporter } from "../reporter";
-import { CIRCUITS_COMPILE_CACHE_FILENAME } from "../constants";
-import { getNormalizedFullPath } from "../utils";
+import { CompileTaskConfig } from "../types/tasks/index.js";
+import { getNormalizedFullPath } from "../utils/path-utils.js";
+import { CIRCUITS_COMPILE_CACHE_FILENAME } from "../constants.js";
+import { createReporter, Reporter } from "../reporter/ReporterFacade.js";
+import { CompilationFilesResolver } from "../core/compile/CompilationFilesResolver.js";
+import { CompileFlags } from "../types/core/compiler/circom-compiler.js";
+import { CircomResolvedFileInfo } from "../types/core/compile/compilation-files-resolver.js";
+import { isVersionValid } from "../core/compiler/versioning.js";
+import { HardhatZKitError } from "../errors.js";
+import { CompilationProcessor } from "../core/compile/CompilationProcessor.js";
+import { TypeGenerationProcessor } from "../core/index.js";
+import { CircuitsCompileCache, createCircuitsCompileCache } from "../cache/CircuitsCompileCache.js";
 
-import { CompileTaskConfig } from "../types/tasks";
-import { CompileFlags, CircomResolvedFileInfo } from "../types/core";
-
-export const compile: ActionType<CompileTaskConfig> = async (
-  taskArgs: CompileTaskConfig,
-  env: HardhatRuntimeEnvironment,
-) => {
+const compileAction: NewTaskActionFunction<CompileTaskConfig> = async (taskArgs, hre) => {
   const circuitsCompileCacheFullPath: string = getNormalizedFullPath(
-    env.config.paths.cache,
+    hre.config.paths.cache,
     CIRCUITS_COMPILE_CACHE_FILENAME,
   );
 
-  createReporter(taskArgs.quiet || env.config.zkit.quiet);
+  createReporter(taskArgs.quiet || hre.config.zkit.quiet);
   await createCircuitsCompileCache(circuitsCompileCacheFullPath);
 
   const compilationFileResolver: CompilationFilesResolver = new CompilationFilesResolver(
-    (absolutePath: string) => env.run(TASK_READ_FILE, { absolutePath }),
-    env.zkit.circuitArtifacts,
-    env.config,
+    (absolutePath: string) => fs.readFileSync(absolutePath).toString(),
+    hre.zkit.circuitArtifacts,
+    hre.config,
   );
 
-  const optimization = taskArgs.optimization || env.config.zkit.compilationSettings.optimization;
+  const optimization = taskArgs.optimization || hre.config.zkit.compilationSettings.optimization;
 
   // Flags for specifying the necessary configurations during the setup process.
   // R1CS, Wasm, and Sym flags are mandatory
@@ -38,8 +38,8 @@ export const compile: ActionType<CompileTaskConfig> = async (
     r1cs: true,
     wasm: true,
     sym: true,
-    json: taskArgs.json || env.config.zkit.compilationSettings.json,
-    c: taskArgs.c || env.config.zkit.compilationSettings.c,
+    json: taskArgs.json || hre.config.zkit.compilationSettings.json,
+    c: taskArgs.c || hre.config.zkit.compilationSettings.c,
     O0: optimization === "O0",
     O1: optimization === "O1",
     O2: optimization === "O2",
@@ -50,10 +50,10 @@ export const compile: ActionType<CompileTaskConfig> = async (
 
   const resolvedFilesInfo: CircomResolvedFileInfo[] = await compilationFileResolver.getResolvedFilesToCompile(
     compileFlags,
-    taskArgs.force,
+    taskArgs.force!,
   );
 
-  const configCompilerVersion = env.config.zkit.compilerVersion;
+  const configCompilerVersion = hre.config.zkit.compilerVersion;
 
   if (configCompilerVersion && !isVersionValid(configCompilerVersion)) {
     throw new HardhatZKitError(`Invalid Circom compiler version ${configCompilerVersion} specified in the config`);
@@ -63,10 +63,10 @@ export const compile: ActionType<CompileTaskConfig> = async (
     const compilationProcessor: CompilationProcessor = new CompilationProcessor(
       {
         compileFlags,
-        quiet: taskArgs.quiet || env.config.zkit.quiet,
+        quiet: taskArgs.quiet || hre.config.zkit.quiet,
       },
-      env.zkit.circuitArtifacts,
-      env,
+      hre.zkit.circuitArtifacts,
+      hre,
     );
 
     await compilationProcessor.compile(resolvedFilesInfo);
@@ -76,7 +76,7 @@ export const compile: ActionType<CompileTaskConfig> = async (
     Reporter!.reportNothingToCompile();
   }
 
-  await new TypeGenerationProcessor(env).generateAllTypes();
+  await new TypeGenerationProcessor(hre).generateAllTypes();
 
   await CircuitsCompileCache!.writeToFile(circuitsCompileCacheFullPath);
 };
@@ -94,3 +94,5 @@ function updateCache(compileFlags: CompileFlags, resolvedFilesInfo: CircomResolv
     }
   }
 }
+
+export default compileAction;

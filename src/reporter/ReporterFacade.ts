@@ -3,23 +3,24 @@ import debug from "debug";
 
 import { ProvingSystemType, VerifierLanguageType } from "@solarity/zkit";
 
-import {
-  ProgressReporter,
-  CircuitFilesResolvingReporter,
-  SetupReporter,
-  CircomCompilerReporter,
-  CircuitCompilationReporter,
-  PtauFileReporter,
-  VerifiersGenerationReporter,
-  VKeyFilesGenerationReporter,
-  ZKeyFilesGenerationReporter,
-  WarningsReporter,
-} from "./reporters";
+import { SetupReporter } from "./reporters/SetupReporter.js";
+import { ProgressReporter } from "./reporters/ProgressReporter.js";
+import { PtauFileReporter } from "./reporters/PtauFileReporter.js";
+import { WarningsReporter } from "./reporters/WarningsReporter.js";
+import { CircomCompilerReporter } from "./reporters/CircomCompilerReporter.js";
+import { CircuitCompilationReporter } from "./reporters/CircuitCompilationReporter.js";
+import { VerifiersGenerationReporter } from "./reporters/VerifiersGenerationReporter.js";
+import { VKeyFilesGenerationReporter } from "./reporters/VKeyFilesGenerationReporter.js";
+import { ZKeyFilesGenerationReporter } from "./reporters/ZKeyFilesGenerationReporter.js";
+import { CircuitFilesResolvingReporter } from "./reporters/CircuitFilesResolvingReporter.js";
 
-import { createProgressBarProcessor } from "./ProgressBarProcessor";
-import { createSpinnerProcessor } from "./SpinnerProcessor";
+import { createProgressBarProcessor } from "./ProgressBarProcessor.js";
+import { createSpinnerProcessor } from "./SpinnerProcessor.js";
 
-import { CompilationInfo, CircuitSetupInfo, SimpleParserRuleContext, SetupContributionSettings } from "../types/core";
+import { CompilationInfo } from "../types/core/compile/compilation-processor.js";
+import { CircuitSetupInfo } from "../types/core/setup/setup-files-resolver.js";
+import { SetupContributionSettings } from "../types/core/setup/setup-processor.js";
+import { SimpleParserRuleContext } from "../types/core/dependencies/index.js";
 
 /**
  * A facade for reporting various types of log information to the user,

@@ -1,4 +1,4 @@
-import { CircomResolvedFile } from "./circom-files-resolver";
+import { CircomResolvedFile } from "./circom-files-resolver.js";
 
 export interface TransitiveDependency {
   dependency: CircomResolvedFile;

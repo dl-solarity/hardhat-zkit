@@ -5,14 +5,14 @@ import semver from "semver";
 import { promisify } from "util";
 import { exec } from "child_process";
 
-import { Reporter } from "../../reporter";
-import { HardhatZKitError } from "../../errors";
-import { LATEST_SUPPORTED_CIRCOM_VERSION, OLDEST_SUPPORTED_CIRCOM_VERSION } from "../../constants";
+import { Reporter } from "../../reporter/index.js";
+import { HardhatZKitError } from "../../errors.js";
+import { LATEST_SUPPORTED_CIRCOM_VERSION, OLDEST_SUPPORTED_CIRCOM_VERSION } from "../../constants.js";
 
-import { BinaryCircomCompiler, WASMCircomCompiler } from "./CircomCompiler";
-import { CircomCompilerDownloader } from "./CircomCompilerDownloader";
+import { BinaryCircomCompiler, WASMCircomCompiler } from "./CircomCompiler.js";
+import { CircomCompilerDownloader } from "./CircomCompilerDownloader.js";
 
-import { CompilerInfo, CompilerPlatformBinary, ICircomCompiler, NativeCompiler } from "../../types/core";
+import { CompilerInfo, CompilerPlatformBinary, ICircomCompiler, NativeCompiler } from "../../types/core/index.js";
 
 /**
  * Abstract factory class responsible for creating instances of Circom compilers.
@@ -183,7 +183,7 @@ export class BaseCircomCompilerFactory {
   }
 
   private _getWasmCompiler(compilerPath: string): Buffer {
-    return fsExtra.readFileSync(require.resolve(compilerPath));
+    return fsExtra.readFileSync(compilerPath);
   }
 
   private async _getCompilersDir(): Promise<string> {

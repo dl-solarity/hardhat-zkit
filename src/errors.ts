@@ -1,6 +1,6 @@
-import { NomicLabsHardhatPluginError } from "hardhat/plugins";
+import { HardhatPluginError } from "hardhat/plugins";
 
-import { PLUGIN_NAME } from "./constants";
+import { PLUGIN_NAME } from "./constants.js";
 
 /**
  * Custom error class for handling errors within the Hardhat ZKit plugin.
@@ -11,7 +11,7 @@ import { PLUGIN_NAME } from "./constants";
  * are propagated, while maintaining the plugin name for consistent
  * error reporting.
  */
-export class HardhatZKitError extends NomicLabsHardhatPluginError {
+export class HardhatZKitError extends HardhatPluginError {
   constructor(message: string, parent?: Error) {
     super(PLUGIN_NAME, message, parent);
 

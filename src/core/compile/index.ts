@@ -1,2 +1,2 @@
-export * from "./CompilationFilesResolver";
-export * from "./CompilationProcessor";
+export * from "./CompilationFilesResolver.js";
+export * from "./CompilationProcessor.js";

@@ -1,12 +1,9 @@
-import { isEqual } from "lodash";
-
-import { CompileCacheSchema } from "./schemas";
-import { CIRCUIT_COMPILE_CACHE_VERSION } from "../constants";
-
-import { BaseCache } from "../cache/BaseCache";
-
-import { CompileCacheEntry } from "../types/cache";
-import { CompileFlags } from "../types/core";
+import { isEqual } from "lodash-es";
+import { CompileCacheEntry } from "../types/cache/circuits-compile-cache.js";
+import { BaseCache } from "./BaseCache.js";
+import { CompileFlags } from "../types/core/compiler/circom-compiler.js";
+import { CIRCUIT_COMPILE_CACHE_VERSION } from "../constants.js";
+import { CompileCacheSchema } from "./schemas/compile-schemas.js";
 
 /**
  * Class that implements the caching logic for compiling circuits.

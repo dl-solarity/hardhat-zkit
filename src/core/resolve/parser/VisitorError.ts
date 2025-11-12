@@ -1,4 +1,4 @@
-import { CircuitResolutionError } from "../../../types/core/dependencies";
+import { CircuitResolutionError } from "../../../types/core/dependencies/index.js";
 
 export class VisitorError extends Error {
   public errors: CircuitResolutionError[];

@@ -1,26 +1,24 @@
 import path from "path";
 import fsExtra from "fs-extra";
+import { FileNotFoundError, getAllFilesMatching, getFileTrueCase } from "@nomicfoundation/hardhat-utils/fs";
+import { HardhatPluginError } from "@nomicfoundation/hardhat-errors";
 
-import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { FileNotFoundError, getAllFilesMatching, getFileTrueCase } from "hardhat/internal/util/fs-utils";
+import { HardhatRuntimeEnvironment } from "hardhat/types/hre";
 import { isFullyQualifiedName } from "hardhat/utils/contract-names";
-import { replaceBackslashes } from "hardhat/utils/source-names";
-import { ERRORS } from "hardhat/internal/core/errors-list";
-import { HardhatError, NomicLabsHardhatPluginError } from "hardhat/internal/core/errors";
 
 import { ProvingSystemType } from "@solarity/zkit";
 
-import { HardhatZKitError } from "../errors";
-import { CIRCUIT_ARTIFACTS_SUFFIX } from "../constants";
-import { Reporter } from "../reporter";
-import { getFileHash, getNormalizedFullPath } from "../utils";
-
+import { Reporter } from "../reporter/ReporterFacade.js";
 import {
-  CircuitArtifact,
-  ICircuitArtifacts,
   ArtifactsCache,
   ArtifactsFileType,
-} from "../types/artifacts/circuit-artifacts";
+  CircuitArtifact,
+  ICircuitArtifacts,
+} from "../types/artifacts/circuit-artifacts.js";
+import { getNormalizedFullPath, replaceBackslashes } from "../utils/path-utils.js";
+import { HardhatZKitError } from "../errors.js";
+import { CIRCUIT_ARTIFACTS_SUFFIX } from "../constants.js";
+import { getFileHash } from "../utils/utils.js";
 
 /**
  * A class for easily managing circuit artifacts, including retrieving existing artifacts,
@@ -96,7 +94,7 @@ export class CircuitArtifacts implements ICircuitArtifacts {
     try {
       artifactPath = await this._getArtifactPath(circuitNameOrFullyQualifiedName);
     } catch (e) {
-      if (NomicLabsHardhatPluginError.isNomicLabsHardhatPluginError(e)) {
+      if (HardhatPluginError.isHardhatPluginError(e)) {
         return false;
       }
 
@@ -316,10 +314,9 @@ export class CircuitArtifacts implements ICircuitArtifacts {
       );
 
       if (artifactPath !== trueCasePath) {
-        throw new HardhatError(ERRORS.ARTIFACTS.WRONG_CASING, {
-          correct: this._getFullyQualifiedNameFromPath(trueCasePath),
-          incorrect: fullyQualifiedName,
-        });
+        throw new HardhatZKitError(
+          `Wrong case in artifact path, correct:${this._getFullyQualifiedNameFromPath(trueCasePath)}, incorrect:${fullyQualifiedName}`,
+        );
       }
 
       return trueCasePath;

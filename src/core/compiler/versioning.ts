@@ -1,6 +1,6 @@
 import semver from "semver";
 
-import { CircomResolvedFileInfo } from "../../types/core";
+import { CircomResolvedFileInfo } from "../../types/core/index.jsx";
 
 export function getHighestVersion(circomVersions: CircomResolvedFileInfo[] | string[]) {
   let highestVersion = "0.0.0";

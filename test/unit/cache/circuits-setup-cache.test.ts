@@ -1,20 +1,22 @@
 import fsExtra from "fs-extra";
 
 import { expect } from "chai";
+import {
+  CircuitsSetupCache,
+  createCircuitsSetupCache,
+  resetCircuitsSetupCache,
+} from "../../../src/cache/CircuitsSetupCache.js";
+import { CIRCUIT_SETUP_CACHE_VERSION, CIRCUITS_SETUP_CACHE_FILENAME } from "../../../src/constants.js";
+import { SetupCacheEntry } from "../../../src/types/cache/circuits-setup-cache.js";
+import { useEnvironment } from "../../helpers.js";
+import { getSetupCacheEntry } from "../../utils.js";
+import { getNormalizedFullPath } from "../../../src/utils/path-utils.js";
+import { TASK_CIRCUITS_MAKE, ZKIT_SCOPE_NAME } from "../../../src/task-names.js";
+import { defaultContributionSettings } from "../../constants.js";
 
-import { getFileHash } from "src/utils/utils";
-import { getNormalizedFullPath } from "src/utils/path-utils";
-import { CircuitsSetupCache, createCircuitsSetupCache, resetCircuitsSetupCache } from "src/cache";
-import { TASK_CIRCUITS_MAKE, ZKIT_SCOPE_NAME } from "src/task-names";
-import { CIRCUITS_SETUP_CACHE_FILENAME, CIRCUIT_SETUP_CACHE_VERSION } from "src/constants";
-
-import { SetupContributionSettings } from "src/types/core";
-import { SetupCacheEntry } from "src/types/cache";
-import { CircuitArtifact } from "src/types/artifacts/circuit-artifacts";
-
-import { useEnvironment } from "test-helpers";
-import { getSetupCacheEntry } from "../../utils";
-import { defaultContributionSettings } from "../../constants";
+import { getFileHash } from "../../../src/utils/utils.js";
+import { SetupContributionSettings } from "../../../src/types/core/setup/setup-processor.js";
+import { CircuitArtifact } from "../../../src/types/artifacts/circuit-artifacts.js";
 
 describe("CircuitsSetupCache", () => {
   describe("createEmpty", () => {
@@ -89,7 +91,7 @@ describe("CircuitsSetupCache", () => {
     useEnvironment({ fixtureProjectName: "with-circuits" });
 
     it("should return correct results", async function () {
-      await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_MAKE }, { quiet: false });
+      await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_MAKE]).run({ quiet: false });
 
       expect(CircuitsSetupCache!.hasFileChanged("invalid-path", "", defaultContributionSettings)).to.be.deep.eq(
         defaultContributionSettings.provingSystems,
@@ -99,8 +101,8 @@ describe("CircuitsSetupCache", () => {
 
       const mul2Artifact: CircuitArtifact = await this.hre.zkit.circuitArtifacts.readCircuitArtifact(mul2FullName);
       const mul2ArtifactFullPath: string =
-        await this.hre.zkit.circuitArtifacts.formCircuitArtifactPathFromFullyQualifiedName(mul2FullName);
-      const mul2R1CSFilePath: string = await this.hre.zkit.circuitArtifacts.getCircuitArtifactFileFullPath(
+        this.hre.zkit.circuitArtifacts.formCircuitArtifactPathFromFullyQualifiedName(mul2FullName);
+      const mul2R1CSFilePath: string = this.hre.zkit.circuitArtifacts.getCircuitArtifactFileFullPath(
         mul2Artifact,
         "r1cs",
       );

@@ -3,7 +3,7 @@ import {
   ParserErrorItem,
   ParserRuleContext,
   TemplateDefinitionContext,
-} from "@distributedlab/circom-parser";
+} from "@tawny0wl/test-circom-parser";
 
 export enum ErrorType {
   SignalDimensionResolution,

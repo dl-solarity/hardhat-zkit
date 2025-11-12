@@ -5,22 +5,22 @@ import semver from "semver";
 import { promisify } from "util";
 import { execFile } from "child_process";
 
+import { MultiProcessMutex } from "@nomicfoundation/hardhat-utils/synchronization";
+
 import {
   COMPILER_AMD_REPOSITORY_URL,
   COMPILER_ARM_REPOSITORY_URL,
   COMPILER_WASM_REPOSITORY_URL,
   LATEST_SUPPORTED_CIRCOM_VERSION,
   WASM_COMPILER_VERSIONING,
-} from "../../constants";
-import { Reporter } from "../../reporter";
-import { HardhatZKitError } from "../../errors";
+} from "../../constants.js";
+import { Reporter } from "../../reporter/index.js";
+import { HardhatZKitError } from "../../errors.js";
 
-import { CompilerInfo, CompilerPlatformBinary } from "../../types/core";
+import { CompilerInfo, CompilerPlatformBinary } from "../../types/core/index.js";
 
-import { downloadFile } from "../../utils/utils";
-import { getHighestVersion } from "./versioning";
-
-import { MultiProcessMutex } from "hardhat/internal/util/multi-process-mutex";
+import { downloadFile } from "../../utils/utils.js";
+import { getHighestVersion } from "./versioning.js";
 
 /**
  * Handles the downloading of Circom compilers for various platforms.

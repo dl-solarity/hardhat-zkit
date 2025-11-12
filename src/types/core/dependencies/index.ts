@@ -1,3 +1,3 @@
-export * from "./dependency-graph";
-export * from "./circom-files-resolver";
-export * from "./parser/circom-files-visitor";
+export * from "./dependency-graph.js";
+export * from "./circom-files-resolver.js";
+export * from "./parser/circom-files-visitor.js";

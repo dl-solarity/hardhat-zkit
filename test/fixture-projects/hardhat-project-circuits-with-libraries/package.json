@@ -7,5 +7,6 @@
   },
   "dependencies": {
     "circomlib": "^2.0.5"
-  }
+  },
+  "type": "module"
 }

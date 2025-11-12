@@ -1,4 +1,5 @@
 import { VerifierLanguageType, ProvingSystemType } from "@solarity/zkit";
+import { RecursivePartial } from "./utils.js";
 
 export type ZKitConfig = {
   compilerVersion?: string;
@@ -10,6 +11,8 @@ export type ZKitConfig = {
   typesWitnessLimit: number;
   quiet: boolean;
 };
+
+export type ZKitUserConfig = RecursivePartial<ZKitConfig>;
 
 export type CompilationSettings = FileFilterSettings & {
   artifactsDir: string;

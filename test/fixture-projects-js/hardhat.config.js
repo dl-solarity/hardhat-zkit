@@ -1,14 +1,8 @@
-require("@nomicfoundation/hardhat-ethers");
-
-require("../../src");
+import zkit from "../../src/index.js";
 
 /** @type import('hardhat/config').HardhatUserConfig */
-module.exports = {
-  networks: {
-    hardhat: {
-      initialDate: "1970-01-01T00:00:00Z",
-    },
-  },
+const config = {
+  plugins: [zkit],
   solidity: {
     version: "0.8.20",
     settings: {
@@ -20,3 +14,5 @@ module.exports = {
     },
   },
 };
+
+export default config;

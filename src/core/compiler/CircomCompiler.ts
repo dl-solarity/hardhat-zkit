@@ -1,13 +1,14 @@
 import fs from "fs";
 
-import { HardhatZKitError } from "../../errors";
-import { execCall } from "../../utils/utils";
+import { HardhatZKitError } from "../../errors.js";
+import { execCall } from "../../utils/utils.js";
 
-import { ICircomCompiler, CompileConfig, BaseCompileConfig } from "../../types/core";
-import { MAGIC_DESCRIPTOR } from "../../constants";
+import { ICircomCompiler, CompileConfig, BaseCompileConfig } from "../../types/core/index.js";
+import { MAGIC_DESCRIPTOR } from "../../constants.js";
 
-// eslint-disable-next-line
-const { CircomRunner, bindings, preopens } = require("./vendor");
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+const { CircomRunner, bindings, preopens } = require("./vendor/index.cjs");
 
 /**
  * An abstract class that serves as the base for all `circom` compiler implementations.
@@ -197,6 +198,7 @@ export class WASMCircomCompiler extends BaseCircomCompiler {
   private _getCircomRunner(callArgs: string[], quiet: boolean, errDescriptor: number): typeof CircomRunner {
     return new CircomRunner({
       args: callArgs,
+      env: process.env,
       preopens,
       bindings: {
         ...bindings,

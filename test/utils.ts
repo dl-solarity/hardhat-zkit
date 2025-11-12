@@ -1,14 +1,14 @@
 import fsExtra from "fs-extra";
 
 import { ProvingSystemType } from "@solarity/zkit";
-
-import { CircomFilesParser } from "../src/core";
-import { getFileHash } from "../src/utils/utils";
-import { getNormalizedFullPath } from "../src/utils/path-utils";
-
-import { CompileCacheEntry, ProvingSystemData, SetupCacheEntry } from "../src/types/cache";
-import { CompileFlags, ResolvedFileData } from "../src/types/core";
-import { defaultCompileFlags, defaultContributionSettings } from "./constants";
+import { defaultCompileFlags, defaultContributionSettings } from "./constants.js";
+import { CompileFlags } from "../src/types/core/compiler/circom-compiler.js";
+import { CompileCacheEntry } from "../src/types/cache/circuits-compile-cache.js";
+import { getNormalizedFullPath } from "../src/utils/path-utils.js";
+import { getFileHash } from "../src/utils/utils.js";
+import { CircomFilesParser } from "../src/core/resolve/parser/CircomFilesParser.js";
+import { ResolvedFileData } from "../src/types/core/dependencies/circom-files-resolver.js";
+import { ProvingSystemData, SetupCacheEntry } from "../src/types/cache/circuits-setup-cache.js";
 
 export async function getCompileCacheEntry(
   projectRoot: string,

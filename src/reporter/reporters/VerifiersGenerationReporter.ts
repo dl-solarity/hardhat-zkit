@@ -1,12 +1,12 @@
 /* eslint-disable no-console */
 import chalk from "chalk";
-import { capitalize } from "lodash";
+import { capitalize } from "lodash-es";
 
 import { ProvingSystemType, VerifierLanguageType } from "@solarity/zkit";
 
-import { BaseReporter } from "./BaseReporter";
-import { SpinnerProcessor } from "../SpinnerProcessor";
-import { HardhatZKitError } from "../../errors";
+import { BaseReporter } from "./BaseReporter.js";
+import { SpinnerProcessor } from "../SpinnerProcessor.js";
+import { HardhatZKitError } from "../../errors.js";
 
 export class VerifiersGenerationReporter extends BaseReporter {
   public reportHeader(verifiersType: VerifierLanguageType) {

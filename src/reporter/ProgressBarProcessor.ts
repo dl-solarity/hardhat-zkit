@@ -1,6 +1,6 @@
 import { Bar, Options, Preset, Presets, ValueType } from "cli-progress";
 
-import { BYTES_IN_MB } from "../constants";
+import { BYTES_IN_MB } from "../constants.js";
 
 export class BaseProgressBarProcessor {
   private _progressBar: Bar | null = null;

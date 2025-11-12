@@ -1,57 +1,57 @@
-import { ActionType, HardhatRuntimeEnvironment } from "hardhat/types";
-
-import { CircomValueType } from "@distributedlab/circom-parser";
+import { CircomValueType } from "@tawny0wl/test-circom-parser";
 
 import { VerifierLanguageType, ProvingSystemType } from "@solarity/zkit";
 
-import { ZKIT_SCOPE_NAME, TASK_CIRCUITS_MAKE } from "../task-names";
+import { HardhatRuntimeEnvironment } from "hardhat/types/hre";
+import { NewTaskActionFunction } from "hardhat/types/tasks";
 
-import { Reporter, createReporter } from "../reporter";
-import { getNormalizedFullPath, getUniqueProvingSystems } from "../utils";
+import { TASK_CIRCUITS_MAKE, ZKIT_SCOPE_NAME } from "../task-names.js";
 
-import { GenerateVerifiersTaskConfig, CircuitArtifactInfo } from "../types/tasks";
-import { CircuitArtifact } from "../types/artifacts/circuit-artifacts";
+import { Reporter, createReporter } from "../reporter/index.js";
+import { getNormalizedFullPath, getUniqueProvingSystems } from "../utils/index.js";
+import { GenerateVerifiersTaskConfig, CircuitArtifactInfo } from "../types/tasks/index.js";
+import { CircuitArtifact } from "../types/artifacts/circuit-artifacts.js";
+import { HardhatZKitError } from "../../src/errors.js";
 
-export const generateVerifiers: ActionType<GenerateVerifiersTaskConfig> = async (
-  taskArgs: GenerateVerifiersTaskConfig,
-  env: HardhatRuntimeEnvironment,
-) => {
+const generateVerifiersAction: NewTaskActionFunction<GenerateVerifiersTaskConfig> = async (taskArgs, hre) => {
   if (!taskArgs.noCompile) {
-    await env.run(
-      { scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_MAKE },
-      {
-        quiet: taskArgs.quiet,
-        force: taskArgs.force,
-      },
-    );
+    await hre.tasks
+      .getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_MAKE])
+      .run({ quiet: taskArgs.quiet, force: taskArgs.force });
   } else {
-    createReporter(taskArgs.quiet || env.config.zkit.quiet);
+    createReporter(taskArgs.quiet || hre.config.zkit.quiet);
   }
 
   const verifiersDirFullPath: string = getNormalizedFullPath(
-    env.config.paths.root,
-    taskArgs.verifiersDir ?? env.config.zkit.verifiersSettings.verifiersDir,
+    hre.config.paths.root,
+    taskArgs.verifiersDir ?? hre.config.zkit.verifiersSettings.verifiersDir,
   );
-  const verifiersType: VerifierLanguageType = taskArgs.verifiersType ?? env.config.zkit.verifiersSettings.verifiersType;
+
+  const _verifiersType = taskArgs.verifiersType ?? hre.config.zkit.verifiersSettings.verifiersType;
+  if (!(_verifiersType == "sol" || _verifiersType == "vy")) {
+    throw new HardhatZKitError(`Invalid verifier type: ${_verifiersType}`);
+  } // todo
+
+  const verifiersType: VerifierLanguageType = _verifiersType;
   const provingSystems: ProvingSystemType[] = getUniqueProvingSystems(
-    env.config.zkit.setupSettings.contributionSettings.provingSystem,
+    hre.config.zkit.setupSettings.contributionSettings.provingSystem,
   );
 
   Reporter!.verboseLog("index", "Verifiers generation dir - %s", [verifiersDirFullPath]);
 
-  const allFullyQualifiedNames: string[] = await env.zkit.circuitArtifacts.getAllCircuitFullyQualifiedNames();
+  const allFullyQualifiedNames: string[] = await hre.zkit.circuitArtifacts.getAllCircuitFullyQualifiedNames();
   let verifiersCount: number = 0;
 
   if (allFullyQualifiedNames.length > 0) {
     Reporter!.reportVerifiersGenerationHeader(verifiersType);
 
-    const [templateNamesCount, circuitArtifactsInfo] = await getAndCountArtifacts(env, allFullyQualifiedNames);
+    const [templateNamesCount, circuitArtifactsInfo] = await getAndCountArtifacts(hre, allFullyQualifiedNames);
 
     for (const circuitArtifactInfo of circuitArtifactsInfo) {
       for (const provingSystem of provingSystems) {
         await generateVerifierForProvingSystem(
           taskArgs,
-          env,
+          hre,
           provingSystems.length,
           circuitArtifactInfo,
           provingSystem,
@@ -70,13 +70,13 @@ export const generateVerifiers: ActionType<GenerateVerifiersTaskConfig> = async 
 };
 
 async function getAndCountArtifacts(
-  env: HardhatRuntimeEnvironment,
+  hre: HardhatRuntimeEnvironment,
   allFullyQualifiedNames: string[],
 ): Promise<[{ [key: string]: number }, CircuitArtifactInfo[]]> {
   const templateNamesCount: { [key: string]: number } = {};
   const circuitArtifactsInfo = await Promise.all(
     allFullyQualifiedNames.map(async (name: string) => {
-      const circuitArtifact: CircuitArtifact = await env.zkit.circuitArtifacts.readCircuitArtifact(name);
+      const circuitArtifact: CircuitArtifact = await hre.zkit.circuitArtifacts.readCircuitArtifact(name);
 
       // Count the number of uses of templates to determine whether a verifier file
       // will need a suffix in case of non-uniqueness
@@ -92,7 +92,7 @@ async function getAndCountArtifacts(
 
 async function generateVerifierForProvingSystem(
   taskArgs: GenerateVerifiersTaskConfig,
-  env: HardhatRuntimeEnvironment,
+  hre: HardhatRuntimeEnvironment,
   totalProvingSystems: number,
   circuitArtifactInfo: CircuitArtifactInfo,
   provingSystem: ProvingSystemType,
@@ -117,7 +117,7 @@ async function generateVerifierForProvingSystem(
     });
   }
 
-  const currentCircuit = await env.zkit.circuitZKitBuilder.getCircuitZKit(
+  const currentCircuit = await hre.zkit.circuitZKitBuilder.getCircuitZKit(
     circuitArtifactInfo.name,
     totalProvingSystems > 1 ? provingSystem : undefined,
     taskArgs.verifiersDir,
@@ -150,3 +150,5 @@ function flattenParameter(parameter: CircomValueType): bigint[] {
 
   return Array.isArray(flatValue) ? flatValue : [flatValue];
 }
+
+export default generateVerifiersAction;

@@ -1,2 +1,2 @@
-export * from "./SetupFilesResolver";
-export * from "./SetupProcessor";
+export * from "./SetupFilesResolver.js";
+export * from "./SetupProcessor.js";

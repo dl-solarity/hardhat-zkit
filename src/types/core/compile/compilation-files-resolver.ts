@@ -1,4 +1,4 @@
-import { CircomResolvedFile } from "../dependencies";
+import { CircomResolvedFile } from "../dependencies/index.js";
 
 export type CircomResolvedFileInfo = {
   circuitName: string;

@@ -1,11 +1,9 @@
 import { expect } from "chai";
 
 import { CircuitZKit } from "@solarity/zkit";
-
-import { TASK_CIRCUITS_COMPILE, ZKIT_SCOPE_NAME } from "src/task-names";
-
-import { useEnvironment } from "test-helpers";
-import { updateProvingSystems, updateTypesDir } from "../../../utils";
+import { useEnvironment } from "../../../helpers.js";
+import { TASK_CIRCUITS_COMPILE, ZKIT_SCOPE_NAME } from "../../../../src/task-names.js";
+import { updateProvingSystems, updateTypesDir } from "../../../utils.js";
 
 describe("CircuitZKitBuilder", () => {
   const defaultTypesDir = "generated-types/zkit";
@@ -20,7 +18,7 @@ describe("CircuitZKitBuilder", () => {
       });
 
       it("should return correct CircuitZKit object for the 'groth16' proving system", async function () {
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_COMPILE]).run({});
 
         const circuit = await this.hre.zkit.circuitZKitBuilder.getCircuitZKit("Multiplier2");
 
@@ -28,7 +26,7 @@ describe("CircuitZKitBuilder", () => {
       });
 
       it("should get exception if a proving system is provided that does not match the configured one", async function () {
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_COMPILE]).run({});
 
         await expect(this.hre.zkit.circuitZKitBuilder.getCircuitZKit("Multiplier2", "plonk")).to.be.rejectedWith(
           "Invalid proving system is passed. Please recompile the circuits or change the proving system.",
@@ -36,18 +34,18 @@ describe("CircuitZKitBuilder", () => {
       });
 
       it("should work correctly if pass proving system instead of undefined", async function () {
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_COMPILE]).run({});
 
         const circuit = await this.hre.zkit.circuitZKitBuilder.getCircuitZKit("Multiplier2", "groth16");
 
         expect(circuit.getProvingSystemType()).to.be.eq("groth16");
 
-        updateProvingSystems(this.hre.config.paths.configFile, ["groth16", "plonk"]);
-        updateTypesDir(this.hre.config.paths.configFile, defaultTypesDir, groth16PlonkTypesDir);
+        updateProvingSystems(this.hre.config.paths.config!, ["groth16", "plonk"]);
+        updateTypesDir(this.hre.config.paths.config!, defaultTypesDir, groth16PlonkTypesDir);
       });
 
       it("should return correct CircuitZKit object for the 'groth16' and 'plonk' proving systems", async function () {
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_COMPILE]).run({});
 
         let circuit = await this.hre.zkit.circuitZKitBuilder.getCircuitZKit("Multiplier2", "groth16");
 
@@ -59,14 +57,14 @@ describe("CircuitZKitBuilder", () => {
       });
 
       it("should throw an error if pass undefined proving system with several proving systems", async function () {
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_COMPILE]).run({});
 
         await expect(this.hre.zkit.circuitZKitBuilder.getCircuitZKit("Multiplier2")).to.be.rejectedWith(
           "Found several proving systems. Please specify the exact proving system in the getCircuit function.",
         );
 
-        updateProvingSystems(this.hre.config.paths.configFile, ["groth16"]);
-        updateTypesDir(this.hre.config.paths.configFile, groth16PlonkTypesDir, defaultTypesDir);
+        updateProvingSystems(this.hre.config.paths.config!, ["groth16"]);
+        updateTypesDir(this.hre.config.paths.config!, groth16PlonkTypesDir, defaultTypesDir);
       });
     });
 
@@ -78,7 +76,7 @@ describe("CircuitZKitBuilder", () => {
       });
 
       it("should return correct CircuitZKit object for the 'groth16' proving system", async function () {
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_COMPILE]).run({});
 
         const circuit = await this.hre.zkit.circuitZKitBuilder.getCircuitZKit("Multiplier2");
 
@@ -87,7 +85,7 @@ describe("CircuitZKitBuilder", () => {
       });
 
       it("should get exception if a proving system is provided that does not match the configured one", async function () {
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_COMPILE]).run({});
 
         await expect(this.hre.zkit.circuitZKitBuilder.getCircuitZKit("Multiplier2", "plonk")).to.be.rejectedWith(
           "Invalid proving system is passed. Please recompile the circuits or change the proving system.",
@@ -95,18 +93,18 @@ describe("CircuitZKitBuilder", () => {
       });
 
       it("should work correctly if pass proving system instead of undefined", async function () {
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_COMPILE]).run({});
 
         const circuit = await this.hre.zkit.circuitZKitBuilder.getCircuitZKit("Multiplier2", "groth16");
 
         expect(circuit.getProvingSystemType()).to.be.eq("groth16");
 
-        updateProvingSystems(this.hre.config.paths.configFile, ["groth16", "plonk"]);
+        updateProvingSystems(this.hre.config.paths.config!, ["groth16", "plonk"]);
         expect(circuit instanceof CircuitZKit).to.be.true;
       });
 
       it("should return correct CircuitZKit object for the 'groth16' and 'plonk' proving systems", async function () {
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_COMPILE]).run({});
 
         let circuit = await this.hre.zkit.circuitZKitBuilder.getCircuitZKit("Multiplier2", "groth16");
 
@@ -120,13 +118,13 @@ describe("CircuitZKitBuilder", () => {
       });
 
       it("should throw an error if pass undefined proving system with several proving systems", async function () {
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_COMPILE]).run({});
 
         await expect(this.hre.zkit.circuitZKitBuilder.getCircuitZKit("Multiplier2")).to.be.rejectedWith(
           "Found several proving systems. Please specify the exact proving system in the getCircuit function.",
         );
 
-        updateProvingSystems(this.hre.config.paths.configFile, ["groth16"]);
+        updateProvingSystems(this.hre.config.paths.config!, ["groth16"]);
       });
     });
   });
@@ -156,7 +154,7 @@ describe("CircuitZKitBuilder", () => {
       const circuitZKitBuilder = this.hre.zkit.circuitZKitBuilder;
 
       expect(function () {
-        circuitZKitBuilder.getProtocolImplementer(invalidProvingSystem);
+        circuitZKitBuilder.getProtocolImplementer(invalidProvingSystem as any);
       }).to.throw(`Unsupported proving system - ${invalidProvingSystem}`);
     });
   });

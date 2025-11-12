@@ -1,11 +1,17 @@
-import { buildVariableContext, CircomValueType, getCircomParser, ParserError } from "@distributedlab/circom-parser";
-
-import { CircomFilesVisitor } from "./CircomFilesVisitor";
-import { CircomTemplateInputsVisitor } from "./CircomTemplateInputsVisitor";
-import { Reporter } from "../../../reporter";
-
-import { VisitorError } from "./VisitorError";
-import { CircomResolvedFile, ErrorType, InputData, ResolvedFileData } from "../../../types/core";
+import {
+  buildVariableContext,
+  CircomValueType,
+  getCircomParser,
+  ParserError,
+  ParseTreeVisitor,
+} from "@tawny0wl/test-circom-parser";
+import { ResolvedFileData } from "../../../types/core/dependencies/circom-files-resolver.js";
+import { CircomFilesVisitor } from "./CircomFilesVisitor.js";
+import { Reporter } from "../../../reporter/ReporterFacade.js";
+import { ErrorType, InputData } from "../../../types/core/dependencies/parser/circom-files-visitor.js";
+import { VisitorError } from "./VisitorError.js";
+import { CircomResolvedFile } from "../CircomFilesResolver.js";
+import { CircomTemplateInputsVisitor } from "./CircomTemplateInputsVisitor.js";
 
 /**
  * A parser class for handling Circom files and extracting relevant data.
@@ -58,7 +64,7 @@ export class CircomFilesParser {
       throw new ParserError(parser.getAllErrors());
     }
 
-    circomFilesVisitor.visit(context);
+    (circomFilesVisitor as ParseTreeVisitor).visit(context);
 
     const visitorErrors = circomFilesVisitor.errors.filter(
       (error) =>

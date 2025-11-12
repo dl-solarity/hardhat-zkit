@@ -1,12 +1,6 @@
 import { expect } from "chai";
-
-import { extendConfig } from "hardhat/config";
-
-import { useEnvironment } from "test-helpers";
-
-import { zkitConfigExtender } from "src/config/config";
-
-import { ZKitConfig } from "src/types/zkit-config";
+import { useEnvironment } from "../../helpers.js";
+import { ZKitConfig } from "../../../src/types/zkit-config.js";
 
 describe("config", () => {
   describe("loading", () => {
@@ -59,7 +53,6 @@ describe("config", () => {
     let loadedOptions: ZKitConfig;
 
     beforeEach("setup", async function () {
-      extendConfig(zkitConfigExtender);
       loadedOptions = this.hre.config.zkit;
     });
 

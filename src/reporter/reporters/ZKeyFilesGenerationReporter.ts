@@ -1,15 +1,14 @@
 /* eslint-disable no-console */
 import chalk from "chalk";
-import { capitalize } from "lodash";
+import { capitalize } from "lodash-es";
 
-import { pluralize } from "hardhat/internal/util/strings";
+import { pluralize } from "@nomicfoundation/hardhat-utils/string";
 
 import { ProvingSystemType } from "@solarity/zkit";
 
-import { BaseReporter } from "./BaseReporter";
-import { SpinnerProcessor } from "../SpinnerProcessor";
-
-import { SetupContributionSettings } from "../../../src/types/core";
+import { SetupContributionSettings } from "../../types/core/index.js";
+import { BaseReporter } from "./BaseReporter.js";
+import { SpinnerProcessor } from "../SpinnerProcessor.js";
 
 export class ZKeyFilesGenerationReporter extends BaseReporter {
   public reportHeader(contributionSettings: SetupContributionSettings) {
@@ -52,7 +51,7 @@ export class ZKeyFilesGenerationReporter extends BaseReporter {
     );
     const contributionMessage: string =
       provingSystem === "groth16" && contributionsNumber !== 0
-        ? `with ${contributionsNumber} ${pluralize(contributionsNumber, "contribution")} `
+        ? `with ${contributionsNumber} ${pluralize("contribution", contributionsNumber)} `
         : "";
 
     SpinnerProcessor!.succeedSpinner(

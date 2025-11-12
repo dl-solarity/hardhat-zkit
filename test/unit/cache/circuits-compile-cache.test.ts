@@ -1,19 +1,22 @@
 import fsExtra from "fs-extra";
-
 import { expect } from "chai";
 
-import { useEnvironment } from "test-helpers";
+import { useEnvironment } from "../../helpers.js";
+import { getCompileCacheEntry } from "../../utils.js";
 
-import { getCompileCacheEntry } from "../../utils";
-import { getFileHash } from "src/utils/utils";
-import { getNormalizedFullPath } from "src/utils/path-utils";
+import {
+  CircuitsCompileCache,
+  createCircuitsCompileCache,
+  resetCircuitsCompileCache,
+} from "../../../src/cache/CircuitsCompileCache.js";
 
-import { defaultCompileFlags } from "../../constants";
-import { CompileCacheEntry } from "src/types/cache";
-import { TASK_CIRCUITS_COMPILE, TASK_CIRCUITS_MAKE, ZKIT_SCOPE_NAME } from "src/task-names";
-import { CIRCUITS_COMPILE_CACHE_FILENAME, CIRCUIT_COMPILE_CACHE_VERSION } from "src/constants";
+import { CompileCacheEntry } from "../../../src/types/cache/circuits-compile-cache.js";
+import { getNormalizedFullPath } from "../../../src/utils/path-utils.js";
+import { getFileHash } from "../../../src/utils/utils.js";
 
-import { CircuitsCompileCache, createCircuitsCompileCache, resetCircuitsCompileCache } from "src/cache";
+import { CIRCUIT_COMPILE_CACHE_VERSION, CIRCUITS_COMPILE_CACHE_FILENAME } from "../../../src/constants.js";
+import { TASK_CIRCUITS_COMPILE, TASK_CIRCUITS_MAKE, ZKIT_SCOPE_NAME } from "../../../src/task-names.js";
+import { defaultCompileFlags } from "../../constants.js";
 
 describe("CircuitsCompileCache", () => {
   describe("createEmpty", () => {
@@ -39,7 +42,7 @@ describe("CircuitsCompileCache", () => {
     });
 
     it("should correctly create CircuitsCompileCache instance and remove non existing files", async function () {
-      await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
+      await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_COMPILE]).run({});
 
       const circuitsCacheFullPath: string = getNormalizedFullPath(
         this.hre.config.paths.cache,
@@ -94,7 +97,7 @@ describe("CircuitsCompileCache", () => {
     });
 
     it("should return correct results", async function () {
-      await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
+      await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_COMPILE]).run({});
 
       expect(CircuitsCompileCache!.hasFileChanged("invalid-path", "", defaultCompileFlags)).to.be.true;
 
@@ -120,14 +123,14 @@ describe("CircuitsCompileCache", () => {
     });
 
     it("should correctly cache the context", async function () {
-      await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_MAKE });
+      await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_MAKE]).run({});
 
       const mockCircuitSourcePath = getNormalizedFullPath(this.hre.config.paths.root, "mock-circuits/newMul2.circom");
       const mockCircuitDestinationPath = getNormalizedFullPath(this.hre.config.paths.root, "circuits/newMul2.circom");
 
       fsExtra.copyFileSync(mockCircuitSourcePath, mockCircuitDestinationPath);
 
-      await expect(this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_MAKE })).to.be.fulfilled;
+      await expect(this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_MAKE]).run()).to.be.fulfilled;
 
       fsExtra.rmSync(mockCircuitDestinationPath);
     });

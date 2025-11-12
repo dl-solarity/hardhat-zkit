@@ -1,7 +1,7 @@
 const isTypedArray = require("is-typed-array");
 const path = require("path-browserify");
 
-const { WASI, WASIExitError, WASIKillError } = require("./wasi");
+const { WASI, WASIExitError, WASIKillError } = require("./wasi.cjs");
 
 const baseNow = Math.floor((Date.now() - performance.now()) * 1e-3);
 
@@ -61,7 +61,7 @@ const defaultPreopens = {
   "/": "/",
 };
 
-class CircomRunner {
+export class CircomRunner {
   constructor({
     args,
     env,
@@ -131,6 +131,5 @@ class CircomRunner {
   }
 }
 
-module.exports.CircomRunner = CircomRunner;
-module.exports.preopens = defaultPreopens;
-module.exports.bindings = defaultBindings;
+export const preopens = defaultPreopens;
+export const bindings = defaultBindings;

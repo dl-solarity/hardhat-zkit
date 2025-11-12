@@ -1,7 +1,7 @@
 import { CircuitZKit, ProvingSystemType } from "@solarity/zkit";
 
-import { ICircuitZKitBuilder } from "./core";
-import { ICircuitArtifacts } from "./artifacts/circuit-artifacts";
+import { ICircuitArtifacts } from "./artifacts/circuit-artifacts.js";
+import { ICircuitZKitBuilder } from "./core/zkit/circuit-zkit-builder.js";
 
 export declare function getCircuit(
   circuitName: string,

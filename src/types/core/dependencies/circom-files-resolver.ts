@@ -1,8 +1,6 @@
-import { LibraryInfo } from "hardhat/types/builtin-tasks";
+import { CircomValueType } from "@tawny0wl/test-circom-parser";
 
-import { CircomValueType } from "@distributedlab/circom-parser";
-
-import { CircomFileData } from "./parser/circom-files-visitor";
+import { CircomFileData } from "./parser/circom-files-visitor.js";
 
 export interface CircomResolvedFile {
   library?: LibraryInfo;
@@ -13,6 +11,14 @@ export interface CircomResolvedFile {
   contentHash: string;
 
   getVersionedName(): string;
+}
+
+/**
+ * Information about an npm library.
+ */
+export interface LibraryInfo {
+  name: string;
+  version: string;
 }
 
 export type SignalType = "Input" | "Output" | "Intermediate";

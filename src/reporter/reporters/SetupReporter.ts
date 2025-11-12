@@ -1,14 +1,14 @@
 /* eslint-disable no-console */
 import fs from "fs";
 import chalk from "chalk";
-import { capitalize } from "lodash";
+import { capitalize } from "lodash-es";
 
-import { BaseReporter } from "./BaseReporter";
-import { CircuitArtifacts } from "../../artifacts/CircuitArtifacts";
-import { HardhatZKitError } from "../../errors";
-import { BYTES_IN_MB } from "../../constants";
+import { BaseReporter } from "./BaseReporter.js";
+import { CircuitArtifacts } from "../../artifacts/CircuitArtifacts.js";
+import { HardhatZKitError } from "../../errors.js";
+import { BYTES_IN_MB } from "../../constants.js";
 
-import { CircuitSetupInfo } from "../../types/core";
+import { CircuitSetupInfo } from "../../types/core/setup/setup-files-resolver.js";
 
 export class SetupReporter extends BaseReporter {
   public reportHeader() {

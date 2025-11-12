@@ -1,12 +1,17 @@
-import { join } from "path";
+import path from "path";
 import fsExtra from "fs-extra";
+import { fileURLToPath } from "url";
 
-import { resetHardhatContext } from "hardhat/plugins-testing";
-import { TASK_COMPILE } from "hardhat/builtin-tasks/task-names";
+import "../src/type-extensions.js";
 
-import { createReporter, Reporter } from "../src/reporter";
-import { resetCircuitsCompileCache, resetCircuitsSetupCache } from "../src/cache";
-import { getNormalizedFullPath } from "../src/utils/path-utils";
+import { HardhatRuntimeEnvironment } from "hardhat/types/hre";
+
+import { createHardhatRuntimeEnvironment } from "hardhat/hre";
+
+import { createReporter, Reporter } from "../src/reporter/ReporterFacade.js";
+import { getNormalizedFullPath } from "../src/utils/path-utils.js";
+import { resetCircuitsCompileCache } from "../src/cache/CircuitsCompileCache.js";
+import { resetCircuitsSetupCache } from "../src/cache/CircuitsSetupCache.js";
 
 export type EnvironmentSettings = {
   fixtureProjectName: string;
@@ -16,19 +21,37 @@ export type EnvironmentSettings = {
   networkName?: string;
 };
 
+declare module "mocha" {
+  interface Context {
+    hre: HardhatRuntimeEnvironment;
+    _cwd?: string;
+  }
+}
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 export function useEnvironment(envSettings: EnvironmentSettings) {
   beforeEach("Loading hardhat environment", async function () {
     const fixtureProjectsDirName = `fixture-projects${envSettings.withJSProject ? "-js" : ""}`;
     const prefix = "hardhat-project-";
 
-    process.chdir(join(__dirname, fixtureProjectsDirName, prefix + envSettings.fixtureProjectName));
+    this._cwd = process.cwd();
+
+    const projectPath = path.join(__dirname, fixtureProjectsDirName, prefix + envSettings.fixtureProjectName);
+    const configPath = path.join(projectPath, `hardhat.config.${envSettings.withJSProject ? "js" : "ts"}`);
+
+    process.chdir(projectPath);
     process.env.HARDHAT_NETWORK = envSettings.networkName ? envSettings.networkName : "hardhat";
 
-    this.hre = require("hardhat");
+    this.hre = await createHardhatRuntimeEnvironment(
+      (await import(configPath)).default,
+      { config: configPath },
+      projectPath,
+    );
 
     if (envSettings.withCleanUp) {
       cleanUp(this.hre.config.paths.root);
-
       return;
     }
 
@@ -38,11 +61,11 @@ export function useEnvironment(envSettings: EnvironmentSettings) {
       Reporter!.setQuiet(!!envSettings.withoutLogging);
     }
 
-    await this.hre.run(TASK_COMPILE, { quiet: true });
+    await this.hre.tasks.getTask("compile").run({ quiet: true });
   });
 
   afterEach("Resetting hardhat", async function () {
-    resetHardhatContext();
+    await this.hre.tasks.getTask("clean").run({});
 
     const typesDir: string = getNormalizedFullPath(this.hre.config.paths.root, "generated-types/zkit");
     fsExtra.rmSync(typesDir, { recursive: true, force: true });

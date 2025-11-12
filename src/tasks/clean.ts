@@ -1,27 +1,29 @@
 import fs from "fs";
 
-import { ActionType, HardhatRuntimeEnvironment } from "hardhat/types";
+import { NewTaskActionFunction } from "hardhat/types/tasks";
 
-import { CIRCUITS_COMPILE_CACHE_FILENAME, CIRCUITS_SETUP_CACHE_FILENAME } from "../constants";
-import { getNormalizedFullPath } from "../utils";
+import { CIRCUITS_COMPILE_CACHE_FILENAME, CIRCUITS_SETUP_CACHE_FILENAME } from "../constants.js";
+import { getNormalizedFullPath } from "../utils/path-utils.js";
 
-export const clean: ActionType<any> = async (_taskArgs: any, env: HardhatRuntimeEnvironment) => {
+const cleanAction: NewTaskActionFunction<any> = async (_, hre) => {
   const circuitsCompileCacheFullPath: string = getNormalizedFullPath(
-    env.config.paths.cache,
+    hre.config.paths.cache,
     CIRCUITS_COMPILE_CACHE_FILENAME,
   );
   const circuitsSetupCacheFullPath: string = getNormalizedFullPath(
-    env.config.paths.cache,
+    hre.config.paths.cache,
     CIRCUITS_SETUP_CACHE_FILENAME,
   );
   const artifactsDirFullPath: string = getNormalizedFullPath(
-    env.config.paths.root,
-    env.config.zkit.compilationSettings.artifactsDir,
+    hre.config.paths.root,
+    hre.config.zkit.compilationSettings.artifactsDir,
   );
-  const circuitTypesFullPath: string = getNormalizedFullPath(env.config.paths.root, env.config.zkit.typesDir);
+  const circuitTypesFullPath: string = getNormalizedFullPath(hre.config.paths.root, hre.config.zkit.typesDir);
 
   fs.rmSync(circuitsCompileCacheFullPath, { force: true });
   fs.rmSync(circuitsSetupCacheFullPath, { force: true });
   fs.rmSync(artifactsDirFullPath, { recursive: true, force: true });
   fs.rmSync(circuitTypesFullPath, { recursive: true, force: true });
 };
+
+export default cleanAction;

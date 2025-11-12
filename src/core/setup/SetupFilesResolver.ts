@@ -1,17 +1,17 @@
 import fsExtra from "fs-extra";
 
-import { HardhatConfig } from "hardhat/types";
+import { HardhatConfig } from "hardhat/types/config";
 
 import { ProvingSystemType } from "@solarity/zkit";
 
-import { Reporter } from "../../reporter";
-import { HardhatZKitError } from "../../errors";
-import { CircuitsSetupCache } from "../../cache";
-import { filterCircuitFiles, getNormalizedFullPath } from "../../utils/path-utils";
+import { Reporter } from "../../reporter/index.js";
+import { HardhatZKitError } from "../../errors.js";
+import { CircuitsSetupCache } from "../../cache/index.js";
+import { filterCircuitFiles, getNormalizedFullPath } from "../../utils/path-utils.js";
 
-import { FileFilterSettings, ZKitConfig } from "../../types/zkit-config";
-import { CircuitArtifact, CompilerOutputFileInfo, ICircuitArtifacts } from "../../types/artifacts/circuit-artifacts";
-import { CircuitSetupInfo, SetupContributionSettings } from "../../types/core";
+import { FileFilterSettings, ZKitConfig } from "../../types/zkit-config.js";
+import { CircuitArtifact, CompilerOutputFileInfo, ICircuitArtifacts } from "../../types/artifacts/circuit-artifacts.js";
+import { CircuitSetupInfo, SetupContributionSettings } from "../../types/core/index.js";
 
 /**
  * Class responsible for resolving setup files for circuits in a given project.

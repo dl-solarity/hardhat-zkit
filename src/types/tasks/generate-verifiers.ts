@@ -1,10 +1,10 @@
 import { VerifierLanguageType } from "@solarity/zkit";
 
-import { CircuitArtifact } from "../artifacts/circuit-artifacts";
+import { CircuitArtifact } from "../artifacts/circuit-artifacts.js";
 
 export type GenerateVerifiersTaskConfig = {
   verifiersDir?: string;
-  verifiersType?: VerifierLanguageType;
+  verifiersType?: string; //VerifierLanguageType; todo
   noCompile: boolean;
   quiet: boolean;
   force: boolean;

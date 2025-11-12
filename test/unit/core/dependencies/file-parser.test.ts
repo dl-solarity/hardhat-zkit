@@ -1,20 +1,20 @@
 import fs from "fs";
 import { expect } from "chai";
 
-import { getCircomParser, VariableContext } from "@distributedlab/circom-parser";
+import { getCircomParser, VariableContext, ParseTreeVisitor } from "@tawny0wl/test-circom-parser";
 
-import { createNonCryptographicHashBasedIdentifier } from "hardhat/internal/util/hash";
-
-import { useEnvironment } from "test-helpers";
-
-import { CircomFilesParser, CircomFilesVisitor, CircomTemplateInputsVisitor } from "src/core";
-import { TASK_CIRCUITS_COMPILE, ZKIT_SCOPE_NAME } from "src/task-names";
-import { getNormalizedFullPath } from "src/utils/path-utils";
-import { CIRCUITS_COMPILE_CACHE_FILENAME } from "src/constants";
-import { createCircuitsCompileCache } from "src/cache";
-import { createReporter } from "src/reporter";
-import { CircomResolvedFile, ResolvedFileData } from "src/types/core";
-import { BaseCacheType } from "src/types/cache/base-cache";
+import { useEnvironment } from "../../../helpers.js";
+import { CircomFilesParser } from "../../../../src/core/resolve/parser/CircomFilesParser.js";
+import { getNormalizedFullPath } from "../../../../src/utils/path-utils.js";
+import { CIRCUITS_COMPILE_CACHE_FILENAME } from "../../../../src/constants.js";
+import { TASK_CIRCUITS_COMPILE, ZKIT_SCOPE_NAME } from "../../../../src/task-names.js";
+import { ResolvedFileData } from "../../../../src/types/core/dependencies/circom-files-resolver.js";
+import { CircomFilesVisitor } from "../../../../src/core/resolve/parser/CircomFilesVisitor.js";
+import { CircomTemplateInputsVisitor } from "../../../../src/core/resolve/parser/CircomTemplateInputsVisitor.js";
+import { CircomResolvedFile } from "../../../../src/core/resolve/CircomFilesResolver.js";
+import { BaseCacheType } from "../../../../src/types/cache/base-cache.js";
+import { createReporter } from "../../../../src/reporter/ReporterFacade.js";
+import { createCircuitsCompileCache } from "../../../../src/cache/CircuitsCompileCache.js";
 
 describe("CircomFilesParser", () => {
   describe("parse", () => {
@@ -37,7 +37,7 @@ describe("CircomFilesParser", () => {
       fileContent = fs.readFileSync(circuitPath, "utf-8");
       contentHash = createNonCryptographicHashBasedIdentifier(Buffer.from(fileContent)).toString("hex");
 
-      await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
+      await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_COMPILE]).run({});
     });
 
     it("should correctly parse file with empty circuit files cache", async function () {
@@ -101,7 +101,7 @@ describe("CircomFilesParser", () => {
 
       const parser = getCircomParser(testFilePath);
 
-      visitor.visit(parser.circuit());
+      (visitor as ParseTreeVisitor).visit(parser.circuit());
 
       const circomTemplateInputsVisitor = new CircomTemplateInputsVisitor(
         testFilePath,
@@ -127,7 +127,7 @@ describe("CircomFilesParser", () => {
     useEnvironment({ fixtureProjectName: "with-circuits-main-component" });
 
     beforeEach("setup", async function () {
-      await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
+      await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_COMPILE]).run({});
     });
 
     it("should correctly resolve the arguments for the main component", async function () {
@@ -139,9 +139,9 @@ describe("CircomFilesParser", () => {
 
       const signals = cache.files[circuitPath].fileData.mainComponentData!.signals;
 
-      const signalIn1 = signals.find((signal) => signal.name === "in1")!;
-      const signalIn2 = signals.find((signal) => signal.name === "in2")!;
-      const signalOut = signals.find((signal) => signal.name === "out")!;
+      const signalIn1 = signals.find((signal: { name: string }) => signal.name === "in1")!;
+      const signalIn2 = signals.find((signal: { name: string }) => signal.name === "in2")!;
+      const signalOut = signals.find((signal: { name: string }) => signal.name === "out")!;
 
       expect(signalIn1.dimension).to.deep.equal([]);
       expect(signalIn2.dimension).to.deep.equal([15, 30]);
@@ -168,3 +168,9 @@ describe("CircomFilesParser", () => {
     });
   });
 });
+
+export function createNonCryptographicHashBasedIdentifier(input: Buffer): Buffer {
+  const { createHash } = require("crypto");
+
+  return createHash("md5").update(input).digest();
+}

@@ -1,5 +1,4 @@
-import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { willRunWithTypescript } from "hardhat/internal/core/typescript-support";
+import { HardhatRuntimeEnvironment } from "hardhat/types/hre";
 
 import {
   CircuitZKit,
@@ -11,11 +10,13 @@ import {
 } from "@solarity/zkit";
 import { CircuitTypesGenerator } from "@solarity/zktype";
 
-import { HardhatZKitError } from "../../errors";
-import { getNormalizedFullPath, getUniqueProvingSystems } from "../../utils";
+import { HardhatZKitError } from "../../errors.js";
 
-import { ICircuitZKitBuilder } from "../../types/core";
-import { CircuitArtifact } from "../../types/artifacts/circuit-artifacts";
+import { getUniqueProvingSystems } from "../../utils/utils.js";
+import { getNormalizedFullPath } from "../../utils/path-utils.js";
+import { ICircuitZKitBuilder } from "../../types/core/index.js";
+import { CircuitArtifact } from "../../types/artifacts/circuit-artifacts.js";
+import { willRunWithTypescript } from "../utils/helper.js";
 
 export class CircuitZKitBuilder implements ICircuitZKitBuilder {
   private readonly _isTSProject: boolean;
@@ -31,7 +32,7 @@ export class CircuitZKitBuilder implements ICircuitZKitBuilder {
       circuitsArtifacts: [],
     });
 
-    this._isTSProject = willRunWithTypescript(_hre.hardhatArguments.config);
+    this._isTSProject = willRunWithTypescript(_hre.globalOptions.config);
     this._provingSystems = getUniqueProvingSystems(_hre.config.zkit.setupSettings.contributionSettings.provingSystem);
   }
 
@@ -40,8 +41,15 @@ export class CircuitZKitBuilder implements ICircuitZKitBuilder {
     provingSystem?: ProvingSystemType,
     verifiersDir?: string,
   ): Promise<CircuitZKit<ProvingSystemType>> {
+    console.log("passed provingSystem", provingSystem);
+
     const circuitArtifact: CircuitArtifact = await this._hre.zkit.circuitArtifacts.readCircuitArtifact(circuitName);
+
+    console.log(91);
+
     const circuitZKitConfig: CircuitZKitConfig = this._getCircuitZKitConfig(circuitArtifact, verifiersDir);
+
+    console.log(this._provingSystems, "this._provingSystems");
 
     /// If multiple proving systems are available but none is explicitly specified, throw an error
     if (this._provingSystems.length > 1 && !provingSystem) {
@@ -50,6 +58,8 @@ export class CircuitZKitBuilder implements ICircuitZKitBuilder {
       );
     }
 
+    console.log(93);
+
     // If a proving system is specified but not found in the available proving systems, throw an error
     if (provingSystem && !this._provingSystems.includes(provingSystem)) {
       throw new HardhatZKitError(
@@ -57,16 +67,23 @@ export class CircuitZKitBuilder implements ICircuitZKitBuilder {
       );
     }
 
+    console.log(94);
+
     if (this._isTSProject) {
       // If only a single proving system has been configured, undefined should be used to retrieve the zktype type
       if (this._provingSystems.length === 1 && provingSystem) {
         provingSystem = undefined;
       }
 
+      console.log(95);
+
       const module = await this._typesGenerator.getCircuitObject(circuitName, provingSystem);
+
+      console.log(96);
 
       return new module(circuitZKitConfig);
     } else {
+      console.log(97);
       // If a proving system was not explicitly provided, it will be retrieved from the config
       if (!provingSystem) {
         provingSystem = this._provingSystems[0];

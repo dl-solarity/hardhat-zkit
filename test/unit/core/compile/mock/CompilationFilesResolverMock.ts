@@ -1,5 +1,8 @@
-import { CircomFilesResolver, CompilationFilesResolver, DependencyGraph } from "src/core";
-import { CompileFlags, CircomResolvedFileInfo, CircomResolvedFile } from "src/types/core";
+import { CompilationFilesResolver } from "../../../../../src/core/compile/CompilationFilesResolver.js";
+import { CircomFilesResolver, CircomResolvedFile } from "../../../../../src/core/resolve/CircomFilesResolver.js";
+import { DependencyGraph } from "../../../../../src/core/resolve/DependencyGraph.js";
+import { CircomResolvedFileInfo } from "../../../../../src/types/core/compile/compilation-files-resolver.js";
+import { CompileFlags } from "../../../../../src/types/core/compiler/circom-compiler.js";
 
 export class CompilationFilesResolverMock extends CompilationFilesResolver {
   public filterResolvedFiles(

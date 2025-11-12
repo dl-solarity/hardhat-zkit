@@ -1,12 +1,15 @@
-import { CircomFilesParser } from "./parser/CircomFilesParser";
+import { SignalType } from "@solarity/zktype";
 
-import { HardhatZKitError } from "../../errors";
-import { CircomResolvedFile, ResolvedMainComponentData, SignalType, VisibilityType } from "../../types/core";
+import { HardhatZKitError } from "../../errors.js";
+import { ResolvedMainComponentData, VisibilityType } from "../../../src/types/core/index.js";
+
+import { CircomFilesParser } from "./parser/CircomFilesParser.js";
+import { CircomResolvedFile } from "./CircomFilesResolver.js";
 
 export class CircuitAnalyzer {
   constructor(
     private readonly _parser: CircomFilesParser,
-    private readonly _readFile: (absolutePath: string) => Promise<string>,
+    private readonly _readFile: (absolutePath: string) => string,
   ) {}
 
   public async buildMainComponentData(resolvedFile: CircomResolvedFile, dependencies: CircomResolvedFile[]) {

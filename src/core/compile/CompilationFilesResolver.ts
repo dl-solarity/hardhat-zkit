@@ -1,21 +1,19 @@
-import { HardhatConfig } from "hardhat/types";
-import { getAllFilesMatching } from "hardhat/internal/util/fs-utils";
-import { localPathToSourceName } from "hardhat/utils/source-names";
+import { HardhatConfig } from "hardhat/types/config";
 
-import {
-  DependencyGraph,
-  CircomFilesParser,
-  CircomFilesResolver,
-  CircuitAnalyzer,
-  CircomResolvedFile,
-} from "../resolve";
-import { CircuitsCompileCache } from "../../cache";
-import { Reporter } from "../../reporter";
-import { filterCircuitFiles, getNormalizedFullPath } from "../../utils/path-utils";
+import { getAllFilesMatching } from "@nomicfoundation/hardhat-utils/fs";
 
-import { ZKitConfig } from "../../types/zkit-config";
-import { ICircuitArtifacts } from "../../types/artifacts/circuit-artifacts";
-import { CircomResolvedFileInfo, CompileFlags } from "../../types/core";
+import { Reporter } from "../../reporter/ReporterFacade.js";
+import { ICircuitArtifacts } from "../../types/artifacts/circuit-artifacts.js";
+import { CircomResolvedFileInfo } from "../../types/core/compile/compilation-files-resolver.js";
+import { CompileFlags } from "../../types/core/compiler/circom-compiler.js";
+import { ZKitConfig } from "../../types/zkit-config.js";
+import { filterCircuitFiles, getNormalizedFullPath, localPathToSourceName } from "../../utils/path-utils.js";
+import { CircuitsCompileCache } from "../../cache/CircuitsCompileCache.js";
+
+import { CircomFilesParser } from "../resolve/parser/CircomFilesParser.js";
+import { CircomFilesResolver, CircomResolvedFile } from "../resolve/CircomFilesResolver.js";
+import { CircuitAnalyzer } from "../resolve/CircuitAnalyzer.js";
+import { DependencyGraph } from "../resolve/DependencyGraph.js";
 
 /**
  * This class is responsible for determining the list of files and circuits that need to be compiled.
@@ -30,7 +28,7 @@ export class CompilationFilesResolver {
   private readonly _projectRoot: string;
 
   constructor(
-    private readonly _readFile: (absolutePath: string) => Promise<string>,
+    private readonly _readFile: (absolutePath: string) => string,
     private readonly _circuitArtifacts: ICircuitArtifacts,
     hardhatConfig: HardhatConfig,
   ) {

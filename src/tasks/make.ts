@@ -1,18 +1,16 @@
-import { ActionType, HardhatRuntimeEnvironment } from "hardhat/types";
+import { TASK_CIRCUITS_COMPILE, TASK_CIRCUITS_SETUP, ZKIT_SCOPE_NAME } from "../task-names.js";
 
-import { ZKIT_SCOPE_NAME, TASK_CIRCUITS_COMPILE, TASK_CIRCUITS_SETUP } from "../task-names";
+import { Reporter } from "../reporter/index.js";
 
-import { Reporter } from "../reporter";
+import { MakeTaskConfig } from "../types/tasks/index.js";
+import { NewTaskActionFunction } from "hardhat/types/tasks";
 
-import { MakeTaskConfig } from "../types/tasks";
-
-export const make: ActionType<MakeTaskConfig> = async (taskArgs: MakeTaskConfig, env: HardhatRuntimeEnvironment) => {
-  await env.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE }, taskArgs);
+const makeAction: NewTaskActionFunction<MakeTaskConfig> = async (taskArgs, hre) => {
+  await hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_COMPILE]).run({ ...taskArgs });
 
   Reporter!.reportCompilationBottomLine();
 
-  await env.run(
-    { scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_SETUP },
-    { force: taskArgs.force, quiet: taskArgs.quiet },
-  );
+  await hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_SETUP]).run({ force: taskArgs.force, quiet: taskArgs.quiet });
 };
+
+export default makeAction;

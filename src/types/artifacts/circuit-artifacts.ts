@@ -1,8 +1,7 @@
-import { CircomValueType } from "@distributedlab/circom-parser";
+import { CircomValueType } from "@tawny0wl/test-circom-parser";
 
 import { ProvingSystemType } from "@solarity/zkit";
-
-import { SignalInfo } from "../core";
+import { SignalInfo } from "../core/dependencies/circom-files-resolver.js";
 
 export interface ICircuitArtifacts {
   readCircuitArtifact(circuitNameOrFullyQualifiedName: string): Promise<CircuitArtifact>;
@@ -22,7 +21,7 @@ export interface ICircuitArtifacts {
   getCircuitArtifactFileFullPath(
     circuitArtifact: CircuitArtifact,
     fileType: ArtifactsFileType,
-    provingSystem: ProvingSystemType,
+    provingSystem?: ProvingSystemType,
   ): string;
 
   saveCircuitArtifact(

@@ -1,6 +1,5 @@
 import { expect } from "chai";
-
-import { getHighestVersion, isVersionValid } from "src/core/compiler/versioning";
+import { getHighestVersion, isVersionValid } from "../../../../src/core/compiler/versioning.js";
 
 describe("Versioning", () => {
   describe("isVersionValid", () => {

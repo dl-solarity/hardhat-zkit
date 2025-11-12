@@ -1,5 +1,5 @@
-export * from "./CircomCompiler";
-export * from "./CircomCompilerFactory";
-export * from "./CircomCompilerDownloader";
+export * from "./CircomCompiler.js";
+export * from "./CircomCompilerFactory.js";
+export * from "./CircomCompilerDownloader.js";
 
-export * from "./versioning";
+export * from "./versioning.js";

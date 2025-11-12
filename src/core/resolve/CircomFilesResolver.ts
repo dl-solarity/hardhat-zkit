@@ -2,26 +2,24 @@ import fsExtra from "fs-extra";
 import path from "path";
 import resolve from "resolve";
 
-import { LibraryInfo } from "hardhat/types/builtin-tasks";
+import { getRealPath } from "@nomicfoundation/hardhat-utils/fs";
+
+import { LibraryInfo, CircomResolvedFile as ICircomResolvedFile, ResolvedFileData } from "../../types/core/index.js";
+import { normalizeSourceName, replaceBackslashes } from "../../utils/path-utils.js";
 import {
   includesOwnPackageName,
   isAbsolutePathSourceName,
   isLocalSourceName,
-  normalizeSourceName,
-  replaceBackslashes,
   validateSourceNameExistenceAndCasing,
   validateSourceNameFormat,
-} from "hardhat/utils/source-names";
+} from "../../utils/source-names.js";
+import { CircomFilesParser } from "./parser/CircomFilesParser.js";
 
-import { assertHardhatInvariant, HardhatError } from "hardhat/internal/core/errors";
-import { ERRORS } from "hardhat/internal/core/errors-list";
-import { getRealPath } from "hardhat/internal/util/fs-utils";
-
-import { CircomFilesParser } from "./parser/CircomFilesParser";
-import { CircuitsCompileCache } from "../../cache";
-import { CIRCOM_FILE_REG_EXP, NODE_MODULES, NODE_MODULES_REG_EXP, URI_SCHEME_REG_EXP } from "../../constants";
-import { getFileHash } from "../../utils";
-import { CircomResolvedFile as ICircomResolvedFile, ResolvedFileData } from "../../types/core";
+import { getFileHash } from "../../utils/utils.js";
+import { CircuitsCompileCache } from "../../cache/CircuitsCompileCache.js";
+import { CIRCOM_FILE_REG_EXP, NODE_MODULES, NODE_MODULES_REG_EXP, URI_SCHEME_REG_EXP } from "../../constants.js";
+import { HardhatZKitError } from "../../errors.js";
+import { HardhatError } from "@nomicfoundation/hardhat-errors";
 
 export class CircomResolvedFile implements ICircomResolvedFile {
   public readonly library?: LibraryInfo;
@@ -35,11 +33,14 @@ export class CircomResolvedFile implements ICircomResolvedFile {
     libraryName?: string,
     libraryVersion?: string,
   ) {
-    assertHardhatInvariant(
-      (libraryName === undefined && libraryVersion === undefined) ||
-        (libraryName !== undefined && libraryVersion !== undefined),
-      "Libraries should have both name and version, or neither one",
-    );
+    if (
+      !(
+        (libraryName === undefined && libraryVersion === undefined) ||
+        (libraryName !== undefined && libraryVersion !== undefined)
+      )
+    ) {
+      throw new HardhatZKitError("Libraries should have both name and version, or neither one");
+    }
 
     if (libraryName !== undefined && libraryVersion !== undefined) {
       this.library = {
@@ -60,7 +61,7 @@ export class CircomFilesResolver {
   constructor(
     private readonly _projectRoot: string,
     private readonly _parser: CircomFilesParser,
-    private readonly _readFile: (absolutePath: string) => Promise<string>,
+    private readonly _readFile: (absolutePath: string) => string,
   ) {}
 
   /**
@@ -99,34 +100,29 @@ export class CircomFilesResolver {
     const scheme = this._getUriScheme(importName);
 
     if (scheme !== undefined) {
-      throw new HardhatError(ERRORS.RESOLVER.INVALID_IMPORT_PROTOCOL, {
-        from: from.sourceName,
-        imported: importName,
-        protocol: scheme,
-      });
+      throw new HardhatZKitError(
+        `Invalid import ${importName} from ${from.sourceName}. Hardhat doesn't support imports via ${scheme}`,
+      );
     }
 
     if (replaceBackslashes(importName) !== importName) {
-      throw new HardhatError(ERRORS.RESOLVER.INVALID_IMPORT_BACKSLASH, {
-        from: from.sourceName,
-        imported: importName,
-      });
+      throw new HardhatZKitError(
+        `Invalid import ${importName} from ${from.sourceName}. Imports must use / instead of \\, even in Windows`,
+      );
     }
 
     if (isAbsolutePathSourceName(importName)) {
-      throw new HardhatError(ERRORS.RESOLVER.INVALID_IMPORT_ABSOLUTE_PATH, {
-        from: from.sourceName,
-        imported: importName,
-      });
+      throw new HardhatZKitError(
+        `Invalid import ${importName} from ${from.sourceName}. Hardhat doesn't support imports with absolute paths`,
+      );
     }
 
     // Edge-case where an import can contain the current package's name in monorepos.
     // The path can be resolved because there's a symlink in the node modules.
     if (await includesOwnPackageName(importName)) {
-      throw new HardhatError(ERRORS.RESOLVER.INCLUDES_OWN_PACKAGE_NAME, {
-        from: from.sourceName,
-        imported: importName,
-      });
+      throw new HardhatZKitError(
+        `Invalid import ${importName} from ${from.sourceName}. Trying to import file using the own package's name`,
+      );
     }
 
     try {
@@ -161,51 +157,60 @@ export class CircomFilesResolver {
 
       return resolvedFile;
     } catch (error) {
+      console.log(error);
+
       if (
-        HardhatError.isHardhatErrorType(error, ERRORS.RESOLVER.FILE_NOT_FOUND) ||
-        HardhatError.isHardhatErrorType(error, ERRORS.RESOLVER.LIBRARY_FILE_NOT_FOUND)
+        HardhatError.isHardhatError(error)
+        // HardhatError.ERRORS.RESOLVER.FILE_NOT_FOUND || ERRORS.RESOLVER.LIBRARY_FILE_NOT_FOUND
       ) {
-        throw new HardhatError(
-          ERRORS.RESOLVER.IMPORTED_FILE_NOT_FOUND,
-          {
-            imported: importName,
-            from: from.sourceName,
-          },
-          error,
-        );
+        throw new Error("todo");
+        // throw new HardhatError(
+        //   ERRORS.RESOLVER.IMPORTED_FILE_NOT_FOUND,
+        //   {
+        //     imported: importName,
+        //     from: from.sourceName,
+        //   },
+        //   error,
+        // );
       }
 
-      if (HardhatError.isHardhatErrorType(error, ERRORS.RESOLVER.WRONG_SOURCE_NAME_CASING)) {
-        throw new HardhatError(
-          ERRORS.RESOLVER.INVALID_IMPORT_WRONG_CASING,
-          {
-            imported: importName,
-            from: from.sourceName,
-          },
-          error,
-        );
+      if (HardhatError.isHardhatError(error)) {
+        // ERRORS.RESOLVER.WRONG_SOURCE_NAME_CASING
+        throw new Error("todo");
+        // throw new HardhatError(
+        //   ERRORS.RESOLVER.INVALID_IMPORT_WRONG_CASING,
+        //   {
+        //     imported: importName,
+        //     from: from.sourceName,
+        //   },
+        //   error,
+        // );
       }
 
-      if (HardhatError.isHardhatErrorType(error, ERRORS.RESOLVER.LIBRARY_NOT_INSTALLED)) {
-        throw new HardhatError(
-          ERRORS.RESOLVER.IMPORTED_LIBRARY_NOT_INSTALLED,
-          {
-            library: error.messageArguments.library,
-            from: from.sourceName,
-          },
-          error,
-        );
+      if (HardhatError.isHardhatError(error)) {
+        //ERRORS.RESOLVER.LIBRARY_NOT_INSTALLED
+        throw new Error("todo");
+        // throw new HardhatError(
+        //   ERRORS.RESOLVER.IMPORTED_LIBRARY_NOT_INSTALLED,
+        //   {
+        //     library: error.messageArguments.library,
+        //     from: from.sourceName,
+        //   },
+        //   error,
+        // );
       }
 
-      if (HardhatError.isHardhatErrorType(error, ERRORS.GENERAL.INVALID_READ_OF_DIRECTORY)) {
-        throw new HardhatError(
-          ERRORS.RESOLVER.INVALID_IMPORT_OF_DIRECTORY,
-          {
-            imported: importName,
-            from: from.sourceName,
-          },
-          error,
-        );
+      if (HardhatError.isHardhatError(error)) {
+        //ERRORS.GENERAL.INVALID_READ_OF_DIRECTORY
+        throw new Error("todo");
+        // throw new HardhatError(
+        //   ERRORS.RESOLVER.INVALID_IMPORT_OF_DIRECTORY,
+        //   {
+        //     imported: importName,
+        //     from: from.sourceName,
+        //   },
+        //   error,
+        // );
       }
 
       throw error;
@@ -228,13 +233,14 @@ export class CircomFilesResolver {
     try {
       packageJsonPath = this._resolveNodeModulesFileFromProjectRoot(path.join(libraryName, "package.json"));
     } catch (error) {
-      throw new HardhatError(
-        ERRORS.RESOLVER.LIBRARY_NOT_INSTALLED,
-        {
-          library: libraryName,
-        },
-        error as Error,
-      );
+      throw new Error("todo");
+      // throw new HardhatError(
+      //   HardhatError.ERRORS.RESOLVER.LIBRARY_NOT_INSTALLED,
+      //   {
+      //     library: libraryName,
+      //   },
+      //   error as Error,
+      // );
     }
 
     let nodeModulesPath = path.dirname(path.dirname(packageJsonPath));
@@ -294,16 +300,19 @@ export class CircomFilesResolver {
     // If the file with the import is local, and the normalized version
     // starts with ../ means that it's trying to get outside of the project.
     if (from.library === undefined && sourceName.startsWith("../")) {
-      throw new HardhatError(ERRORS.RESOLVER.INVALID_IMPORT_OUTSIDE_OF_PROJECT, { from: from.sourceName, imported });
+      throw new Error("todo");
+      //throw new HardhatError(ERRORS.RESOLVER.INVALID_IMPORT_OUTSIDE_OF_PROJECT, { from: from.sourceName, imported });
     }
 
     if (from.library !== undefined && !this._isInsideSameDir(from.sourceName, sourceName)) {
       // If the file is being imported from a library, this means that it's
       // trying to reach another one.
-      throw new HardhatError(ERRORS.RESOLVER.ILLEGAL_IMPORT, {
-        from: from.sourceName,
-        imported,
-      });
+
+      throw new Error("todo");
+      // throw new HardhatError(ERRORS.RESOLVER.ILLEGAL_IMPORT, {
+      //   from: from.sourceName,
+      //   imported,
+      // });
     }
 
     return sourceName;
@@ -413,23 +422,27 @@ export class CircomFilesResolver {
     try {
       await validateSourceNameExistenceAndCasing(fromDir, sourceName);
     } catch (error) {
-      if (HardhatError.isHardhatErrorType(error, ERRORS.SOURCE_NAMES.FILE_NOT_FOUND)) {
-        throw new HardhatError(
-          isLibrary ? ERRORS.RESOLVER.LIBRARY_FILE_NOT_FOUND : ERRORS.RESOLVER.FILE_NOT_FOUND,
-          { file: sourceName },
-          error,
-        );
+      if (HardhatError.isHardhatError(error)) {
+        //ERRORS.SOURCE_NAMES.FILE_NOT_FOUND
+        throw new Error("todo");
+
+        // throw new HardhatError(
+        //   isLibrary ? ERRORS.RESOLVER.LIBRARY_FILE_NOT_FOUND : ERRORS.RESOLVER.FILE_NOT_FOUND,
+        //   { file: sourceName },
+        //   error,
+        // );
       }
 
-      if (HardhatError.isHardhatErrorType(error, ERRORS.SOURCE_NAMES.WRONG_CASING)) {
-        throw new HardhatError(
-          ERRORS.RESOLVER.WRONG_SOURCE_NAME_CASING,
-          {
-            incorrect: sourceName,
-            correct: error.messageArguments.correct,
-          },
-          error,
-        );
+      if (Error.toString() == "SOURCE_NAMES.WRONG_CASING") {
+        throw new Error("todo");
+        // throw new HardhatError(
+        //   ERRORS.RESOLVER.WRONG_SOURCE_NAME_CASING,
+        //   {
+        //     incorrect: sourceName,
+        //     correct: error.messageArguments.correct,
+        //   },
+        //   error,
+        // );
       }
 
       throw error;

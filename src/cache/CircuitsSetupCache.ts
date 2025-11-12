@@ -1,12 +1,9 @@
 import { ProvingSystemType } from "@solarity/zkit";
-
-import { SetupCacheSchema } from "./schemas";
-import { CIRCUIT_SETUP_CACHE_VERSION } from "../constants";
-
-import { BaseCache } from "../cache/BaseCache";
-
-import { ProvingSystemData, SetupCacheEntry } from "../types/cache";
-import { SetupContributionSettings } from "../types/core";
+import { ProvingSystemData, SetupCacheEntry } from "../types/cache/circuits-setup-cache.js";
+import { BaseCache } from "./BaseCache.js";
+import { SetupContributionSettings } from "../types/core/setup/setup-processor.js";
+import { CIRCUIT_SETUP_CACHE_VERSION } from "../constants.js";
+import { SetupCacheSchema } from "./schemas/setup-schemas.js";
 
 /**
  * Class that implements the caching logic for setting up circuits.

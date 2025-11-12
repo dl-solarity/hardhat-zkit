@@ -1,6 +1,6 @@
 import ora, { Options, Ora } from "ora";
 
-import { SpinnerData } from "../types/reporter/spinner-processor";
+import { SpinnerData } from "../types/reporter/spinner-processor.js";
 
 export class BaseSpinnerProcessor {
   private _idToSpinnerData: Map<string, SpinnerData> = new Map();

@@ -1,8 +1,5 @@
-import { HardhatError } from "hardhat/internal/core/errors";
-import { ERRORS } from "hardhat/internal/core/errors-list";
-
-import { CircomFilesResolver, CircomResolvedFile } from "./CircomFilesResolver";
-import { TransitiveDependency } from "../../types/core";
+import { CircomFilesResolver, CircomResolvedFile } from "./CircomFilesResolver.js";
+import { TransitiveDependency } from "../../types/core/index.js";
 
 export class DependencyGraph {
   public static async createFromResolvedFiles(
@@ -90,10 +87,11 @@ export class DependencyGraph {
 
     if (sourceName !== undefined) {
       if (sourceName !== file.sourceName) {
-        throw new HardhatError(ERRORS.RESOLVER.AMBIGUOUS_SOURCE_NAMES, {
-          sourcenames: `'${sourceName}' and '${file.sourceName}'`,
-          file: file.absolutePath,
-        });
+        throw new Error("todo");
+        // throw new HardhatError(ERRORS.RESOLVER.AMBIGUOUS_SOURCE_NAMES, {
+        //   sourcenames: `'${sourceName}' and '${file.sourceName}'`,
+        //   file: file.absolutePath,
+        // });
       }
 
       return;
@@ -108,7 +106,7 @@ export class DependencyGraph {
 
     // TODO refactor this to make the results deterministic
     await Promise.all(
-      file.fileData.parsedFileData.includes.map(async (imp) => {
+      file.fileData.parsedFileData.includes.map(async (imp: any) => {
         const dependency = await resolver.resolveImport(file, imp);
         dependencies.add(dependency);
 

@@ -1,9 +1,7 @@
 import "hardhat/types/config";
-import "hardhat/types/runtime";
 
-import { ZKitConfig } from "./types/zkit-config";
-import { HardhatZKit } from "./types/hardhat-zkit";
-import { RecursivePartial } from "./types/utils";
+import { ZKitConfig, ZKitUserConfig } from "./types/zkit-config.js";
+import { HardhatZKit } from "./types/hardhat-zkit.js";
 
 declare module "hardhat/types/config" {
   interface HardhatConfig {
@@ -11,11 +9,11 @@ declare module "hardhat/types/config" {
   }
 
   interface HardhatUserConfig {
-    zkit?: RecursivePartial<ZKitConfig>;
+    zkit?: ZKitUserConfig;
   }
 }
 
-declare module "hardhat/types/runtime" {
+declare module "hardhat/types/hre" {
   interface HardhatRuntimeEnvironment {
     zkit: HardhatZKit;
   }

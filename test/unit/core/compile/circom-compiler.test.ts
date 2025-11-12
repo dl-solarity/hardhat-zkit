@@ -2,14 +2,17 @@ import fsExtra from "fs-extra";
 import { execSync } from "child_process";
 
 import { expect } from "chai";
-
-import { useEnvironment } from "test-helpers";
-
-import { getNormalizedFullPath } from "src/utils/path-utils";
-import { CircomCompilerFactory, createCircomCompilerFactory, WASMCircomCompiler } from "src/core";
-import { LATEST_SUPPORTED_CIRCOM_VERSION, NODE_MODULES } from "src/constants";
-import { CompileFlags, CompilerPlatformBinary } from "src/types/core";
-import { CircomCompilerDownloader } from "src/core/compiler/CircomCompilerDownloader";
+import { WASMCircomCompiler } from "../../../../src/core/compiler/CircomCompiler.js";
+import { CompileFlags } from "../../../../src/types/core/compiler/circom-compiler.js";
+import { useEnvironment } from "../../../helpers.js";
+import { getNormalizedFullPath } from "../../../../src/utils/path-utils.js";
+import { CompilerPlatformBinary } from "../../../../src/types/core/compiler/circom-compiler-downloader.js";
+import { CircomCompilerDownloader } from "../../../../src/core/compiler/CircomCompilerDownloader.js";
+import { LATEST_SUPPORTED_CIRCOM_VERSION, NODE_MODULES } from "../../../../src/constants.js";
+import {
+  CircomCompilerFactory,
+  createCircomCompilerFactory,
+} from "../../../../src/core/compiler/CircomCompilerFactory.js";
 
 describe("WASMCircomCompiler", () => {
   const defaultCompileFlags: CompileFlags = {

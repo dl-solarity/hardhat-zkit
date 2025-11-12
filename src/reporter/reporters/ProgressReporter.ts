@@ -1,8 +1,8 @@
 /* eslint-disable no-console */
 import chalk from "chalk";
 
-import { BaseReporter } from "./BaseReporter";
-import { ProgressBarProcessor } from "../ProgressBarProcessor";
+import { BaseReporter } from "./BaseReporter.js";
+import { ProgressBarProcessor } from "../ProgressBarProcessor.js";
 
 export class ProgressReporter extends BaseReporter {
   public reportNothingTo(action: string) {

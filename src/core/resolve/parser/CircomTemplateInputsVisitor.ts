@@ -23,9 +23,10 @@ import {
   VarDeclarationContext,
   VariableContext,
   VarIdentifierContext,
-} from "@distributedlab/circom-parser";
+  ParseTreeVisitor,
+} from "@tawny0wl/test-circom-parser";
 
-import { CircuitResolutionError, ErrorType, IdentifierObject, InputData } from "../../../types/core";
+import { CircuitResolutionError, ErrorType, IdentifierObject, InputData } from "../../../types/core/index.js";
 
 /**
  * Visitor class for the {@link https://www.npmjs.com/package/@distributedlab/circom-parser | @distributedlab/circom-parser} package.
@@ -60,7 +61,7 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
   }
 
   startParse = () => {
-    this.visit(this.templateContext);
+    (this as ParseTreeVisitor).visit(this.templateContext);
   };
 
   visitVarDeclaration = (ctx: VarDeclarationContext) => {
@@ -69,13 +70,13 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
         type: ErrorType.VarTupleLikeDeclarationNotSupported,
         context: ctx,
         fileIdentifier: this.fileIdentifier,
-        message: `Tuple-like declarations are not supported (${ctx.start.line}:${ctx.start.column})`,
+        message: `Tuple-like declarations are not supported (${(ctx as ParserRuleContext).start.line}:${(ctx as ParserRuleContext).start.column})`,
       });
 
       return;
     }
 
-    this.visitChildren(ctx);
+    (this as ParseTreeVisitor).visitChildren(ctx);
   };
 
   visitSignalDeclaration = (ctx: SignalDeclarationContext) => {
@@ -84,13 +85,13 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
         type: ErrorType.VarTupleLikeDeclarationNotSupported,
         context: ctx,
         fileIdentifier: this.fileIdentifier,
-        message: `Tuple-like declarations are not supported (${ctx.start.line}:${ctx.start.column})`,
+        message: `Tuple-like declarations are not supported (${(ctx as ParserRuleContext).start.line}:${(ctx as ParserRuleContext).start.column})`,
       });
 
       return;
     }
 
-    this.visitChildren(ctx);
+    (this as ParseTreeVisitor).visitChildren(ctx);
 
     return;
   };
@@ -111,7 +112,7 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
           type: ErrorType.SignalDimensionResolution,
           context: ctx,
           fileIdentifier: this.fileIdentifier,
-          message: `Failed to resolve the signal dimension ${dimension.getText()} (${ctx.start.line}:${ctx.start.column})`,
+          message: `Failed to resolve the signal dimension ${(dimension as ParserRuleContext).getText()} (${(ctx as ParserRuleContext).start.line}:${(ctx as ParserRuleContext).start.column})`,
           linkedParserErrors: linkedErrors,
         });
 
@@ -123,7 +124,7 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
           type: ErrorType.SignalDimensionResolution,
           context: ctx,
           fileIdentifier: this.fileIdentifier,
-          message: `Invalid signal dimension value ${dimension.getText()} (${ctx.start.line}:${ctx.start.column})`,
+          message: `Invalid signal dimension value ${(dimension as ParserRuleContext).getText()} (${(ctx as ParserRuleContext).start.line}:${(ctx as ParserRuleContext).start.column})`,
           linkedParserErrors: linkedErrors,
         });
 
@@ -133,19 +134,25 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
       resolvedDimensions.push(Number(dimensionValue));
     }
 
-    if (!ctx.parentCtx && !(ctx.parentCtx! instanceof SignalIdentifierListContext)) {
+    if (
+      !(ctx as ParserRuleContext).parentCtx &&
+      !((ctx as ParserRuleContext).parentCtx! instanceof SignalIdentifierListContext)
+    ) {
       throw new Error("INTERNAL ERROR: SignalIdentifier should have a SignalIdentifierListContext as a parent");
     }
 
-    if (!ctx.parentCtx!.parentCtx && !(ctx.parentCtx!.parentCtx! instanceof SignalDeclarationContext)) {
+    if (
+      !(ctx as ParserRuleContext).parentCtx!.parentCtx &&
+      !((ctx as ParserRuleContext).parentCtx!.parentCtx! instanceof SignalDeclarationContext)
+    ) {
       throw new Error("INTERNAL ERROR: SignalIdentifier should have a SignalDeclarationContext as a parent of parent");
     }
 
-    if (ctx.parentCtx!.parentCtx instanceof BusDeclarationContext) {
+    if ((ctx as ParserRuleContext).parentCtx!.parentCtx instanceof BusDeclarationContext) {
       throw new Error("Buses are not supported");
     }
 
-    const signalDeclarationContext = ctx.parentCtx!.parentCtx as SignalDeclarationContext;
+    const signalDeclarationContext = (ctx as ParserRuleContext).parentCtx!.parentCtx as SignalDeclarationContext;
 
     let signalType = "intermediate";
     if (signalDeclarationContext.signalHeader().SIGNAL_TYPE()) {
@@ -176,7 +183,7 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
     }
 
     if (condition === 1n) {
-      this.visitChildren(ctx);
+      (this as ParseTreeVisitor).visitChildren(ctx);
     }
   };
 
@@ -191,7 +198,7 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
     }
 
     if (condition === 1n) {
-      this.visitChildren(ctx);
+      (this as ParseTreeVisitor).visitChildren(ctx);
     }
   };
 
@@ -206,9 +213,9 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
     }
 
     if (condition === 1n) {
-      this.visit(ctx.regularStatements());
+      (this as ParseTreeVisitor).visit(ctx.regularStatements());
     } else {
-      this.visit(ctx.ifStatements());
+      (this as ParseTreeVisitor).visit(ctx.ifStatements());
     }
   };
 
@@ -223,9 +230,9 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
     }
 
     if (condition === 1n) {
-      this.visit(ctx.regularStatements(0));
+      (this as ParseTreeVisitor).visit(ctx.regularStatements(0));
     } else {
-      this.visit(ctx.regularStatements(1));
+      (this as ParseTreeVisitor).visit(ctx.regularStatements(1));
     }
   };
 
@@ -240,7 +247,7 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
         type: ErrorType.FailedToResolveIdentifier,
         context: ctx,
         fileIdentifier: this.fileIdentifier,
-        message: `Failed to resolve the identifier ${ctx.identifier().getText()} (${ctx.start.line}:${ctx.start.column})`,
+        message: `Failed to resolve the identifier ${(ctx as ParserRuleContext).identifier().getText()} (${(ctx as ParserRuleContext).start.line}:${(ctx as ParserRuleContext).start.column})`,
       });
 
       return;
@@ -261,7 +268,7 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
           type: ErrorType.FailedToResolveIdentifierValue,
           context: ctx,
           fileIdentifier: this.fileIdentifier,
-          message: `Failed to resolve the identifier value ${ctx._rhs.getText()} (${ctx.start.line}:${ctx.start.column})`,
+          message: `Failed to resolve the identifier value ${(ctx as ParserRuleContext)._rhs.getText()} (${(ctx as ParserRuleContext).start.line}:${(ctx as ParserRuleContext).start.column})`,
           linkedParserErrors: linkedErrors,
         });
 
@@ -273,7 +280,7 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
           type: ErrorType.VarArraysNotSupported,
           context: ctx,
           fileIdentifier: this.fileIdentifier,
-          message: `Failed to resolve the identifier value ${ctx._rhs.getText()} (${ctx.start.line}:${ctx.start.column})`,
+          message: `Failed to resolve the identifier value ${(ctx as ParserRuleContext)._rhs.getText()} (${(ctx as ParserRuleContext).start.line}:${(ctx as ParserRuleContext).start.column})`,
           linkedParserErrors: linkedErrors,
         });
 
@@ -297,7 +304,7 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
         type: ErrorType.InvalidLeftAssignment,
         context: ctx,
         fileIdentifier: this.fileIdentifier,
-        message: `Expected to assign value to an identifier (${ctx.start.line}:${ctx.start.column})`,
+        message: `Expected to assign value to an identifier (${(ctx as ParserRuleContext).start.line}:${(ctx as ParserRuleContext).start.column})`,
       });
 
       return;
@@ -312,7 +319,7 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
         type: ErrorType.InvalidLeftAssignment,
         context: ctx,
         fileIdentifier: this.fileIdentifier,
-        message: `Expected to assign value to an identifier (${ctx.start.line}:${ctx.start.column})`,
+        message: `Expected to assign value to an identifier (${(ctx as ParserRuleContext).start.line}:${(ctx as ParserRuleContext).start.column})`,
       });
 
       return;
@@ -325,7 +332,7 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
         type: ErrorType.ComplexAccessNotSupported,
         context: ctx,
         fileIdentifier: this.fileIdentifier,
-        message: `Complex assignment to an identifier is not supported (${ctx.start.line}:${ctx.start.column})`,
+        message: `Complex assignment to an identifier is not supported (${(ctx as ParserRuleContext).start.line}:${(ctx as ParserRuleContext).start.column})`,
       });
 
       return;
@@ -341,7 +348,7 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
         type: ErrorType.FailedToResolveIdentifierValue,
         context: ctx,
         fileIdentifier: this.fileIdentifier,
-        message: `Failed to resolve the identifier value ${ctx._rhs.getText()} (${ctx.start.line}:${ctx.start.column})`,
+        message: `Failed to resolve the identifier value ${(ctx as ParserRuleContext)._rhs.getText()} (${(ctx as ParserRuleContext).start.line}:${(ctx as ParserRuleContext).start.column})`,
         linkedParserErrors: linkedErrors,
       });
 
@@ -353,7 +360,7 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
         type: ErrorType.VarArraysNotSupported,
         context: ctx,
         fileIdentifier: this.fileIdentifier,
-        message: `Failed to resolve the identifier value ${ctx._rhs.getText()} (${ctx.start.line}:${ctx.start.column})`,
+        message: `Failed to resolve the identifier value ${(ctx as ParserRuleContext)._rhs.getText()} (${(ctx as ParserRuleContext).start.line}:${(ctx as ParserRuleContext).start.column})`,
         linkedParserErrors: linkedErrors,
       });
 
@@ -374,7 +381,7 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
         type: ErrorType.ComplexAccessNotSupported,
         context: ctx,
         fileIdentifier: this.fileIdentifier,
-        message: `Complex assignment to an identifier is not supported (${ctx.start.line}:${ctx.start.column})`,
+        message: `Complex assignment to an identifier is not supported (${(ctx as ParserRuleContext).start.line}:${(ctx as ParserRuleContext).start.column})`,
       });
 
       return;
@@ -390,7 +397,7 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
         type: ErrorType.FailedToResolveIdentifierValue,
         context: ctx,
         fileIdentifier: this.fileIdentifier,
-        message: `Failed to resolve the identifier value ${ctx._rhs.getText()} (${ctx.start.line}:${ctx.start.column})`,
+        message: `Failed to resolve the identifier value ${(ctx as ParserRuleContext)._rhs.getText()} (${(ctx as ParserRuleContext).start.line}:${(ctx as ParserRuleContext).start.column})`,
         linkedParserErrors: linkedErrors,
       });
 
@@ -402,7 +409,7 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
         type: ErrorType.InvalidLeftAssignment,
         context: ctx,
         fileIdentifier: this.fileIdentifier,
-        message: `Cannot perform operation on an array (${ctx.start.line}:${ctx.start.column})`,
+        message: `Cannot perform operation on an array (${(ctx as ParserRuleContext).start.line}:${(ctx as ParserRuleContext).start.column})`,
         linkedParserErrors: linkedErrors,
       });
 
@@ -416,7 +423,7 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
         type: ErrorType.AssigneeNotDeclared,
         context: ctx,
         fileIdentifier: this.fileIdentifier,
-        message: `Assignee ${assigneeName} is not declared (${ctx.start.line}:${ctx.start.column})`,
+        message: `Assignee ${assigneeName} is not declared (${(ctx as ParserRuleContext).start.line}:${(ctx as ParserRuleContext).start.column})`,
         linkedParserErrors: linkedErrors,
       });
 
@@ -428,7 +435,7 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
         type: ErrorType.VarArraysNotSupported,
         context: ctx,
         fileIdentifier: this.fileIdentifier,
-        message: `Cannot perform operation on an array (${ctx.start.line}:${ctx.start.column})`,
+        message: `Cannot perform operation on an array (${(ctx as ParserRuleContext).start.line}:${(ctx as ParserRuleContext).start.column})`,
         linkedParserErrors: linkedErrors,
       });
 
@@ -456,7 +463,7 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
           type: ErrorType.QUOOperationNotSupported,
           context: ctx,
           fileIdentifier: this.fileIdentifier,
-          message: `QUO operation is not supported (${ctx.start.line}:${ctx.start.column})`,
+          message: `QUO operation is not supported (${(ctx as ParserRuleContext).start.line}:${(ctx as ParserRuleContext).start.column})`,
         });
         break;
       case "%=":
@@ -482,7 +489,7 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
           type: ErrorType.ReachedUnknownOperation,
           context: ctx,
           fileIdentifier: this.fileIdentifier,
-          message: `Invalid operation type ${ctx.ASSIGNMENT_WITH_OP().getText()} (${ctx.start.line}:${ctx.start.column})`,
+          message: `Invalid operation type ${ctx.ASSIGNMENT_WITH_OP().getText()} (${(ctx as ParserRuleContext).start.line}:${(ctx as ParserRuleContext).start.column})`,
           linkedParserErrors: linkedErrors,
         });
         break;
@@ -497,7 +504,7 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
         type: ErrorType.ComplexAccessNotSupported,
         context: ctx,
         fileIdentifier: this.fileIdentifier,
-        message: `Complex assignment to an identifier is not supported (${ctx.start.line}:${ctx.start.column})`,
+        message: `Complex assignment to an identifier is not supported (${(ctx as ParserRuleContext).start.line}:${(ctx as ParserRuleContext).start.column})`,
       });
 
       return;
@@ -510,7 +517,7 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
         type: ErrorType.AssigneeNotDeclared,
         context: ctx,
         fileIdentifier: this.fileIdentifier,
-        message: `Assignee ${assigneeName} is not declared (${ctx.start.line}:${ctx.start.column})`,
+        message: `Assignee ${assigneeName} is not declared (${(ctx as ParserRuleContext).start.line}:${(ctx as ParserRuleContext).start.column})`,
       });
 
       return;
@@ -521,7 +528,7 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
         type: ErrorType.VarArraysNotSupported,
         context: ctx,
         fileIdentifier: this.fileIdentifier,
-        message: `Cannot perform operation on an array (${ctx.start.line}:${ctx.start.column})`,
+        message: `Cannot perform operation on an array (${(ctx as ParserRuleContext).start.line}:${(ctx as ParserRuleContext).start.column})`,
       });
 
       return;
@@ -543,7 +550,7 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
           type: ErrorType.ReachedUnknownOperation,
           context: ctx,
           fileIdentifier: this.fileIdentifier,
-          message: `Invalid operation type ${ctx.SELF_OP().getText()} (${ctx.start.line}:${ctx.start.column})`,
+          message: `Invalid operation type ${ctx.SELF_OP().getText()} (${(ctx as ParserRuleContext).start.line}:${(ctx as ParserRuleContext).start.column})`,
         });
         break;
     }
@@ -554,7 +561,7 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
       type: ErrorType.InvalidIncDecOperation,
       context: ctx,
       fileIdentifier: this.fileIdentifier,
-      message: `Prefix increment/decrement operations are not allowed (${ctx.start.line}:${ctx.start.column})`,
+      message: `Prefix increment/decrement operations are not allowed (${(ctx as ParserRuleContext).start.line}:${(ctx as ParserRuleContext).start.column})`,
     });
   };
 
@@ -577,7 +584,7 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
           type: ErrorType.InvalidIdentifierDimensionValue,
           context: ctx,
           fileIdentifier: this.fileIdentifier,
-          message: `Invalid dimension type for identifier ${baseName} (${ctx.start.line}:${ctx.start.column})`,
+          message: `Invalid dimension type for identifier ${baseName} (${(ctx as ParserRuleContext).start.line}:${(ctx as ParserRuleContext).start.column})`,
           linkedParserErrors: linkedErrors,
         });
 
@@ -591,7 +598,7 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
           type: ErrorType.InvalidIdentifierDimensionValue,
           context: ctx,
           fileIdentifier: this.fileIdentifier,
-          message: `Invalid dimension value for identifier ${baseName} (${ctx.start.line}:${ctx.start.column})`,
+          message: `Invalid dimension value for identifier ${baseName} (${(ctx as ParserRuleContext).start.line}:${(ctx as ParserRuleContext).start.column})`,
           linkedParserErrors: linkedErrors,
         });
 
@@ -638,7 +645,7 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
         type: ErrorType.FailedToResolveIfCondition,
         context: parentContext,
         fileIdentifier: this.fileIdentifier,
-        message: `Failed to resolve the if condition ${expressionContext.getText()} (${expressionContext.start.line}:${expressionContext.start.column})`,
+        message: `Failed to resolve the if condition ${(expressionContext as ParserRuleContext).getText()} (${(expressionContext as ParserRuleContext).start.line}:${(expressionContext as ParserRuleContext).start.column})`,
         linkedParserErrors: linkedErrors,
       });
 
@@ -650,7 +657,7 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
         type: ErrorType.InvalidConditionReturnedValue,
         context: parentContext,
         fileIdentifier: this.fileIdentifier,
-        message: `Value returned from the condition is an array ${expressionContext.getText()} (${expressionContext.start.line}:${expressionContext.start.column})`,
+        message: `Value returned from the condition is an array ${(expressionContext as ParserRuleContext).getText()} (${(expressionContext as ParserRuleContext).start.line}:${(expressionContext as ParserRuleContext).start.column})`,
         linkedParserErrors: linkedErrors,
       });
 
@@ -662,7 +669,7 @@ export class CircomTemplateInputsVisitor extends CircomVisitor<void> {
         type: ErrorType.InvalidConditionReturnedValue,
         context: parentContext,
         fileIdentifier: this.fileIdentifier,
-        message: `Value returned from the condition is not a boolean ${expressionContext.getText()} (${expressionContext.start.line}:${expressionContext.start.column})`,
+        message: `Value returned from the condition is not a boolean ${(expressionContext as ParserRuleContext).getText()} (${(expressionContext as ParserRuleContext).start.line}:${(expressionContext as ParserRuleContext).start.column})`,
         linkedParserErrors: linkedErrors,
       });
 

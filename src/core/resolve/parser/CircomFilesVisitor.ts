@@ -9,9 +9,15 @@ import {
   PublicInputsDefinitionContext,
   TemplateDefinitionContext,
   ExpressionHelper,
-} from "@distributedlab/circom-parser";
+  ParseTreeVisitor,
+  ParserRuleContext,
+} from "@tawny0wl/test-circom-parser";
 
-import { CircomFileData, CircuitResolutionError, ErrorType } from "../../../types/core";
+import {
+  CircomFileData,
+  CircuitResolutionError,
+  ErrorType,
+} from "../../../types/core/dependencies/parser/circom-files-visitor.js";
 
 /**
  * Class responsible for gathering comprehensive information from a Circom file.
@@ -62,7 +68,7 @@ export class CircomFilesVisitor extends CircomVisitor<void> {
         context: ctx,
         fileIdentifier: this.fileIdentifier,
         templateIdentifier: ctx.ID().getText(),
-        message: `Template name ${ctx.ID().getText()} (${ctx.start.line}:${ctx.start.column}) is already in use`,
+        message: `Template name ${ctx.ID().getText()} (${(ctx as ParserRuleContext).start.line}:${(ctx as ParserRuleContext).start.column}) is already in use`,
       });
 
       return;
@@ -89,8 +95,8 @@ export class CircomFilesVisitor extends CircomVisitor<void> {
       parameters: [],
     };
 
-    if (ctx.publicInputsDefinition()) this.visit(ctx.publicInputsDefinition());
-    if (ctx._argValues) this.visit(ctx._argValues);
+    if (ctx.publicInputsDefinition()) (this as ParseTreeVisitor).visit(ctx.publicInputsDefinition());
+    if (ctx._argValues) (this as ParseTreeVisitor).visit(ctx._argValues);
   };
 
   visitPublicInputsDefinition = (ctx: PublicInputsDefinitionContext) => {
@@ -111,7 +117,7 @@ export class CircomFilesVisitor extends CircomVisitor<void> {
           context: ctx.expression(i),
           fileIdentifier: this.fileIdentifier,
           linkedParserErrors: errors,
-          message: `Failed to parse array parameter with index ${i}. Parameter: ${ctx.expression(i).getText()} (${ctx.expression(i).start.line}:${ctx.expression(i).start.column})`,
+          message: `Failed to parse array parameter with index ${i}. Parameter: ${(ctx as ParserRuleContext).expression(i).getText()} (${(ctx as ParserRuleContext).expression(i).start.line}:${(ctx as ParserRuleContext).expression(i).start.column})`,
         });
 
         continue;

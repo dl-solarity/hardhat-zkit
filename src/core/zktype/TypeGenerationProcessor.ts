@@ -1,15 +1,13 @@
-import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { localPathToSourceName } from "hardhat/utils/source-names";
-import { willRunWithTypescript } from "hardhat/internal/core/typescript-support";
+import { HardhatRuntimeEnvironment } from "hardhat/types/hre";
 
 import { ProvingSystemType } from "@solarity/zkit";
 import { CircuitTypesGenerator } from "@solarity/zktype";
-
-import { Reporter } from "../../reporter";
-import { getUniqueProvingSystems } from "../../utils";
-
-import { ZKitConfig } from "../../types/zkit-config";
-import { ICircuitArtifacts } from "../../types/artifacts/circuit-artifacts";
+import { ZKitConfig } from "../../types/zkit-config.js";
+import { ICircuitArtifacts } from "../../types/artifacts/circuit-artifacts.js";
+import { getUniqueProvingSystems } from "../../utils/utils.js";
+import { Reporter } from "../../reporter/ReporterFacade.js";
+import { localPathToSourceName } from "../../utils/path-utils.js";
+import { willRunWithTypescript } from "../utils/helper.js";
 
 /**
  * A class responsible for generating TypeScript types for compiled circuits.
@@ -34,7 +32,7 @@ export class TypeGenerationProcessor {
     this._circuitArtifacts = hre.zkit.circuitArtifacts;
     this._zkitConfig = hre.config.zkit;
     this._root = hre.config.paths.root;
-    this._isTSProject = willRunWithTypescript(hre.hardhatArguments.config);
+    this._isTSProject = willRunWithTypescript(hre.globalOptions.config);
     this._provingSystems = getUniqueProvingSystems(hre.config.zkit.setupSettings.contributionSettings.provingSystem);
   }
 

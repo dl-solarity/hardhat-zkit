@@ -6,12 +6,10 @@ import { exec } from "child_process";
 import * as snarkjs from "snarkjs";
 
 import { ProvingSystemType } from "@solarity/zkit";
-
-import { Reporter } from "../reporter";
-import { HardhatZKitError } from "../errors";
-import { BN128_CURVE_NAME } from "../constants";
-
-import { ExecCallResult } from "../types/utils";
+import { Reporter } from "../reporter/ReporterFacade.js";
+import { ExecCallResult } from "../types/utils.js";
+import { HardhatZKitError } from "../errors.js";
+import { BN128_CURVE_NAME } from "../constants.js";
 
 /**
  * Downloads a file from the specified URL

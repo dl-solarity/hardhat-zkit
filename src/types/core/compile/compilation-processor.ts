@@ -1,5 +1,5 @@
-import { CompileFlags } from "../compiler/circom-compiler";
-import { CircomResolvedFile } from "../dependencies";
+import { CompileFlags } from "../compiler/circom-compiler.js";
+import { CircomResolvedFile } from "../dependencies/circom-files-resolver.js";
 
 export type CompilationProcessorConfig = {
   compileFlags: CompileFlags;

@@ -1,18 +1,32 @@
 import os from "os";
 import path from "path";
 import fsExtra from "fs-extra";
-import { capitalize } from "lodash";
+import { capitalize } from "lodash-es";
 import { execSync } from "child_process";
-
-import "@solarity/chai-zkit";
-
 import { expect } from "chai";
 import { before } from "mocha";
 import { stub, SinonStub } from "sinon";
 
-import { HardhatUserConfig } from "hardhat/config";
-
+import "@tawny0wl/test-chai-zkit";
 import { ProvingSystemType } from "@solarity/zkit";
+
+import { BaseCircomCompilerFactory } from "../../src/core/compiler/CircomCompilerFactory.js";
+import { getNormalizedFullPath } from "../../src/utils/path-utils.js";
+import { HardhatZKit } from "../../src/types/hardhat-zkit.js";
+import { SetupCacheEntry } from "../../src/types/cache/circuits-setup-cache.js";
+import { CircuitsSetupCache } from "../../src/cache/CircuitsSetupCache.js";
+import { CompileCacheEntry } from "../../src/types/cache/circuits-compile-cache.js";
+import { CircuitsCompileCache } from "../../src/cache/CircuitsCompileCache.js";
+import { CircomCompilerDownloader } from "../../src/core/compiler/CircomCompilerDownloader.js";
+
+import { cleanUp, useEnvironment } from "../helpers.js";
+import {
+  getCompileCacheEntry,
+  getSetupCacheEntry,
+  updateInclude,
+  updateProvingSystems,
+  updateTypesDir,
+} from "../utils.js";
 
 import {
   TASK_CIRCUITS_COMPILE,
@@ -21,23 +35,8 @@ import {
   TASK_GENERATE_VERIFIERS,
   TASK_ZKIT_CLEAN,
   ZKIT_SCOPE_NAME,
-} from "src/task-names";
-import { CircuitsCompileCache, CircuitsSetupCache } from "src/cache";
-import { CompileCacheEntry, SetupCacheEntry } from "src/types/cache";
-
-import { cleanUp, useEnvironment } from "test-helpers";
-import { getNormalizedFullPath } from "src/utils/path-utils";
-import {
-  getCompileCacheEntry,
-  getSetupCacheEntry,
-  updateInclude,
-  updateProvingSystems,
-  updateTypesDir,
-} from "../utils";
-
-import { HardhatZKit } from "src/types/hardhat-zkit";
-import { BaseCircomCompilerFactory } from "src/core";
-import { CircomCompilerDownloader } from "src/core/compiler/CircomCompilerDownloader";
+} from "../../src/task-names.js";
+import { HardhatConfig } from "hardhat/types/config";
 
 describe("ZKit tasks", async function () {
   const circuitNames = ["Multiplier2", "Multiplier3Arr"];
@@ -58,19 +57,20 @@ describe("ZKit tasks", async function () {
     nativeCompilerStub.restore();
   });
 
-  function getZkitCircuitFullPaths(config: HardhatUserConfig): string[] {
+  function getZkitCircuitFullPaths(config: HardhatConfig): string[] {
     const circuitFullPaths: string[] = [];
+
     sourceNames.forEach((sourceName) => {
       circuitFullPaths.push(
-        getNormalizedFullPath(config.paths!.root!, `${config.zkit!.compilationSettings!.artifactsDir}/${sourceName}`),
+        getNormalizedFullPath(config.paths.root, `${config.zkit!.compilationSettings!.artifactsDir}/${sourceName}`),
       );
     });
 
     return circuitFullPaths;
   }
 
-  async function checkMake(config: HardhatUserConfig, zkit: HardhatZKit, provingSystems: ProvingSystemType[]) {
-    const cacheFullPath: string = getNormalizedFullPath(config.paths!.root!, "cache");
+  async function checkMake(config: HardhatConfig, zkit: HardhatZKit, provingSystems: ProvingSystemType[]) {
+    const cacheFullPath: string = getNormalizedFullPath(config.paths.root, "cache");
 
     expect(fsExtra.readdirSync(cacheFullPath)).to.be.deep.eq([
       "circuits-compile-cache.json",
@@ -100,7 +100,7 @@ describe("ZKit tasks", async function () {
       ]);
     });
 
-    const ptauFullPath: string = getNormalizedFullPath(config.paths!.root!, "zkit/ptau");
+    const ptauFullPath: string = getNormalizedFullPath(config.paths.root, "zkit/ptau");
     expect(fsExtra.readdirSync(ptauFullPath)).to.be.deep.eq(["powers-of-tau-8.ptau"]);
 
     for (const provingSystem of provingSystems) {
@@ -121,7 +121,7 @@ describe("ZKit tasks", async function () {
       });
 
       it("should correctly compile circuits", async function () {
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_COMPILE]).run({});
 
         const cacheFullPath: string = getNormalizedFullPath(this.hre.config.paths.root, "cache");
 
@@ -142,7 +142,7 @@ describe("ZKit tasks", async function () {
       });
 
       it("should correctly compile circuits with task arguments", async function () {
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE }, { json: true, c: true });
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_COMPILE]).run({ json: true, c: true });
 
         const cacheFullPath: string = getNormalizedFullPath(this.hre.config.paths.root, "cache");
 
@@ -172,7 +172,7 @@ describe("ZKit tasks", async function () {
       });
 
       it("should correctly compile circuits with the specified version of the compiler", async function () {
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_COMPILE]).run({});
 
         const artifactsPath = getNormalizedFullPath(
           this.hre.config.paths.root,
@@ -186,7 +186,7 @@ describe("ZKit tasks", async function () {
           "Multiplier2_js",
         ]);
 
-        const compilerPath = path.join(os.homedir(), ".zkit", "compilers", this.hre.config.zkit.compilerVersion);
+        const compilerPath = path.join(os.homedir(), ".zkit", "compilers", this.hre.config.zkit.compilerVersion!);
 
         expect(fsExtra.readdirSync(compilerPath)).to.be.deep.equal([
           CircomCompilerDownloader.getCompilerPlatformBinary(),
@@ -201,7 +201,7 @@ describe("ZKit tasks", async function () {
       });
 
       it("should throw an error when the specified config compiler version is lower that the circuit one", async function () {
-        await expect(this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE })).to.be.rejectedWith(
+        await expect(this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_COMPILE]).run()).to.be.rejectedWith(
           "Unable to compile a circuit with Circom version 2.1.9 using compiler version 2.1.8 specified in the config",
         );
       });
@@ -218,7 +218,7 @@ describe("ZKit tasks", async function () {
           const root = this.hre.config.paths.root;
 
           execSync("npm install --no-workspaces", { cwd: root });
-          await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
+          await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_COMPILE]).run({});
 
           const cacheFullPath: string = getNormalizedFullPath(root, "cache");
 
@@ -258,7 +258,7 @@ describe("ZKit tasks", async function () {
 
           updateInclude(circuitFullPath, invalidImportPath);
 
-          await expect(this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE })).to.be.rejectedWith(
+          await expect(this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_COMPILE]).run()).to.be.rejectedWith(
             `Invalid import ${invalidImportPath} from ${circuitPath}. Hardhat doesn't support imports via http`,
           );
         });
@@ -270,7 +270,7 @@ describe("ZKit tasks", async function () {
 
           updateInclude(circuitFullPath, invalidImportPath);
 
-          await expect(this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE })).to.be.rejectedWith(
+          await expect(this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_COMPILE]).run()).to.be.rejectedWith(
             `Invalid import ${invalidImportPath} from ${circuitPath}. Imports must use / instead of \\, even in Windows`,
           );
         });
@@ -282,8 +282,8 @@ describe("ZKit tasks", async function () {
 
           updateInclude(circuitFullPath, invalidImportPath);
 
-          await expect(this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE })).to.be.rejectedWith(
-            ` Invalid import ${invalidImportPath} from ${circuitPath}. Hardhat doesn't support imports with absolute paths.`,
+          await expect(this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_COMPILE]).run()).to.be.rejectedWith(
+            `Invalid import ${invalidImportPath} from ${circuitPath}. Hardhat doesn't support imports with absolute paths`,
           );
         });
       });
@@ -324,7 +324,9 @@ describe("ZKit tasks", async function () {
         const runCompilationAndGetSizes = async (optimization: "O0" | "O1" | "O2") => {
           this.hre.config.zkit.compilationSettings.optimization = optimization;
 
-          await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
+          // console.log(this.hre.config.zkit.compilationSettings.optimization);
+
+          await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_COMPILE]).run({});
 
           expect(fsExtra.readdirSync(circuitPath)).to.deep.equal(expectedFiles);
 
@@ -342,6 +344,7 @@ describe("ZKit tasks", async function () {
         ({ r1csSize, constraintsSize } = await runCompilationAndGetSizes("O1"));
 
         expect(r1csSize).to.be.lt(fileSizes.r1cs);
+
         expect(constraintsSize).to.be.lt(fileSizes.constraints);
 
         fileSizes.r1cs = r1csSize;
@@ -364,29 +367,31 @@ describe("ZKit tasks", async function () {
       });
 
       it("should correctly compile circuits with 'groth16' proving system", async function () {
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_COMPILE]).run({});
 
         const circuit = await this.hre.zkit.getCircuit("Multiplier2");
 
         expect(circuit.getProvingSystemType()).to.be.eq("groth16");
 
-        updateProvingSystems(this.hre.config.paths.configFile, ["plonk"]);
-        updateTypesDir(this.hre.config.paths.configFile, defaultTypesDir, plonkTypesDir);
+        updateProvingSystems(this.hre.config.paths.config!, ["plonk"]);
+        updateTypesDir(this.hre.config.paths.config!, defaultTypesDir, plonkTypesDir);
+
+        // console.log(fsExtra.readFileSync(this.hre.config.paths.config!, "utf-8"));
       });
 
       it("should correctly compile circuits with 'plonk' proving system", async function () {
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_COMPILE]).run({});
 
         const circuit = await this.hre.zkit.getCircuit("Multiplier2");
 
-        updateProvingSystems(this.hre.config.paths.configFile, ["groth16", "plonk"]);
-        updateTypesDir(this.hre.config.paths.configFile, plonkTypesDir, groth16PlonkTypesDir);
+        updateProvingSystems(this.hre.config.paths.config!, ["groth16", "plonk"]);
+        updateTypesDir(this.hre.config.paths.config!, plonkTypesDir, groth16PlonkTypesDir);
 
         expect(circuit.getProvingSystemType()).to.be.eq("plonk");
       });
 
       it("should correctly compile circuits with several proving systems", async function () {
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_COMPILE]).run({});
 
         let circuit = await this.hre.zkit.getCircuit("Multiplier2", "groth16");
 
@@ -396,8 +401,8 @@ describe("ZKit tasks", async function () {
 
         expect(circuit.getProvingSystemType()).to.be.eq("plonk");
 
-        updateProvingSystems(this.hre.config.paths.configFile, ["groth16"]);
-        updateTypesDir(this.hre.config.paths.configFile, groth16PlonkTypesDir, defaultTypesDir);
+        updateProvingSystems(this.hre.config.paths.config!, ["groth16"]);
+        updateTypesDir(this.hre.config.paths.config!, groth16PlonkTypesDir, defaultTypesDir);
       });
     });
 
@@ -409,27 +414,27 @@ describe("ZKit tasks", async function () {
       });
 
       it("should correctly compile circuits with 'groth16' proving system", async function () {
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_COMPILE]).run({});
 
         const circuit = await this.hre.zkit.getCircuit("Multiplier2");
 
         expect(circuit.getProvingSystemType()).to.be.eq("groth16");
 
-        updateProvingSystems(this.hre.config.paths.configFile, ["plonk"]);
+        updateProvingSystems(this.hre.config.paths.config!, ["plonk"]);
       });
 
       it("should correctly compile circuits with 'plonk' proving system", async function () {
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_COMPILE]).run({});
 
         const circuit = await this.hre.zkit.getCircuit("Multiplier2");
 
-        updateProvingSystems(this.hre.config.paths.configFile, ["groth16", "plonk"]);
+        updateProvingSystems(this.hre.config.paths.config!, ["groth16", "plonk"]);
 
         expect(circuit.getProvingSystemType()).to.be.eq("plonk");
       });
 
       it("should correctly compile circuits with several proving systems", async function () {
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_COMPILE]).run({});
 
         let circuit = await this.hre.zkit.getCircuit("Multiplier2", "groth16");
 
@@ -439,7 +444,7 @@ describe("ZKit tasks", async function () {
 
         expect(circuit.getProvingSystemType()).to.be.eq("plonk");
 
-        updateProvingSystems(this.hre.config.paths.configFile, ["groth16"]);
+        updateProvingSystems(this.hre.config.paths.config!, ["groth16"]);
       });
     });
   });
@@ -457,7 +462,7 @@ describe("ZKit tasks", async function () {
       it("should not generate vkey, zkey files without compiled circuits", async function () {
         cleanUp(this.hre.config.paths.root);
 
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_SETUP });
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_SETUP]).run({});
 
         const cacheFullPath: string = getNormalizedFullPath(this.hre.config.paths.root, "cache");
         expect(fsExtra.readdirSync(cacheFullPath)).to.be.deep.eq(["circuits-setup-cache.json"]);
@@ -466,33 +471,33 @@ describe("ZKit tasks", async function () {
       });
 
       it("should generate correct vkey, zkey files for compiled circuits with 'groth16' proving system", async function () {
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_SETUP });
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_COMPILE]).run({});
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_SETUP]).run({});
 
         await checkMake(this.hre.config, this.hre.zkit, ["groth16"]);
 
-        updateProvingSystems(this.hre.config.paths.configFile, ["plonk"]);
-        updateTypesDir(this.hre.config.paths.configFile, defaultTypesDir, plonkTypesDir);
+        updateProvingSystems(this.hre.config.paths.config!, ["plonk"]);
+        updateTypesDir(this.hre.config.paths.config!, defaultTypesDir, plonkTypesDir);
       });
 
       it("should generate correct vkey, zkey files for compiled circuits with 'plonk' proving system", async function () {
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_SETUP });
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_COMPILE]).run({});
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_SETUP]).run({});
 
         await checkMake(this.hre.config, this.hre.zkit, ["plonk"]);
 
-        updateProvingSystems(this.hre.config.paths.configFile, ["groth16", "plonk"]);
-        updateTypesDir(this.hre.config.paths.configFile, plonkTypesDir, groth16PlonkTypesDir);
+        updateProvingSystems(this.hre.config.paths.config!, ["groth16", "plonk"]);
+        updateTypesDir(this.hre.config.paths.config!, plonkTypesDir, groth16PlonkTypesDir);
       });
 
       it("should generate correct vkey, zkey files with 'plonk' and 'groth16' proving systems", async function () {
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_SETUP });
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_COMPILE]).run({});
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_SETUP]).run({});
 
         await checkMake(this.hre.config, this.hre.zkit, ["groth16", "plonk"]);
 
-        updateProvingSystems(this.hre.config.paths.configFile, ["groth16"]);
-        updateTypesDir(this.hre.config.paths.configFile, groth16PlonkTypesDir, defaultTypesDir);
+        updateProvingSystems(this.hre.config.paths.config!, ["groth16"]);
+        updateTypesDir(this.hre.config.paths.config!, groth16PlonkTypesDir, defaultTypesDir);
       });
     });
 
@@ -506,7 +511,7 @@ describe("ZKit tasks", async function () {
       it("should not generate vkey, zkey files without compiled circuits", async function () {
         cleanUp(this.hre.config.paths.root);
 
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_SETUP });
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_SETUP]).run({});
 
         const cacheFullPath: string = getNormalizedFullPath(this.hre.config.paths.root, "cache");
         expect(fsExtra.readdirSync(cacheFullPath)).to.be.deep.eq(["circuits-setup-cache.json"]);
@@ -515,30 +520,30 @@ describe("ZKit tasks", async function () {
       });
 
       it("should generate correct vkey, zkey files for compiled circuits with 'groth16' proving system", async function () {
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_SETUP });
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_COMPILE]).run({});
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_SETUP]).run({});
 
         await checkMake(this.hre.config, this.hre.zkit, ["groth16"]);
 
-        updateProvingSystems(this.hre.config.paths.configFile, ["plonk"]);
+        updateProvingSystems(this.hre.config.paths.config!, ["plonk"]);
       });
 
       it("should generate correct vkey, zkey files for compiled circuits with 'plonk' proving system", async function () {
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_SETUP });
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_COMPILE]).run({});
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_SETUP]).run({});
 
         await checkMake(this.hre.config, this.hre.zkit, ["plonk"]);
 
-        updateProvingSystems(this.hre.config.paths.configFile, ["groth16", "plonk"]);
+        updateProvingSystems(this.hre.config.paths.config!, ["groth16", "plonk"]);
       });
 
       it("should generate correct vkey, zkey files with 'plonk' and 'groth16' proving systems", async function () {
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_SETUP });
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_COMPILE]).run({});
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_SETUP]).run({});
 
         await checkMake(this.hre.config, this.hre.zkit, ["groth16", "plonk"]);
 
-        updateProvingSystems(this.hre.config.paths.configFile, ["groth16"]);
+        updateProvingSystems(this.hre.config.paths.config!, ["groth16"]);
       });
     });
   });
@@ -551,7 +556,7 @@ describe("ZKit tasks", async function () {
       });
 
       it("should correctly compile circuits and generate vkey, zkey files", async function () {
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_MAKE });
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_MAKE]).run({});
 
         await checkMake(this.hre.config, this.hre.zkit, ["groth16"]);
       });
@@ -565,7 +570,7 @@ describe("ZKit tasks", async function () {
       });
 
       it("should correctly compile circuits and generate vkey, zkey files", async function () {
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_MAKE });
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_MAKE]).run({});
 
         await checkMake(this.hre.config, this.hre.zkit, ["groth16"]);
       });
@@ -583,7 +588,7 @@ describe("ZKit tasks", async function () {
       });
 
       it("should correctly generate 'groth16' verifiers after running the verifiers task", async function () {
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_GENERATE_VERIFIERS });
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_GENERATE_VERIFIERS]).run({});
 
         await checkMake(this.hre.config, this.hre.zkit, ["groth16"]);
 
@@ -594,12 +599,12 @@ describe("ZKit tasks", async function () {
           "Test_20_Groth16Verifier.sol",
         ]);
 
-        updateProvingSystems(this.hre.config.paths.configFile, ["plonk"]);
-        updateTypesDir(this.hre.config.paths.configFile, defaultTypesDir, plonkTypesDir);
+        updateProvingSystems(this.hre.config.paths.config!, ["plonk"]);
+        updateTypesDir(this.hre.config.paths.config!, defaultTypesDir, plonkTypesDir);
       });
 
       it("should correctly generate 'plonk' verifiers after running the verifiers task", async function () {
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_GENERATE_VERIFIERS });
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_GENERATE_VERIFIERS]).run({});
 
         await checkMake(this.hre.config, this.hre.zkit, ["plonk"]);
 
@@ -610,14 +615,14 @@ describe("ZKit tasks", async function () {
           "Test_20_PlonkVerifier.sol",
         ]);
 
-        updateProvingSystems(this.hre.config.paths.configFile, ["groth16", "plonk"]);
-        updateTypesDir(this.hre.config.paths.configFile, plonkTypesDir, groth16PlonkTypesDir);
+        updateProvingSystems(this.hre.config.paths.config!, ["groth16", "plonk"]);
+        updateTypesDir(this.hre.config.paths.config!, plonkTypesDir, groth16PlonkTypesDir);
       });
 
       it("should correctly generate 'groth16' and 'plonk' verifiers after running the verifiers task", async function () {
         const provingSystemsArr: ProvingSystemType[] = ["groth16", "plonk"];
 
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_GENERATE_VERIFIERS });
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_GENERATE_VERIFIERS]).run({});
 
         await checkMake(this.hre.config, this.hre.zkit, provingSystemsArr);
 
@@ -632,8 +637,8 @@ describe("ZKit tasks", async function () {
 
         expect(fsExtra.readdirSync(verifiersFullPath)).to.be.deep.eq(verifiersNameArr);
 
-        updateProvingSystems(this.hre.config.paths.configFile, ["groth16"]);
-        updateTypesDir(this.hre.config.paths.configFile, groth16PlonkTypesDir, defaultTypesDir);
+        updateProvingSystems(this.hre.config.paths.config!, ["groth16"]);
+        updateTypesDir(this.hre.config.paths.config!, groth16PlonkTypesDir, defaultTypesDir);
       });
     });
 
@@ -644,7 +649,7 @@ describe("ZKit tasks", async function () {
       });
 
       it("should correctly generate verifiers with custom verifier names", async function () {
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_GENERATE_VERIFIERS });
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_GENERATE_VERIFIERS]).run({});
 
         const expectedCircuitNames: string[] = ["SomeCircuit_5_3_2_5_3_", "SomeCircuit_5_3_2_5_4_"];
 
@@ -663,7 +668,7 @@ describe("ZKit tasks", async function () {
       });
 
       it("should correctly generate 'groth16' verifiers after running the verifiers task", async function () {
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_GENERATE_VERIFIERS });
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_GENERATE_VERIFIERS]).run({});
 
         await checkMake(this.hre.config, this.hre.zkit, ["groth16"]);
 
@@ -672,12 +677,12 @@ describe("ZKit tasks", async function () {
           ...circuitNames.map((name) => `${name}Groth16Verifier.sol`),
         ]);
 
-        updateProvingSystems(this.hre.config.paths.configFile, ["plonk"]);
-        updateTypesDir(this.hre.config.paths.configFile, defaultTypesDir, plonkTypesDir);
+        updateProvingSystems(this.hre.config.paths.config!, ["plonk"]);
+        updateTypesDir(this.hre.config.paths.config!, defaultTypesDir, plonkTypesDir);
       });
 
       it("should correctly generate 'plonk' verifiers after running the verifiers task", async function () {
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_GENERATE_VERIFIERS });
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_GENERATE_VERIFIERS]).run({});
 
         await checkMake(this.hre.config, this.hre.zkit, ["plonk"]);
 
@@ -686,14 +691,14 @@ describe("ZKit tasks", async function () {
           ...circuitNames.map((name) => `${name}PlonkVerifier.sol`),
         ]);
 
-        updateProvingSystems(this.hre.config.paths.configFile, ["groth16", "plonk"]);
-        updateTypesDir(this.hre.config.paths.configFile, plonkTypesDir, groth16PlonkTypesDir);
+        updateProvingSystems(this.hre.config.paths.config!, ["groth16", "plonk"]);
+        updateTypesDir(this.hre.config.paths.config!, plonkTypesDir, groth16PlonkTypesDir);
       });
 
       it("should correctly generate 'groth16' and 'plonk' verifiers after running the verifiers task", async function () {
         const provingSystemsArr: ProvingSystemType[] = ["groth16", "plonk"];
 
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_GENERATE_VERIFIERS });
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_GENERATE_VERIFIERS]).run({});
 
         await checkMake(this.hre.config, this.hre.zkit, provingSystemsArr);
 
@@ -708,8 +713,8 @@ describe("ZKit tasks", async function () {
 
         expect(fsExtra.readdirSync(verifiersFullPath)).to.be.deep.eq(verifiersNameArr);
 
-        updateProvingSystems(this.hre.config.paths.configFile, ["groth16"]);
-        updateTypesDir(this.hre.config.paths.configFile, groth16PlonkTypesDir, defaultTypesDir);
+        updateProvingSystems(this.hre.config.paths.config!, ["groth16"]);
+        updateTypesDir(this.hre.config.paths.config!, groth16PlonkTypesDir, defaultTypesDir);
       });
     });
   });
@@ -736,7 +741,7 @@ describe("ZKit tasks", async function () {
           [],
         );
 
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_MAKE });
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_MAKE]).run({});
 
         const typesDir: string = getNormalizedFullPath(this.hre.config.paths.root, "generated-types");
         const cacheDir: string = getNormalizedFullPath(this.hre.config.paths.root, "cache");
@@ -744,7 +749,7 @@ describe("ZKit tasks", async function () {
 
         await checkMake(this.hre.config, this.hre.zkit, ["groth16"]);
 
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_ZKIT_CLEAN });
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_ZKIT_CLEAN]).run({});
 
         expect(fsExtra.readdirSync(cacheDir)).to.be.deep.eq([]);
         expect(fsExtra.readdirSync(typesDir)).to.be.deep.eq([]);
@@ -768,14 +773,14 @@ describe("ZKit tasks", async function () {
           "package.json",
         ]);
 
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_MAKE });
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_MAKE]).run({});
 
         const cacheDir: string = getNormalizedFullPath(this.hre.config.paths.root, "cache");
         const zkitDir: string = getNormalizedFullPath(this.hre.config.paths.root, "zkit");
 
         await checkMake(this.hre.config, this.hre.zkit, ["groth16"]);
 
-        await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_ZKIT_CLEAN });
+        await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_ZKIT_CLEAN]).run({});
 
         expect(fsExtra.readdirSync(cacheDir)).to.be.deep.eq([]);
         expect(fsExtra.readdirSync(zkitDir)).to.be.deep.eq(["ptau"]);

@@ -1,3 +1,3 @@
-export * from "./ReporterFacade";
-export * from "./ProgressBarProcessor";
-export * from "./SpinnerProcessor";
+export * from "./ReporterFacade.js";
+export * from "./ProgressBarProcessor.js";
+export * from "./SpinnerProcessor.js";

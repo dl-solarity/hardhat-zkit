@@ -1,4 +1,4 @@
-import { CircomValueType } from "@distributedlab/circom-parser";
+import { CircomValueType } from "@tawny0wl/test-circom-parser";
 import { z } from "zod";
 
 /**

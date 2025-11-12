@@ -1,7 +1,7 @@
 import chalk from "chalk";
 import CliTable3 from "cli-table3";
 
-import { SpinnerProcessor } from "../SpinnerProcessor";
+import { SpinnerProcessor } from "../SpinnerProcessor.js";
 
 export abstract class BaseReporter {
   constructor(private _quiet: boolean) {}

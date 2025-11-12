@@ -1,4 +1,5 @@
-import { CompileFlags, SetupContributionSettings } from "../src/types/core";
+import type { CompileFlags } from "../src/types/core/compiler/circom-compiler.js";
+import type { SetupContributionSettings } from "../src/types/core/setup/setup-processor.js";
 
 export const defaultCompileFlags: CompileFlags = {
   r1cs: true,

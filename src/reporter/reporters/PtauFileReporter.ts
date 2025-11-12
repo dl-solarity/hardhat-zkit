@@ -1,9 +1,8 @@
 /* eslint-disable no-console */
 import chalk from "chalk";
-import { emoji } from "hardhat/internal/cli/emoji";
 
-import { BaseReporter } from "./BaseReporter";
-import { ProgressBarProcessor } from "../ProgressBarProcessor";
+import { BaseReporter } from "./BaseReporter.js";
+import { ProgressBarProcessor } from "../ProgressBarProcessor.js";
 
 export class PtauFileReporter extends BaseReporter {
   public reportInfo(maxConstraintsNumber: number, ptauId: number, ptauFileFullPath?: string) {
@@ -43,7 +42,7 @@ export class PtauFileReporter extends BaseReporter {
 
     ProgressBarProcessor!.stopProgressBar();
 
-    console.log(`\n${emoji("✅ ", `${chalk.green("✔ ")}`)}Ptau file successfully downloaded`);
+    console.log(`\n${chalk.green("✔ ")}Ptau file successfully downloaded`);
   }
 
   public reportDownloadingError() {
@@ -51,6 +50,6 @@ export class PtauFileReporter extends BaseReporter {
 
     ProgressBarProcessor!.stopProgressBar();
 
-    console.log(`\n${emoji("❌ ", `${chalk.red("X ")}`)}Ptau file downloading failed`);
+    console.log(`\n${chalk.red("X ")}Ptau file downloading failed`);
   }
 }

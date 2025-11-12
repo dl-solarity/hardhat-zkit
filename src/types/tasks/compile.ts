@@ -1,7 +1,9 @@
 export type CompileTaskConfig = {
-  force: boolean;
   json: boolean;
   c: boolean;
+  force: boolean;
   quiet: boolean;
-  optimization?: "O0" | "O1" | "O2";
+  optimization?: string;
 };
+
+type optimisationType = "O0" | "O1" | "O2" | undefined; // todo

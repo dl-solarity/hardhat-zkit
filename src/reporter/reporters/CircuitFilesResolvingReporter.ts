@@ -1,8 +1,8 @@
 /* eslint-disable no-console */
 import chalk from "chalk";
 
-import { BaseReporter } from "./BaseReporter";
-import { SpinnerProcessor } from "../SpinnerProcessor";
+import { BaseReporter } from "./BaseReporter.js";
+import { SpinnerProcessor } from "../SpinnerProcessor.js";
 
 export class CircuitFilesResolvingReporter extends BaseReporter {
   public reportHeader() {

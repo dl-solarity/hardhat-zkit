@@ -1,9 +1,47 @@
 import * as snarkjs from "snarkjs";
 
-import { LinearCombination, R1CSConstraint } from "../../src/types/utils";
+import fsExtra from "fs-extra";
+
+import { LinearCombination, R1CSConstraint } from "../../src/types/utils.js";
+import { HardhatZKitError } from "../../src/errors.js";
+import { terminateCurve } from "./utils.js";
 
 export async function getR1CSConstraintsNumber(r1csFilePath: string): Promise<number> {
-  return (await snarkjs.r1cs.info(r1csFilePath)).nConstraints;
+  const r1csDescriptor = fsExtra.openSync(r1csFilePath, "r");
+
+  const readBytes = (position: number, length: number): bigint => {
+    const buffer = Buffer.alloc(length);
+
+    fsExtra.readSync(r1csDescriptor, buffer, { length, position });
+
+    return BigInt(`0x${buffer.reverse().toString("hex")}`);
+  };
+
+  // https://github.com/iden3/r1csfile/blob/d82959da1f88fbd06db0407051fde94afbf8824a/doc/r1cs_bin_format.md#format-of-the-file
+  const numberOfSections = readBytes(8, 4);
+  let sectionStart = 12;
+
+  for (let i = 0; i < numberOfSections; ++i) {
+    const sectionType = Number(readBytes(sectionStart, 4));
+    const sectionSize = Number(readBytes(sectionStart + 4, 8));
+
+    // Reading header section
+    if (sectionType == 1) {
+      const totalConstraintsOffset = 4 + 8 + 4 + 32 + 4 + 4 + 4 + 4 + 8;
+
+      return Number(readBytes(sectionStart + totalConstraintsOffset, 4));
+    }
+
+    sectionStart += 4 + 8 + sectionSize;
+  }
+
+  throw new HardhatZKitError(`Header section in ${r1csFilePath} file is not found.`);
+
+  // const nConstraints =  (await snarkjs.r1cs.info(r1csFilePath)).nConstraints;
+
+  //     await terminateCurve();
+
+  //     return nConstraints;
 }
 
 export async function getGroth16ConstraintsNumber(r1csFilePath: string): Promise<number> {

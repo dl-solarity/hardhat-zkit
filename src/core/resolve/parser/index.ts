@@ -1,3 +1,3 @@
-export * from "./CircomFilesParser";
-export * from "./CircomFilesVisitor";
-export * from "./CircomTemplateInputsVisitor";
+export * from "./CircomFilesParser.js";
+export * from "./CircomFilesVisitor.js";
+export * from "./CircomTemplateInputsVisitor.js";

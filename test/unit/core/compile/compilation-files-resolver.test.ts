@@ -1,26 +1,27 @@
 import fsExtra from "fs-extra";
+import * as fs from "fs";
 
 import { expect } from "chai";
+import { HardhatRuntimeEnvironment } from "hardhat/types/hre";
 
-import { TASK_COMPILE_SOLIDITY_READ_FILE as TASK_READ_FILE } from "hardhat/builtin-tasks/task-names";
-import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { getAllFilesMatching } from "hardhat/internal/util/fs-utils";
+import { getAllFilesMatching } from "@nomicfoundation/hardhat-utils/fs";
 
-import { useEnvironment } from "test-helpers";
+import { CompilationFilesResolverMock } from "./mock/CompilationFilesResolverMock.js";
+import { CircomFilesResolver, CircomResolvedFile } from "../../../../src/core/resolve/CircomFilesResolver.js";
+import { DependencyGraph } from "../../../../src/core/resolve/DependencyGraph.js";
+import { TASK_CIRCUITS_COMPILE, ZKIT_SCOPE_NAME } from "../../../../src/task-names.js";
+import { CircomFilesParser } from "../../../../src/core/resolve/parser/CircomFilesParser.js";
+import { CircomResolvedFileInfo } from "../../../../src/types/core/compile/compilation-files-resolver.js";
+import { getNormalizedFullPath } from "../../../../src/utils/path-utils.js";
+import { CircuitsCompileCache } from "../../../../src/cache/CircuitsCompileCache.js";
+import { CIRCUITS_COMPILE_CACHE_FILENAME } from "../../../../src/constants.js";
 
-import { CompilationFilesResolverMock } from "./mock/CompilationFilesResolverMock";
-import { CircuitsCompileCache } from "src/cache";
-import { TASK_CIRCUITS_COMPILE, ZKIT_SCOPE_NAME } from "src/task-names";
-import { DependencyGraph, CircomFilesResolver, CircomFilesParser } from "src/core";
-import { getNormalizedFullPath } from "src/utils/path-utils";
-import { CIRCUITS_COMPILE_CACHE_FILENAME } from "src/constants";
-
-import { CircomResolvedFileInfo, CircomResolvedFile } from "src/types/core";
+import { useEnvironment } from "../../../helpers.js";
 
 describe("CompilationFilesResolver", () => {
   function getCompilationFilesManagerMock(hre: HardhatRuntimeEnvironment): CompilationFilesResolverMock {
     return new CompilationFilesResolverMock(
-      (absolutePath: string) => hre.run(TASK_READ_FILE, { absolutePath }),
+      (absolutePath: string) => fs.readFileSync(absolutePath).toString(),
       hre.zkit.circuitArtifacts,
       hre.config,
     );
@@ -35,14 +36,14 @@ describe("CompilationFilesResolver", () => {
     useEnvironment({ fixtureProjectName: "with-circuits" });
 
     beforeEach("setup", async function () {
-      await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
+      await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_COMPILE]).run({});
 
       compilationFilesManager = getCompilationFilesManagerMock(this.hre);
 
       const resolver = new CircomFilesResolver(
         this.hre.config.paths.root,
         new CircomFilesParser(),
-        (absolutePath: string) => this.hre.run(TASK_READ_FILE, { absolutePath }),
+        (absolutePath: string) => fs.readFileSync(absolutePath).toString(),
       );
 
       const sourcePaths: string[] = await getAllFilesMatching(compilationFilesManager.getCircuitsDirFullPath(), (f) =>
@@ -124,7 +125,7 @@ describe("CompilationFilesResolver", () => {
     useEnvironment({ fixtureProjectName: "with-circuits" });
 
     beforeEach("setup", async function () {
-      await this.hre.run({ scope: ZKIT_SCOPE_NAME, task: TASK_CIRCUITS_COMPILE });
+      await this.hre.tasks.getTask([ZKIT_SCOPE_NAME, TASK_CIRCUITS_COMPILE]).run({});
 
       compilationFilesManager = getCompilationFilesManagerMock(this.hre);
 
@@ -137,7 +138,7 @@ describe("CompilationFilesResolver", () => {
       const resolver = new CircomFilesResolver(
         this.hre.config.paths.root,
         new CircomFilesParser(),
-        (absolutePath: string) => this.hre.run(TASK_READ_FILE, { absolutePath }),
+        (absolutePath: string) => fs.readFileSync(absolutePath).toString(),
       );
       const dependencyGraph: DependencyGraph = await compilationFilesManager.getDependencyGraph(sourceNames, resolver);
 

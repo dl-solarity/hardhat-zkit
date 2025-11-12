@@ -1,2 +1,2 @@
-export * from "./CircuitsCompileCache";
-export * from "./CircuitsSetupCache";
+export * from "./CircuitsCompileCache.js";
+export * from "./CircuitsSetupCache.js";
